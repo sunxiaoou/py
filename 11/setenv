@@ -1,0 +1,4 @@
+#!/bin/sh
+
+export http_proxy=http://cn-proxy.jp.oracle.com:80
+export https_proxy=$http_proxy
