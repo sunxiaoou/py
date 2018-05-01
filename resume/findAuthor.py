@@ -2,6 +2,7 @@
 import re
 import bs4
 import sys
+from resume import Experience
 
 
 def get_preview_list():
@@ -75,15 +76,51 @@ def get_education():
     return elem.getText().strip()
 
 
-def get_experience():
-    # elems = soup.select("[class$=workExperience]")
-    # elems = soup.select('[class$=workExperience] h2')
-    elem = soup.find('div', class_='resume-preview-all workExperience')
-    if elem is None:
-        print(2)
-        elem = soup.find('h3', text='工作经历').find_parent()
-    elems = elem.findAll('h2')
-    return elems[0].getText().strip()
+def get_experiences():
+    experiences = []
+    # tag = soup.find('div', class_='resume-preview-all workExperience')
+    tag = soup.find('h3', text=re.compile(r'工作经历|项目经历'))
+    if tag is None:
+        return experiences
+    tag = tag.find_parent()
+    if not tag['class'][0].startswith('resume-preview-all'):
+        return experiences
+
+    for h2 in tag.findAll('h2'):
+        text = h2.getText().strip()
+        date1 = date2 = company = company_desc = job = job_desc = 'null'
+        mo = re.compile(r'\d{4}\D\d{1,2}\D').search(text)
+        if mo is not None:
+            date1 = mo.group().strip()
+            text = text.replace(date1, '')
+        mo = re.compile(r'\d{4}\D\d{1,2}\D|至今').search(text)
+        if mo is not None:
+            date2 = mo.group().strip()
+            text = text.replace(date2, '')
+        # mo = re.compile(r'\S*(公司)\S*').search(text)
+        mo = re.compile(r'[^-\s]+').search(text)
+        if mo is not None:
+            company = mo.group()
+
+        sibling = h2.find_next_sibling()
+        while sibling is not None and sibling.name != 'h2':
+            if sibling.name == 'h5':
+                jobs = '(生|员|工|师|代|理|总|监|书|顾|计)'
+                mo = re.compile(r'\S*{0}\S*'.format(jobs)).search(sibling.getText())
+                if mo is not None:
+                    job = mo.group()
+            elif sibling['class'][0] == 'resume-preview-dl':
+                if sibling.string is not None:
+                    company_desc = sibling.getText().strip()
+                else:
+                    for td in sibling.findAll('td'):
+                        if td.getText() != '工作描述：':
+                            job_desc = td.getText()
+            sibling = sibling.find_next_sibling()
+
+        experiences.append(Experience(date1, date2, company, company_desc, job, job_desc))
+
+    return experiences
 
 
 def get_table():
@@ -92,8 +129,8 @@ def get_table():
 
 
 # html = open('../html/jm089618041r90250000000_2015-08-24_0.html')
-html = open('/home/xixisun/suzy/resumes/0001/2/jm089638951r90250000000_2015-01-28_0.html')
-# html = open('/home/xixisun/suzy/resumes/0001/2/jm090122773r90250000000_2015-03-08_0.html')
+# html = open('/home/xixisun/suzy/resumes/0001/2/jm089638951r90250000000_2015-01-28_0.html')
+html = open('/home/xixisun/suzy/resumes/0001/2/jm090122773r90250000000_2015-03-08_0.html')
 
 soup = bs4.BeautifulSoup(html.read(), "lxml")
 
@@ -123,18 +160,20 @@ print("Education: ")
 print(get_education())
 
 print("Experience: ")
-print(get_experience())
+for experience in get_experiences():
+    print(str(experience))
+
 
 # print('CREATE TABLE {} ({} {}, {} {}, {} {}, {} {}, {} {})'.
 #      format('person', 'name', 'TEXT', 'gender', 'TEXT', 'birth', 'TEXT', 'phone', 'INTEGER', 'email', 'TEXT'))
 
-print('CREATE TABLE person (name TEXT, gender TEXT, birth TEXT, email TEXT, phone INTEGER PRIMARY KEY)')
-print('CREATE TABLE objective (spot TEXT, salary INTEGER, field TEXT, industry TEXT, phone INTEGER, '
-      'FOREIGN KEY(phone) REFERENCES person(phone))')
-print('CREATE TABLE experience (start_date TEXT, end_date TEXT, company TEXT, job TEXT, phone INTEGER, '
-      'FOREIGN KEY(phone) REFERENCES person(phone))')
-print('CREATE TABLE education (start_date TEXT, end_date TEXT, school TEXT, major TEXT, degree TEXT, phone INTEGER, '
-      'FOREIGN KEY(phone) REFERENCES person(phone))')
+# print('CREATE TABLE person (name TEXT, gender TEXT, birth TEXT, email TEXT, phone INTEGER PRIMARY KEY)')
+# print('CREATE TABLE objective (spot TEXT, salary INTEGER, field TEXT, industry TEXT, phone INTEGER, '
+#      'FOREIGN KEY(phone) REFERENCES person(phone))')
+# print('CREATE TABLE experience (start_date TEXT, end_date TEXT, company TEXT, job TEXT, phone INTEGER, '
+#       'FOREIGN KEY(phone) REFERENCES person(phone))')
+# print('CREATE TABLE education (start_date TEXT, end_date TEXT, school TEXT, major TEXT, degree TEXT, phone INTEGER, '
+#      'FOREIGN KEY(phone) REFERENCES person(phone))')
 
 
 sys.exit(1)

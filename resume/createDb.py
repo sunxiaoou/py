@@ -16,8 +16,8 @@ def create_tabs():
     curs.execute(cmd)
 
     cmd = 'CREATE TABLE experience ' +\
-          '(start_date TEXT, end_date TEXT, company TEXT, job TEXT, phone INTEGER, ' +\
-          'FOREIGN KEY(phone) REFERENCES person(phone))'
+          '(start_date TEXT, end_date TEXT, company TEXT, company_desc TEXT, job TEXT, job_desc TEXT, phone INTEGER, '\
+          + 'FOREIGN KEY(phone) REFERENCES person(phone))'
     print(cmd)
     curs.execute(cmd)
 

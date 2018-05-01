@@ -36,19 +36,23 @@ class Objective:
 
 
 class Experience:
-    def __init__(self, start_date, end_date, company, job):
+    def __init__(self, start_date, end_date, company, company_desc, job, job_desc):
         self.start_date = start_date
         self.end_date = end_date
         self.company = company
+        self.company_desc = company_desc
         self.job = job
+        self.job_desc = job_desc
 
     def __str__(self):
-        return self.start_date + ', ' + self.end_date + ', ' + self.company + ', ' + self.job
+        return self.start_date + ', ' + self.end_date + ', ' + self.company + ', ' + self.company_desc + '\n' +\
+               self.job + ', ' + self.job_desc
 
     def insert_cmd(self, phone):
-        return 'INSERT OR IGNORE INTO experience (start_date, end_date, company, job, phone) ' +\
-               "VALUES ('{}', '{}', '{}', '{}', {})".\
-                   format(self.start_date, self.end_date, self.company, self.job, phone)
+        return 'INSERT OR IGNORE INTO experience (start_date, end_date, company, company_desc, job, job_desc, phone) '\
+               + "VALUES ('{}', '{}', '{}', '{}', '{}', '{}', {})".\
+                   format(self.start_date, self.end_date, self.company, self.company_desc, self.job, self.job_desc,
+                          phone)
 
 
 class Education:

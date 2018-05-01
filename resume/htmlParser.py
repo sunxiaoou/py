@@ -74,6 +74,7 @@ class HtmlParser:
         return Objective(spot, salary, field, industry)
 
     def get_experiences(self):
+        """
         experiences = []
         element = self.soup.find('div', class_='resume-preview-all workExperience')
         if element is None:
@@ -107,6 +108,48 @@ class HtmlParser:
             except IndexError:
                 pass
             experiences.append(Experience(date1, date2, company, job))
+            """
+        experiences = []
+        # tag = self.soup.find('div', class_='resume-preview-all workExperience')
+        tag = self.soup.find('h3', text=re.compile(r'工作经历|项目经历'))
+        if tag is None:
+            return experiences
+        tag = tag.find_parent()
+        if not tag['class'][0].startswith('resume-preview-all'):
+            return experiences
+
+        for h2 in tag.findAll('h2'):
+            text = h2.getText().strip()
+            date1 = date2 = company = company_desc = job = job_desc = 'null'
+            mo = re.compile(r'\d{4}\D\d{1,2}\D').search(text)
+            if mo is not None:
+                date1 = mo.group().strip()
+                text = text.replace(date1, '')
+            mo = re.compile(r'\d{4}\D\d{1,2}\D|至今').search(text)
+            if mo is not None:
+                date2 = mo.group().strip()
+                text = text.replace(date2, '')
+            # mo = re.compile(r'\S*(公司)\S*').search(text)
+            mo = re.compile(r'[^-\s]+').search(text)
+            if mo is not None:
+                company = mo.group()
+            sibling = h2.find_next_sibling()
+            while sibling is not None and sibling.name != 'h2':
+                if sibling.name == 'h5':
+                    # jobs = '(生|员|工|师|代|理|总|监|书|顾|计)'
+                    # mo = re.compile(r'\S*{0}\S*'.format(jobs)).search(sibling.getText())
+                    # if mo is not None:
+                    #    job = mo.group()
+                    job = sibling.getText().strip()
+                elif sibling['class'][0] == 'resume-preview-dl':
+                    if sibling.string is not None:
+                        company_desc = sibling.getText().strip()
+                    else:
+                        for td in sibling.findAll('td'):
+                            if td.getText() != '工作描述：':
+                                job_desc = td.getText().replace('\'', '’')
+                sibling = sibling.find_next_sibling()
+            experiences.append(Experience(date1, date2, company, company_desc, job, job_desc))
         return experiences
 
     def get_educations(self):
