@@ -51,7 +51,7 @@ class HtmlParser:
         if mo is not None:
             email = mo.group()
 
-        return Person(file, name, gender, birth, phone, email)
+        return Person(file, name, gender, birth, phone, email, self.get_objective())
 
     def get_objective(self):
         spot = field = industry = 'null'
@@ -74,41 +74,6 @@ class HtmlParser:
         return Objective(spot, salary, field, industry)
 
     def get_experiences(self):
-        """
-        experiences = []
-        element = self.soup.find('div', class_='resume-preview-all workExperience')
-        if element is None:
-            element = self.soup.find('h3', text=re.compile(r'工作经历|项目经历'))
-            if element is None:
-                return experiences
-            element = element.find_parent()
-        h2s = element.findAll('h2')
-        h5s = element.findAll('h5')
-        for i in range(len(h2s)):
-            text = h2s[i].getText().strip()
-            date1 = date2 = company = job = 'null'
-            mo = re.compile(r'\d{4}\D\d{1,2}\D').search(text)
-            if mo is not None:
-                date1 = mo.group().strip()
-                text = text.replace(date1, '')
-            mo = re.compile(r'\d{4}\D\d{1,2}\D|至今').search(text)
-            if mo is not None:
-                date2 = mo.group().strip()
-                text = text.replace(date2, '')
-            # mo = re.compile(r'\S*(公司)\S*').search(text)
-            mo = re.compile(r'[^-\s]+').search(text)
-            if mo is not None:
-                company = mo.group()
-            try:
-                text = h5s[i].getText().strip()
-                jobs = '(生|员|工|师|代|理|总|监|书|顾|计)'
-                mo = re.compile(r'\S*{0}\S*'.format(jobs)).search(text)
-                if mo is not None:
-                    job = mo.group()
-            except IndexError:
-                pass
-            experiences.append(Experience(date1, date2, company, job))
-            """
         experiences = []
         # tag = self.soup.find('div', class_='resume-preview-all workExperience')
         tag = self.soup.find('h3', text=re.compile(r'工作经历|项目经历'))
@@ -188,4 +153,4 @@ class HtmlParser:
         return educations
 
     def new_resume(self):
-        return Resume(self.get_person(), self.get_objective(), self.get_experiences(), self.get_educations())
+        return Resume(self.get_person(), self.get_experiences(), self.get_educations())

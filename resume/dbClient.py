@@ -4,8 +4,8 @@ import sqlite3
 
 
 class DbClient:
-    def __init__(self, dbFile):
-        self.conn = sqlite3.connect(dbFile)
+    def __init__(self, db_file):
+        self.conn = sqlite3.connect(db_file)
         self.curs = self.conn.cursor()
 
     def execute(self, cmd):

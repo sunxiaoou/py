@@ -1,25 +1,6 @@
 #! /usr/bin/python3
 
 
-class Person:
-    def __init__(self, file, name, gender, birth, phone, email):
-        self.file = file
-        self.name = name
-        self.gender = gender
-        self.birth = birth
-        self.phone = phone
-        self.email = email
-
-    def __str__(self):
-        return self.file + '\n' +\
-               self.name + ', ' + self.gender + ', ' + self.birth + ', ' + self.phone + ', ' + self.email
-
-    def insert_cmd(self):
-        return 'INSERT OR IGNORE INTO person (file, name, gender, birth, email, phone) ' +\
-               "VALUES ('{}', '{}', '{}', '{}', '{}', {})".\
-                    format(self.file, self.name, self.gender, self.birth, self.email, self.phone)
-
-
 class Objective:
     def __init__(self, spot, salary, field, industry):
         self.spot = spot
@@ -28,11 +9,29 @@ class Objective:
         self.industry = industry
 
     def __str__(self):
-        return self.spot + '\n' + self.salary + '\n' + self.field + '\n' + self.industry
+        return self.spot + ', ' + self.salary + ', ' + self.field + ', ' + self.industry
 
-    def insert_cmd(self, phone):
-        return 'INSERT OR IGNORE INTO objective (spot, salary, field, industry, phone) ' +\
-               "VALUES ('{}', {}, '{}', '{}', {})".format(self.spot, self.salary, self.field, self.industry, phone)
+
+class Person:
+    def __init__(self, file, name, gender, birth, phone, email, objective):
+        self.file = file
+        self.name = name
+        self.gender = gender
+        self.birth = birth
+        self.phone = phone
+        self.email = email
+        self.objective = objective
+
+    def __str__(self):
+        return self.file + '\n' +\
+               self.name + ', ' + self.gender + ', ' + self.birth + ', ' + self.phone + ', ' + self.email + '\n' +\
+               str(self.objective)
+
+    def insert_cmd(self):
+        return 'INSERT OR IGNORE INTO person (file, name, gender, birth, email, phone, spot, salary, field, industry) '\
+               + "VALUES ('{}', '{}', '{}', '{}', '{}', {}, '{}', {}, '{}', '{}')".\
+                    format(self.file, self.name, self.gender, self.birth, self.email, self.phone,
+                           self.objective.spot, self.objective.salary, self.objective.field, self.objective.industry)
 
 
 class Experience:
@@ -73,15 +72,13 @@ class Education:
 
 
 class Resume:
-    def __init__(self, person, objective, experiences, educations):
+    def __init__(self, person, experiences, educations):
         self.person = person
-        self.objective = objective
         self.experiences = experiences
         self.educations = educations
 
     def __str__(self):
         msg = 'Person:\n' + str(self.person) + '\n'
-        msg = msg + 'Objective:\n' + str(self.objective) + '\n'
         msg += 'Experiences:\n'
         for experience in self.experiences:
             msg = msg + str(experience) + '\n'
@@ -91,7 +88,7 @@ class Resume:
         return msg
 
     def insert_cmds(self):
-        cmds = [self.person.insert_cmd(), self.objective.insert_cmd(self.person.phone)]
+        cmds = [self.person.insert_cmd()]
         for experience in self.experiences:
             cmds.append(experience.insert_cmd(self.person.phone))
         for education in self.educations:
