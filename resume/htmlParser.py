@@ -2,21 +2,22 @@
 
 import re
 import os
-from bs4 import BeautifulSoup
+from abcParser import ABCParser
 from resume import Person
 from resume import Objective
 from resume import Experience
 from resume import Education
-from resume import Resume
 
 
-class HtmlParser:
+class HtmlParser(ABCParser):
+    """
     def __init__(self, html):
         self.html = html
         self.soup = BeautifulSoup(open(html), 'lxml')
+    """
 
     def get_person(self):
-        gender = birth = phone = email = 'null'
+        gender = birth = email = 'null'
 
         file = os.path.basename(self.html)
 
@@ -152,5 +153,7 @@ class HtmlParser:
             educations.append(Education(date1, date2, school, major, degree))
         return educations
 
+    """
     def new_resume(self):
         return Resume(self.get_person(), self.get_experiences(), self.get_educations())
+    """

@@ -17,10 +17,10 @@ def test_one():
     # file = 'jm328873785r90250000000.html'
     parser = HtmlParser(folder + '/' + file)
     resume = parser.new_resume()
-    # print(resume)
+    print(resume)
     for cmd in resume.insert_cmds():
         print(cmd)
-        dbClient.execute(cmd)
+        # dbClient.execute(cmd)
 
 
 def parse():
@@ -44,7 +44,7 @@ def parse():
 
 dbFile = 'shoulie.sqlite'
 dbClient = DbClient(dbFile)
-# test_one()
-parse()
+test_one()
+# parse()
 dbClient.close()
 sys.exit(0)
