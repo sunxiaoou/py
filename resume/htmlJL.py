@@ -97,10 +97,14 @@ class HtmlJL(ABCParser):
                     continue
                 if '工作内容:' not in item:
                     flds = [x.strip() for x in item.split('|') if x != '']
-                    date1 = flds[0]
-                    date2 = flds[1]
-                    company = flds[2]
-                    company_desc = '{} {}'.format(flds[3], flds[4])
+                    try:
+                        date1 = flds[0]
+                        date2 = flds[1]
+                        company = flds[2]
+                        company_desc = flds[3]
+                        company_desc += ' {}'.format(flds[4])
+                    except IndexError:
+                        pass
                 else:
                     job_desc = item[7:]
             experiences.append(Experience(date1, date2, company, company_desc, job, job_desc))
@@ -108,43 +112,45 @@ class HtmlJL(ABCParser):
 
     def get_educations(self):
         educations = []
-        element = self.soup.find('div', class_='resume-preview-dl educationContent')
-        if element is None:
-            element = self.soup.find('h3', text='教育经历')
-            if element is None:
-                return educations
-            element = element.find_next_sibling()
-        text = element.getText().strip()
-        texts = text.split('\n')
+        text = self.soup.body.getText()
+        mo = re.compile(r'教育经历:(.*)语言水平', re.DOTALL).search(text)
+        texts = mo.group(1).split('\n')
         for text in texts:
+            text.strip()
+            if text == '' or text == ' ':
+                continue
+            # print(":".join("{:02x}".format(ord(c)) for c in text))
             date1 = date2 = school = major = degree = 'null'
-            mo = re.compile(r'(\d{4}\D\d{1,2}\D)').search(text)
+            mo = re.compile(r'(\d{4}\D+\d{1,2})').search(text)
             if mo is not None:
                 date1 = mo.group().strip()
                 text = text.replace(date1, '')
-            mo = re.compile(r'(\d{4}\D\d{1,2}\D)').search(text)
+            mo = re.compile(r'(\d{4}\D+\d{1,2})').search(text)
             if mo is not None:
                 date2 = mo.group().strip()
                 text = text.replace(date2, '')
-            mo = re.compile(r'\S*(大学|学院)').search(text)
+            mo = re.compile(r'&nbsp(\S*(大学|学院))').search(text)
             if mo is not None:
-                school = mo.group()
+                school = mo.group(1)
                 text = text.replace(school, '')
             majors = '(科学|语|数|理|化|光|机|电|计|通|仪|材料|应用|工程)'
-            mo = re.compile(r'\S*{0}\S*'.format(majors)).search(text)
+            mo = re.compile(r'(&nbsp)+(\S*{0}\S*)&nbsp'.format(majors)).search(text)
             if mo is not None:
-                major = mo.group()
+                major = mo.group(2)
                 text = text.replace(major, '')
-            mo = re.compile(r'\S*(专|本|生|士)\S*').search(text)
+            mo = re.compile(r'(&nbsp)+(\S*(专|本|生|士)\S*)').search(text)
             if mo is not None:
-                degree = mo.group()
+                degree = mo.group(2)
             educations.append(Education(date1, date2, school, major, degree))
         return educations
 
 
 folder = '/home/xixisun/suzy/resumes/html/jl'
-file = '10022353-季文清.html'
+# file = '10022353-季文清.html'
+file = '10052356-安敬辉.html'
 parser = HtmlJL(folder + '/' + file)
 print(parser.get_person())
 for experience in parser.get_experiences():
     print(experience)
+for education in parser.get_educations():
+    print(education)
