@@ -6,6 +6,7 @@ from abcParser import ABCParser
 from resume import Person
 from resume import Objective
 from resume import Experience
+from resume import Project
 from resume import Education
 
 
@@ -110,6 +111,39 @@ class HtmlJL(ABCParser):
             experiences.append(Experience(date1, date2, company, company_desc, job, job_desc))
         return experiences
 
+    def get_projects(self):
+        projects = []
+        text = self.soup.body.getText()
+        mo = re.compile(r'项目经验:(.*)教育经历', re.DOTALL).search(text)
+        text = mo.group(1)
+        texts = re.compile(r'  \d\d\d\d.*?(?=  \d\d\d\d)', re.DOTALL).findall(text)     # ? non greed, ?= non consuming
+        for text in texts:
+            date1 = date2 = project_name = 'null'
+            mo = re.compile(r'  \d\d\d\d.*').search(text)
+            if mo is None:
+                continue
+            item = mo.group()
+            flds = [x.strip() for x in item.split('|') if x != '']
+            try:
+                date1 = flds[0]
+                date2 = flds[1]
+                project_name = flds[2]
+            except IndexError:
+                pass
+            # print('date1({}) date2({}) project_name({})'.format(date1, date2, project_name))
+            mo = re.compile(r'项目介绍:\n(.*?)$', re.DOTALL | re.MULTILINE).search(text)
+            if mo is None:
+                continue
+            project_desc = mo.group(1).strip()
+            # print(project_desc)
+            mo = re.compile(r'责任描述:\n(.*?)$', re.DOTALL | re.MULTILINE).search(text)
+            if mo is None:
+                continue
+            job_desc = mo.group(1).strip()
+            # print(job_desc)
+            projects.append(Project(date1, date2, project_name, project_desc, job_desc))
+        return projects
+
     def get_educations(self):
         educations = []
         text = self.soup.body.getText()
@@ -150,7 +184,13 @@ folder = '/home/xixisun/suzy/resumes/html/jl'
 file = '10052356-安敬辉.html'
 parser = HtmlJL(folder + '/' + file)
 print(parser.get_person())
+
+print('Experiences:')
 for experience in parser.get_experiences():
     print(experience)
+print('Projects:')
+for project in parser.get_projects():
+    print(project)
+print('Educations:')
 for education in parser.get_educations():
     print(education)

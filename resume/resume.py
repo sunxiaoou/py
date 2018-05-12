@@ -54,6 +54,19 @@ class Experience:
                           phone)
 
 
+class Project:
+    def __init__(self, start_date, end_date, project_name, project_desc, job_desc):
+        self.start_date = start_date
+        self.end_date = end_date
+        self.project_name = project_name
+        self.project_desc = project_desc
+        self.job_desc = job_desc
+
+    def __str__(self):
+        return self.start_date + ', ' + self.end_date + ', ' + self.project_name + ', ' + self.project_desc + '\n' + \
+               self.job_desc
+
+
 class Education:
     def __init__(self, start_date, end_date, school, major, degree):
         self.start_date = start_date
@@ -72,9 +85,10 @@ class Education:
 
 
 class Resume:
-    def __init__(self, person, experiences, educations):
+    def __init__(self, person, experiences, projects, educations):
         self.person = person
         self.experiences = experiences
+        self.projects = projects
         self.educations = educations
 
     def __str__(self):
@@ -82,6 +96,9 @@ class Resume:
         msg += 'Experiences:\n'
         for experience in self.experiences:
             msg = msg + str(experience) + '\n'
+        msg += 'Projects:\n'
+        for project in self.projects:
+            msg = msg + str(project) + '\n'
         msg += 'Educations:\n'
         for education in self.educations:
             msg = msg + str(education) + '\n'
