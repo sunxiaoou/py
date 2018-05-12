@@ -20,7 +20,14 @@ class ABCParser(abc.ABC):
     def get_experiences(self): pass
 
     @abc.abstractclassmethod
+    def get_projects(self): pass
+
+    @abc.abstractclassmethod
     def get_educations(self): pass
 
+    @abc.abstractclassmethod
+    def get_skills(self): pass
+
     def new_resume(self):
-        return Resume(self.get_person(), self.get_experiences(), self.get_educations())
+        return Resume(self.get_person(), self.get_experiences(), self.get_projects(), self.get_educations(),
+                      self.get_skills())

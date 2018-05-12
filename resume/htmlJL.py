@@ -2,12 +2,14 @@
 
 import re
 import os
+from pprint import pprint
 from abcParser import ABCParser
 from resume import Person
 from resume import Objective
 from resume import Experience
 from resume import Project
 from resume import Education
+from resume import Skill
 
 
 class HtmlJL(ABCParser):
@@ -86,11 +88,13 @@ class HtmlJL(ABCParser):
         return Objective(spot, salary, field, industry)
 
     def get_experiences(self):
-        experiences = []
         text = self.soup.body.getText()
         mo = re.compile(r'工作经历(:|：)(.*)项目经验', re.DOTALL).search(text)
+        if mo is None:
+            return []
         text = mo.group(2)
         texts = re.compile(r'.*?离职理由:', re.DOTALL).findall(text)    # ? = non greedy
+        experiences = []
         for text in texts:
             date1 = date2 = company = company_desc = job = job_desc = 'null'
             for item in text.split('\n'):
@@ -112,13 +116,15 @@ class HtmlJL(ABCParser):
         return experiences
 
     def get_projects(self):
-        projects = []
         text = self.soup.body.getText()
         mo = re.compile(r'项目经验:(.*)教育经历', re.DOTALL).search(text)
+        if mo is None:
+            return []
         text = mo.group(1)
         texts = re.compile(r'  \d\d\d\d.*?(?=  \d\d\d\d)', re.DOTALL).findall(text)     # ? non greed, ?= non consuming
+        projects = []
         for text in texts:
-            date1 = date2 = project_name = 'null'
+            date1 = date2 = name = 'null'
             mo = re.compile(r'  \d\d\d\d.*').search(text)
             if mo is None:
                 continue
@@ -127,28 +133,30 @@ class HtmlJL(ABCParser):
             try:
                 date1 = flds[0]
                 date2 = flds[1]
-                project_name = flds[2]
+                name = flds[2]
             except IndexError:
                 pass
             # print('date1({}) date2({}) project_name({})'.format(date1, date2, project_name))
             mo = re.compile(r'项目介绍:\n(.*?)$', re.DOTALL | re.MULTILINE).search(text)
             if mo is None:
                 continue
-            project_desc = mo.group(1).strip()
+            description = mo.group(1).strip()
             # print(project_desc)
             mo = re.compile(r'责任描述:\n(.*?)$', re.DOTALL | re.MULTILINE).search(text)
             if mo is None:
                 continue
-            job_desc = mo.group(1).strip()
+            duty = mo.group(1).strip()
             # print(job_desc)
-            projects.append(Project(date1, date2, project_name, project_desc, job_desc))
+            projects.append(Project(date1, date2, name, description, duty))
         return projects
 
     def get_educations(self):
-        educations = []
         text = self.soup.body.getText()
         mo = re.compile(r'教育经历:(.*)语言水平', re.DOTALL).search(text)
+        if mo is None:
+            return []
         texts = mo.group(1).split('\n')
+        educations = []
         for text in texts:
             text.strip()
             if text == '' or text == ' ':
@@ -178,19 +186,52 @@ class HtmlJL(ABCParser):
             educations.append(Education(date1, date2, school, major, degree))
         return educations
 
+    def get_skills(self):
+        text = self.soup.body.getText()
+        mo = re.compile(r'技能:(.*)', re.DOTALL).search(text)
+        if mo is None:
+            return []
+        texts = mo.group(1).split('\n')
+        skills = []
+        for text in texts:
+            if text == '' or text == ' ':
+                continue
+            name = grade = 'null'
+            flds = [x.strip() for x in text.split('-') if x != '']
+            try:
+                name = flds[0]
+                grade = flds[1]
+            except IndexError:
+                pass
+            skills.append(Skill(name, grade))
+        return skills
 
-folder = '/home/xixisun/suzy/resumes/html/jl'
-# file = '10022353-季文清.html'
-file = '10052356-安敬辉.html'
-parser = HtmlJL(folder + '/' + file)
-print(parser.get_person())
 
-print('Experiences:')
-for experience in parser.get_experiences():
-    print(experience)
-print('Projects:')
-for project in parser.get_projects():
-    print(project)
-print('Educations:')
-for education in parser.get_educations():
-    print(education)
+
+
+def main():
+    folder = '/home/xixisun/suzy/resumes/html/jl'
+    # file = '10022353-季文清.html'
+    file = '10052356-安敬辉.html'
+    parser = HtmlJL(folder + '/' + file)
+    """
+    print(parser.get_person())
+    print('Experiences:')
+    for experience in parser.get_experiences():
+        print(experience)
+    print('Projects:')
+    for project in parser.get_projects():
+        print(project)
+    print('Educations:')
+    for education in parser.get_educations():
+        print(education)
+    print('Skills:')
+    for skill in parser.get_skills():
+        print(skill)
+    """
+    resume = parser.new_resume()
+    # print(resume)
+    pprint(resume.to_dictionary())
+
+if __name__ == "__main__":
+    main()
