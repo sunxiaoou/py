@@ -207,8 +207,6 @@ class HtmlJL(ABCParser):
         return skills
 
 
-
-
 def main():
     folder = '/home/xixisun/suzy/resumes/html/jl'
     # file = '10022353-季文清.html'

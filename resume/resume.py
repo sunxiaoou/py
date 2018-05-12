@@ -32,8 +32,8 @@ class Person:
                str(self.objective)
 
     def to_dictionary(self):
-        person = {'姓名': self.name, '性别': self.gender, '出生日期': self.birth, '手机号码': self.phone,
-                  'Email': self.email}
+        person = {'file': self.file, '姓名': self.name, '性别': self.gender, '出生日期': self.birth,
+                  '手机号码': self.phone, '电子邮箱': self.email}
         return {**person, **self.objective.to_dictionary()}     # merge 2 dictionaries
 
     def insert_cmd(self):
@@ -140,22 +140,18 @@ class Resume:
 
     def to_dictionary(self):
         resume = self.person.to_dictionary()
-        experiences = projects = educations = []
+        resume['工作经历'] = []
         for experience in self.experiences:
-            experiences.append(experience.to_dictionary())
-        resume['工作经历'] = experiences
+            resume['工作经历'].append(experience.to_dictionary())
+        resume['项目经验'] = []
         for project in self.projects:
-            projects.append(project.to_dictionary())
-        resume['项目经验'] = projects
-        """
+            resume['项目经验'].append(project.to_dictionary())
+        resume['教育经历'] = []
         for education in self.educations:
-            educations.append(education.to_dictionary())
-        resume['教育经历'] = educations
-        skills = {}
+            resume['教育经历'].append(education.to_dictionary())
+        resume['技能'] = {}
         for skill in self.skills:
-            skills[skill.name] = skill.grade
-        resume['技能'] = skills
-        """
+            resume['技能'][skill.name] = skill.grade
         return resume
 
     def insert_cmds(self):
