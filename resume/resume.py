@@ -106,12 +106,16 @@ class Education:
 
 
 class Skill:
-    def __init__(self, name, grade):
+    def __init__(self, name, grade, time):
         self.name = name
         self.grade = grade
+        self.time = time
 
     def __str__(self):
-        return self.name + ', ' + self.grade
+        return self.name + ', ' + self.grade + ', ' + self.time
+
+    def to_dictionary(self):
+        return {'技能': self.name, '程度': self.grade, '使用时间': self.time}
 
 
 class Resume:
@@ -149,9 +153,9 @@ class Resume:
         resume['教育经历'] = []
         for education in self.educations:
             resume['教育经历'].append(education.to_dictionary())
-        resume['技能'] = {}
+        resume['技能'] = []
         for skill in self.skills:
-            resume['技能'][skill.name] = skill.grade
+            resume['技能'].append(skill.to_dictionary())
         return resume
 
     def insert_cmds(self):

@@ -196,14 +196,17 @@ class HtmlJL(ABCParser):
         for text in texts:
             if text == '' or text == ' ':
                 continue
-            name = grade = 'null'
+            name = grade = time = 'null'
             flds = [x.strip() for x in text.split('-') if x != '']
             try:
                 name = flds[0]
-                grade = flds[1]
+                mo = re.compile(r'(.*)&nbsp(.*)').search(flds[1])
+                if mo is not None:
+                    grade = mo.group(1)
+                    time = mo.group(2)
             except IndexError:
                 pass
-            skills.append(Skill(name, grade))
+            skills.append(Skill(name, grade, time))
         return skills
 
 
