@@ -2,6 +2,7 @@
 
 import re
 import os
+import json
 from pprint import pprint
 from abcParser import ABCParser
 from resume import Person
@@ -35,34 +36,31 @@ class HtmlJL(ABCParser):
 
     def get_person(self):
         file = os.path.basename(self.html)
-        gender = birth = email = 'null'
 
-        text = self.soup.body.find(text=re.compile(r'姓名:.*'))
-        if text is not None:
+        try:
+            text = self.soup.body.find(text=re.compile(r'姓名:.*'))
             name = re.compile(r'姓名:(.*)$').search(text).group(1)
-        else:
-            raise Exception('Cannot find name')
-
-        text = self.soup.body.find(text=re.compile(r'性别:.*'))
-        if text is not None:
-            mo = re.compile(r'性别:(.*)').search(text)
-            gender = mo.group(1)
-
-        text = self.soup.body.find(text=re.compile(r'出生日期:.*'))
-        if text is not None:
+            text = self.soup.body.find(text=re.compile(r'性别:.*'))
+            gender = re.compile(r'性别:(.*)').search(text).group(1)
+            text = self.soup.body.find(text=re.compile(r'出生日期:.*'))
             birth = re.compile(r'出生日期:(.*)').search(text).group(1).strip()
-
-        text = self.soup.body.find(text=re.compile(r'手机号码:.*'))
-        if text is not None:
+            text = self.soup.body.find(text=re.compile(r'手机号码:.*'))
             phone = re.compile(r'手机号码:(.*)').search(text).group(1).strip()
-        else:
-            raise Exception('Cannot find phone')
+        except (TypeError, AttributeError) as err:
+            raise err
 
-        text = self.soup.body.find(text=re.compile(r'Email:.*'))
-        if text is not None:
+        email = education = experience = 'null'
+        try:
+            text = self.soup.body.find(text=re.compile(r'Email:.*'))
             email = re.compile(r'Email:(.*)').search(text).group(1).strip()
+            text = self.soup.body.find(text=re.compile(r'学历:.*'))
+            education = re.compile(r'学历:(.*)').search(text).group(1).strip()
+            text = self.soup.body.find(text=re.compile(r'工作经验:.*'))
+            experience = re.compile(r'工作经验:(.*)工作经验').search(text).group(1).strip()
+        except (TypeError, AttributeError):
+            pass
 
-        return Person(file, name, gender, birth, phone, email, self.get_objective())
+        return Person(file, name, gender, birth, phone, email, education, experience, self.get_objective())
 
     def get_objective(self):
         spot = field = industry = 'null'
@@ -75,7 +73,8 @@ class HtmlJL(ABCParser):
         text = self.soup.body.find(text=re.compile(r'期望月薪\(税前\):.*'))
         if text is not None:
             salaries = re.compile(r'\d+').findall(text)
-            salary = salaries[len(salaries) - 1]
+            if len(salaries) > 0:
+                salary = salaries[len(salaries) - 1]
 
         text = self.soup.body.find(text=re.compile(r'期望从事职业:.*'))
         if text is not None:
@@ -213,7 +212,8 @@ class HtmlJL(ABCParser):
 def main():
     folder = '/home/xixisun/suzy/resumes/html/jl'
     # file = '10022353-季文清.html'
-    file = '10052356-安敬辉.html'
+    # file = '10052356-安敬辉.html'
+    file = 'jm375383835r90250000000-姜丽婷.html'
     parser = HtmlJL(folder + '/' + file)
     """
     print(parser.get_person())
@@ -233,6 +233,7 @@ def main():
     resume = parser.new_resume()
     # print(resume)
     pprint(resume.to_dictionary())
+    # print(json.dumps(resume.to_dictionary()))
 
 if __name__ == "__main__":
     main()

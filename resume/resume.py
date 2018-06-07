@@ -17,30 +17,26 @@ class Objective:
 
 
 class Person:
-    def __init__(self, file, name, gender, birth, phone, email, objective):
+    def __init__(self, file, name, gender, birth, phone, email, education, experience, objective):
         self.file = file
         self.name = name
         self.gender = gender
         self.birth = birth
         self.phone = phone
         self.email = email
+        self.education = education
+        self.experience = experience
         self.objective = objective
 
     def __str__(self):
         return self.file + '\n' +\
                self.name + ', ' + self.gender + ', ' + self.birth + ', ' + self.phone + ', ' + self.email + '\n' +\
-               str(self.objective)
+               self.education + self.experience + str(self.objective)
 
     def to_dictionary(self):
         person = {'file': self.file, '姓名': self.name, '性别': self.gender, '出生日期': self.birth,
-                  '手机号码': self.phone, '电子邮箱': self.email}
+                  '手机号码': self.phone, '电子邮箱': self.email, '学历': self.education, '工作经验': self.experience}
         return {**person, **self.objective.to_dictionary()}     # merge 2 dictionaries
-
-    def insert_cmd(self):
-        return 'INSERT OR IGNORE INTO person (file, name, gender, birth, email, phone, spot, salary, field, industry) '\
-               + "VALUES ('{}', '{}', '{}', '{}', '{}', {}, '{}', {}, '{}', '{}')".\
-                    format(self.file, self.name, self.gender, self.birth, self.email, self.phone,
-                           self.objective.spot, self.objective.salary, self.objective.field, self.objective.industry)
 
 
 class Experience:
@@ -59,12 +55,6 @@ class Experience:
     def to_dictionary(self):
         return {'开始日期': self.start_date, '结束日期': self.end_date, '单位': self.company,
                 '单位描述': self.company_desc, '岗位': self.job, '岗位描述': self.job_desc}
-
-    def insert_cmd(self, phone):
-        return 'INSERT OR IGNORE INTO experience (start_date, end_date, company, company_desc, job, job_desc, phone) '\
-               + "VALUES ('{}', '{}', '{}', '{}', '{}', '{}', {})".\
-                   format(self.start_date, self.end_date, self.company, self.company_desc, self.job, self.job_desc,
-                          phone)
 
 
 class Project:
@@ -98,11 +88,6 @@ class Education:
     def to_dictionary(self):
         return {'开始日期': self.start_date, '结束日期': self.end_date, '学校': self.school, '专业': self.major,
                 '学位': self.degree}
-
-    def insert_cmd(self, phone):
-        return 'INSERT OR IGNORE INTO education (start_date, end_date, school, major, degree, phone) ' +\
-               "VALUES ('{}', '{}', '{}', '{}', '{}', {})".\
-                   format(self.start_date, self.end_date, self.school, self.major, self.degree, phone)
 
 
 class Skill:
@@ -157,11 +142,3 @@ class Resume:
         for skill in self.skills:
             resume['技能'].append(skill.to_dictionary())
         return resume
-
-    def insert_cmds(self):
-        cmds = [self.person.insert_cmd()]
-        for experience in self.experiences:
-            cmds.append(experience.insert_cmd(self.person.phone))
-        for education in self.educations:
-            cmds.append(education.insert_cmd(self.person.phone))
-        return cmds
