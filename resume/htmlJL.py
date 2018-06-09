@@ -2,7 +2,7 @@
 
 import re
 import os
-import json
+from datetime import datetime
 from pprint import pprint
 from abcParser import ABCParser
 from resume import Person
@@ -43,24 +43,33 @@ class HtmlJL(ABCParser):
             text = self.soup.body.find(text=re.compile(r'性别:.*'))
             gender = re.compile(r'性别:(.*)').search(text).group(1)
             text = self.soup.body.find(text=re.compile(r'出生日期:.*'))
-            birth = re.compile(r'出生日期:(.*)').search(text).group(1).strip()
+            # birth = re.compile(r'出生日期:(.*)').search(text).group(1).strip()
+            mo = re.compile(r'出生日期:\D*(\d{4})\D*(\d{1,2})\D*(\d{1,2})?\D*').search(text)    # ? to a optional group
+            if mo.group(3) is None:
+                birth = datetime(int(mo.group(1)), int(mo.group(2)), 15)
+            else:
+                birth = datetime(int(mo.group(1)), int(mo.group(2)), int(mo.group(3)))
             text = self.soup.body.find(text=re.compile(r'手机号码:.*'))
             phone = re.compile(r'手机号码:(.*)').search(text).group(1).strip()
         except (TypeError, AttributeError) as err:
             raise err
 
-        email = education = experience = 'null'
+        email = education = 'null'
+        years = -1
         try:
             text = self.soup.body.find(text=re.compile(r'Email:.*'))
             email = re.compile(r'Email:(.*)').search(text).group(1).strip()
             text = self.soup.body.find(text=re.compile(r'学历:.*'))
             education = re.compile(r'学历:(.*)').search(text).group(1).strip()
+
             text = self.soup.body.find(text=re.compile(r'工作经验:.*'))
-            experience = re.compile(r'工作经验:(.*)工作经验').search(text).group(1).strip()
+            years = int(re.compile(r'工作经验:\D*(\d+)年\D*工作经验').search(text).group(1))
+            if years < 1 or years > 99:
+                raise TypeError
         except (TypeError, AttributeError):
             pass
 
-        return Person(file, name, gender, birth, phone, email, education, experience, self.get_objective())
+        return Person(file, name, gender, birth, phone, email, education, years, self.get_objective())
 
     def get_objective(self):
         spot = field = industry = 'null'
@@ -212,8 +221,8 @@ class HtmlJL(ABCParser):
 def main():
     folder = '/home/xixisun/suzy/resumes/html/jl'
     # file = '10022353-季文清.html'
-    # file = '10052356-安敬辉.html'
-    file = 'jm375383835r90250000000-姜丽婷.html'
+    file = '10052356-安敬辉.html'
+    # file = 'jm375383835r90250000000-姜丽婷.html'
     parser = HtmlJL(folder + '/' + file)
     """
     print(parser.get_person())

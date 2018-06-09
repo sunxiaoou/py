@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import time
+from bson import json_util
 from htmlParser import HtmlParser
 from htmlJL import HtmlJL
 # from dbClient import DbClient
@@ -41,8 +42,11 @@ def parse():
             fn = folderName + '/' + fileName
             print(fn)
             parser = HtmlJL(fn)
-            resume = parser.new_resume()
-            output.write(json.dumps(resume.to_dictionary()))
+            try:
+                resume = parser.new_resume()
+            except AttributeError:
+                continue
+            output.write(json.dumps(resume.to_dictionary(), default=json_util.default))
             output.write('\n')
             # i += 1
             # if i == 1000:

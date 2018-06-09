@@ -17,7 +17,7 @@ class Objective:
 
 
 class Person:
-    def __init__(self, file, name, gender, birth, phone, email, education, experience, objective):
+    def __init__(self, file, name, gender, birth, phone, email, education, years, objective):
         self.file = file
         self.name = name
         self.gender = gender
@@ -25,17 +25,17 @@ class Person:
         self.phone = phone
         self.email = email
         self.education = education
-        self.experience = experience
+        self.years = years
         self.objective = objective
 
     def __str__(self):
         return self.file + '\n' +\
                self.name + ', ' + self.gender + ', ' + self.birth + ', ' + self.phone + ', ' + self.email + '\n' +\
-               self.education + self.experience + str(self.objective)
+               self.education + self.years + str(self.objective)
 
     def to_dictionary(self):
         person = {'file': self.file, '姓名': self.name, '性别': self.gender, '出生日期': self.birth,
-                  '手机号码': self.phone, '电子邮箱': self.email, '学历': self.education, '工作经验': self.experience}
+                  '手机号码': self.phone, '电子邮箱': self.email, '学历': self.education, '工作经验': self.years}
         return {**person, **self.objective.to_dictionary()}     # merge 2 dictionaries
 
 
