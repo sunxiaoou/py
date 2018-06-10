@@ -9,30 +9,11 @@ from resume import Person
 from resume import Objective
 from resume import Experience
 from resume import Project
-from resume import Education
+from resume import Educations
 from resume import Skill
 
 
 class HtmlJL(ABCParser):
-
-    """
-    def __init__(self, html):
-        super(HtmlJL, self).__init__(html)
-        # text = self.soup.body.find(text=re.compile(r'工作经历(:|：).*', re.DOTALL))
-        text = self.soup.body.getText()
-        mo = re.compile(r'工作经历(:|：)(.*)项目经验', re.DOTALL).search(text)
-        text = mo.group(2)
-        texts = re.compile(r'.*离职理由', re.DOTALL).findall(text)
-        for text in texts:
-            # i = 0
-            for item in text.split('\n'):
-                if item != '' and '离职理由' not in item:
-                    if '工作内容:' not in item:
-                        flds = [x for x in item.split('|') if x != '']
-                        print('{} {}'.format(flds, len(flds)))
-                    else:
-                        print(item[7:])
-    """
 
     def get_person(self):
         file = os.path.basename(self.html)
@@ -172,37 +153,24 @@ class HtmlJL(ABCParser):
         text = self.soup.body.getText()
         mo = re.compile(r'教育经历:(.*)语言水平', re.DOTALL).search(text)
         if mo is None:
-            return []
+            return None
         texts = mo.group(1).split('\n')
-        educations = []
+        schools = []
+        majors = []
+        degrees = []
         for text in texts:
-            text.strip()
-            if text == '' or text == ' ':
+            if re.compile('^ *$').search(text) is not None:
                 continue
+            text.strip()
             # print(":".join("{:02x}".format(ord(c)) for c in text))
-            date1 = date2 = school = major = degree = 'null'
-            mo = re.compile(r'(\d{4}\D+\d{1,2})').search(text)
-            if mo is not None:
-                date1 = mo.group().strip()
-                text = text.replace(date1, '')
-            mo = re.compile(r'(\d{4}\D+\d{1,2})').search(text)
-            if mo is not None:
-                date2 = mo.group().strip()
-                text = text.replace(date2, '')
-            mo = re.compile(r'&nbsp(\S*(大学|学院))').search(text)
-            if mo is not None:
-                school = mo.group(1)
-                text = text.replace(school, '')
-            majors = '(科学|语|数|理|化|光|机|电|计|通|仪|材料|应用|工程)'
-            mo = re.compile(r'(&nbsp)+(\S*{0}\S*)&nbsp'.format(majors)).search(text)
-            if mo is not None:
-                major = mo.group(2)
-                text = text.replace(major, '')
-            mo = re.compile(r'(&nbsp)+(\S*(专|本|生|士)\S*)').search(text)
-            if mo is not None:
-                degree = mo.group(2)
-            educations.append(Education(date1, date2, school, major, degree))
-        return educations
+            try:
+                a = re.split('&nbsp', text)
+                schools.append(a[1])
+                majors.append(a[3])
+                degrees.append(a[4])
+            except IndexError:
+                pass
+        return Educations(schools, majors, degrees)
 
     def get_skills(self):
         text = self.soup.body.getText()
@@ -231,8 +199,8 @@ class HtmlJL(ABCParser):
 def main():
     folder = '/home/xixisun/suzy/resumes/html/jl'
     # file = '10022353-季文清.html'
-    # file = '10052356-安敬辉.html'
-    file = 'jm615458412r90250000000-曾德阳.html'
+    file = '10052356-安敬辉.html'
+    # file = 'jm615458412r90250000000-曾德阳.html'
     # file = 'jm375383835r90250000000-姜丽婷.html'
     parser = HtmlJL(folder + '/' + file)
     """

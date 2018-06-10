@@ -73,7 +73,7 @@ class Project:
         return self.start_date + ', ' + self.end_date + ', ' + self.name + ', ' + self.description + '\n' + \
                self.duty
 
-
+"""
 class Education:
     def __init__(self, start_date, end_date, school, major, degree):
         self.start_date = start_date
@@ -88,6 +88,20 @@ class Education:
     def to_dictionary(self):
         return {'开始日期': self.start_date, '结束日期': self.end_date, '学校': self.school, '专业': self.major,
                 '学位': self.degree}
+"""
+
+
+class Educations:
+    def __init__(self, schools, majors, degrees):
+        self.schools = schools
+        self.majors = majors
+        self.degrees = degrees
+
+    def __str__(self):
+        return ' '.join(self.schools) + '\n' + ' '.join(self.majors) + '\n' + ' '.join(self.degrees)
+
+    def to_dictionary(self):
+        return {'学校': self.schools, '专业': self.majors, '学位': self.degrees}
 
 
 class Skill:
@@ -119,9 +133,9 @@ class Resume:
         msg += 'Projects:\n'
         for project in self.projects:
             msg = msg + str(project) + '\n'
-        msg += 'Educations:\n'
-        for education in self.educations:
-            msg = msg + str(education) + '\n'
+        # msg += 'Educations:\n'
+        # for education in self.educations:
+        #    msg = msg + str(education) + '\n'
         msg += 'Skills:\n'
         for skill in self.skills:
             msg = msg + str(skill) + '\n'
@@ -135,9 +149,13 @@ class Resume:
         resume['项目经验'] = []
         for project in self.projects:
             resume['项目经验'].append(project.to_dictionary())
+        """
         resume['教育经历'] = []
         for education in self.educations:
             resume['教育经历'].append(education.to_dictionary())
+        """
+        if self.educations is not None:
+            resume['教育经历'] = self.educations.to_dictionary()
         resume['技能'] = []
         for skill in self.skills:
             resume['技能'].append(skill.to_dictionary())

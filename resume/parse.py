@@ -5,7 +5,7 @@ import os
 import sys
 import time
 from bson import json_util
-from htmlParser import HtmlParser
+# from htmlParser import HtmlParser
 from htmlJL import HtmlJL
 # from dbClient import DbClient
 
@@ -44,9 +44,10 @@ def parse():
             parser = HtmlJL(fn)
             try:
                 resume = parser.new_resume()
+                dictionary = resume.to_dictionary()
             except AttributeError:
                 continue
-            output.write(json.dumps(resume.to_dictionary(), default=json_util.default))
+            output.write(json.dumps(dictionary, default=json_util.default))
             output.write('\n')
             # i += 1
             # if i == 1000:
