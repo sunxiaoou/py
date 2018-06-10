@@ -73,23 +73,6 @@ class Project:
         return self.start_date + ', ' + self.end_date + ', ' + self.name + ', ' + self.description + '\n' + \
                self.duty
 
-"""
-class Education:
-    def __init__(self, start_date, end_date, school, major, degree):
-        self.start_date = start_date
-        self.end_date = end_date
-        self.school = school
-        self.major = major
-        self.degree = degree
-
-    def __str__(self):
-        return self.start_date + ', ' + self.end_date + ', ' + self.school + ', ' + self.major + ', ' + self.degree
-
-    def to_dictionary(self):
-        return {'开始日期': self.start_date, '结束日期': self.end_date, '学校': self.school, '专业': self.major,
-                '学位': self.degree}
-"""
-
 
 class Educations:
     def __init__(self, schools, majors, degrees):
@@ -104,17 +87,17 @@ class Educations:
         return {'学校': self.schools, '专业': self.majors, '学位': self.degrees}
 
 
-class Skill:
-    def __init__(self, name, grade, time):
-        self.name = name
-        self.grade = grade
-        self.time = time
+class Skills:
+    def __init__(self, level1, level2, level3):
+        self.level1 = level1
+        self.level2 = level2
+        self.level3 = level3
 
     def __str__(self):
-        return self.name + ', ' + self.grade + ', ' + self.time
+        return ' '.join(self.level1) + '\n' + ' '.join(self.level2) + '\n' + ' '.join(self.level3)
 
     def to_dictionary(self):
-        return {'技能': self.name, '程度': self.grade, '使用时间': self.time}
+        return {'一般': self.level1, '熟练': self.level2, '精通': self.level3}
 
 
 class Resume:
@@ -153,10 +136,12 @@ class Resume:
         resume['教育经历'] = []
         for education in self.educations:
             resume['教育经历'].append(education.to_dictionary())
-        """
-        if self.educations is not None:
-            resume['教育经历'] = self.educations.to_dictionary()
         resume['技能'] = []
         for skill in self.skills:
             resume['技能'].append(skill.to_dictionary())
+        """
+        if self.educations is not None:
+            resume['教育经历'] = self.educations.to_dictionary()
+        if self.skills is not None:
+            resume['技能'] = self.skills.to_dictionary()
         return resume

@@ -10,7 +10,7 @@ from resume import Objective
 from resume import Experience
 from resume import Project
 from resume import Educations
-from resume import Skill
+from resume import Skills
 
 
 class HtmlJL(ABCParser):
@@ -176,30 +176,32 @@ class HtmlJL(ABCParser):
         text = self.soup.body.getText()
         mo = re.compile(r'技能:(.*)', re.DOTALL).search(text)
         if mo is None:
-            return []
+            return None
         texts = mo.group(1).split('\n')
-        skills = []
+        level1 = []
+        level2 = []
+        level3 = []
         for text in texts:
-            if text == '' or text == ' ':
+            if re.compile('^ *$').search(text) is not None:
                 continue
-            name = grade = time = 'null'
-            flds = [x.strip() for x in text.split('-') if x != '']
+            a = [x.strip() for x in text.split('-') if x != '']
             try:
-                name = flds[0]
-                mo = re.compile(r'(.*)&nbsp(.*)').search(flds[1])
-                if mo is not None:
-                    grade = mo.group(1)
-                    time = mo.group(2)
+                b = re.split('&nbsp', a[1])
+                if b[0] == '一般':
+                    level1.append(a[0])
+                elif b[0] == '熟练':
+                    level2.append(a[0])
+                elif b[0] == '精通':
+                    level3.append(a[0])
             except IndexError:
                 pass
-            skills.append(Skill(name, grade, time))
-        return skills
+        return Skills(level1, level2, level3)
 
 
 def main():
     folder = '/home/xixisun/suzy/resumes/html/jl'
-    # file = '10022353-季文清.html'
-    file = '10052356-安敬辉.html'
+    file = '10022353-季文清.html'
+    # file = '10052356-安敬辉.html'
     # file = 'jm615458412r90250000000-曾德阳.html'
     # file = 'jm375383835r90250000000-姜丽婷.html'
     parser = HtmlJL(folder + '/' + file)
