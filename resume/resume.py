@@ -2,18 +2,18 @@
 
 
 class Objective:
-    def __init__(self, spot, salary, field, industry):
+    def __init__(self, spot, salary, fields, industries):
         self.spot = spot
         self.salary = salary
-        self.field = field
-        self.industry = industry
+        self.fields = fields
+        self.industries = industries
 
     def __str__(self):
-        return self.spot + ', ' + self.salary + ', ' + self.field + ', ' + self.industry
+        return self.spot + ', ' + self.salary + ', ' + self.fields + ', ' + self.industries
 
     def to_dictionary(self):
-        return {'期望工作地点': self.spot, '期望月薪': self.salary, '期望从事职业': self.field,
-                '期望从事行业': self.industry}
+        return {'期望工作地点': self.spot, '期望月薪': self.salary, '期望从事职业': self.fields,
+                '期望从事行业': self.industries}
 
 
 class Person:

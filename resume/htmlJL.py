@@ -54,25 +54,27 @@ class HtmlJL(ABCParser):
         except (TypeError, AttributeError) as err:
             raise err
 
-        email = education = 'null'
-        years = -1
+        email = None
+        education = years = -1
         try:
             text = self.soup.body.find(text=re.compile(r'Email:.*'))
             email = re.compile(r'Email:(.*)').search(text).group(1).strip()
+
             text = self.soup.body.find(text=re.compile(r'学历:.*'))
-            education = re.compile(r'学历:(.*)').search(text).group(1).strip()
+            text = re.compile(r'学历:(.*)').search(text).group(1).strip()
+            education = ['大专', '本科', '硕士', 'MBA', 'EMBA', '博士',  '博士后'].index(text.upper()) + 1
 
             text = self.soup.body.find(text=re.compile(r'工作经验:.*'))
             years = int(re.compile(r'工作经验:\D*(\d+)年\D*工作经验').search(text).group(1))
             if years < 1 or years > 99:
                 raise TypeError
-        except (TypeError, AttributeError):
+        except (TypeError, AttributeError, ValueError):
             pass
 
         return Person(file, name, gender, birth, phone, email, education, years, self.get_objective())
 
     def get_objective(self):
-        spot = field = industry = 'null'
+        spot = fields = industries = None
         salary = '-1'
 
         text = self.soup.body.find(text=re.compile(r'期望工作地点:.*'))
@@ -87,13 +89,21 @@ class HtmlJL(ABCParser):
 
         text = self.soup.body.find(text=re.compile(r'期望从事职业:.*'))
         if text is not None:
-            field = re.compile(r'期望从事职业:(.*)$').search(text).group(1).strip()
+            text = re.compile(r'期望从事职业:(.*)$').search(text).group(1).strip()
+            text = re.compile(r'\(.*\)').sub('', text)      # remove embedded ()
+            fields = []
+            for field in re.split('，|、', text):
+                fields.append(field.upper())
 
         text = self.soup.body.find(text=re.compile(r'期望从事行业:.*'))
         if text is not None:
-            industry = re.compile(r'期望从事行业:(.*)$').search(text).group(1).strip()
+            text = re.compile(r'期望从事行业:(.*)$').search(text).group(1).strip()
+            text = re.compile(r'\(.*\)').sub('', text)      # remove embedded ()
+            industries = []
+            for industry in re.split('，|、', text):
+                industries.append(industry)
 
-        return Objective(spot, salary, field, industry)
+        return Objective(spot, salary, fields, industries)
 
     def get_experiences(self):
         text = self.soup.body.getText()
@@ -221,7 +231,8 @@ class HtmlJL(ABCParser):
 def main():
     folder = '/home/xixisun/suzy/resumes/html/jl'
     # file = '10022353-季文清.html'
-    file = '10052356-安敬辉.html'
+    # file = '10052356-安敬辉.html'
+    file = 'jm615458412r90250000000-曾德阳.html'
     # file = 'jm375383835r90250000000-姜丽婷.html'
     parser = HtmlJL(folder + '/' + file)
     """
