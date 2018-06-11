@@ -11,6 +11,7 @@ from resume import Experience
 from resume import Project
 from resume import Educations
 from resume import Skills
+from schools import Schools
 
 
 class HtmlJL(ABCParser):
@@ -170,7 +171,17 @@ class HtmlJL(ABCParser):
                 degrees.append(a[4])
             except IndexError:
                 pass
-        return Educations(schools, majors, degrees)
+        school_rank = 0
+        for school in schools:
+            if Schools.is_985(school):
+                a = 2
+            elif Schools.is_211(school):
+                a = 1
+            else:
+                a = 0
+            if a > school_rank:
+                school_rank = a
+        return Educations(schools, majors, degrees, school_rank)
 
     def get_skills(self):
         text = self.soup.body.getText()

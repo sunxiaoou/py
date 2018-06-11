@@ -75,16 +75,17 @@ class Project:
 
 
 class Educations:
-    def __init__(self, schools, majors, degrees):
+    def __init__(self, schools, majors, degrees, school_rank):
         self.schools = schools
         self.majors = majors
         self.degrees = degrees
+        self.school_rank = school_rank
 
     def __str__(self):
         return ' '.join(self.schools) + '\n' + ' '.join(self.majors) + '\n' + ' '.join(self.degrees)
 
     def to_dictionary(self):
-        return {'学校': self.schools, '专业': self.majors, '学位': self.degrees}
+        return {'学校': self.schools, '专业': self.majors, '学位': self.degrees, '学校类别': self.school_rank}
 
 
 class Skills:
