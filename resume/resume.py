@@ -99,7 +99,6 @@ class Skills:
 
     def to_dictionary(self):
         skills = {}
-        # ignore level1
         if self.level1 is not None:
             skills['一般'] = self.level1
         if self.level2 is not None:

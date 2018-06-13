@@ -204,7 +204,10 @@ class HtmlJL(ABCParser):
                         level3.append(skill.upper())
             except IndexError:
                 pass
-        return Skills(level1 if level1 else None, level2 if level2 else None, level3 if level3 else None)
+        # Ignore level1
+        if not level2 and not level3:
+            return None
+        return Skills(None, level2 if level2 else None, level3 if level3 else None)
 
 
 def main():
