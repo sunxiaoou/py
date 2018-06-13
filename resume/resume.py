@@ -98,7 +98,15 @@ class Skills:
         return ' '.join(self.level1) + '\n' + ' '.join(self.level2) + '\n' + ' '.join(self.level3)
 
     def to_dictionary(self):
-        return {'一般': self.level1, '熟练': self.level2, '精通': self.level3}
+        skills = {}
+        # ignore level1
+        if self.level1 is not None:
+            skills['一般'] = self.level1
+        if self.level2 is not None:
+            skills['熟练'] = self.level2
+        if self.level3 is not None:
+            skills['精通'] = self.level3
+        return skills
 
 
 class Resume:

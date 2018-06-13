@@ -173,14 +173,9 @@ class HtmlJL(ABCParser):
                 pass
         school_rank = 0
         for school in schools:
-            if Schools.is_985(school):
-                a = 2
-            elif Schools.is_211(school):
-                a = 1
-            else:
-                a = 0
-            if a > school_rank:
-                school_rank = a
+            rank = Schools.get_rank(school)
+            if rank > school_rank:
+                school_rank = rank
         return Educations(schools, majors, degrees, school_rank)
 
     def get_skills(self):
@@ -199,19 +194,23 @@ class HtmlJL(ABCParser):
             try:
                 b = re.split('&nbsp', a[1])
                 if b[0] == '一般':
-                    level1.append(a[0])
+                    for skill in re.split('，|、', a[0]):
+                        level1.append(skill.upper())
                 elif b[0] == '熟练':
-                    level2.append(a[0])
+                    for skill in re.split('，|、', a[0]):
+                        level2.append(skill.upper())
                 elif b[0] == '精通':
-                    level3.append(a[0])
+                    for skill in re.split('，|、', a[0]):
+                        level3.append(skill.upper())
             except IndexError:
                 pass
-        return Skills(level1, level2, level3)
+        return Skills(level1 if level1 else None, level2 if level2 else None, level3 if level3 else None)
 
 
 def main():
     folder = '/home/xixisun/suzy/resumes/html/jl'
-    file = '10022353-季文清.html'
+    # file = '10022353-季文清.html'
+    file = 'jm329830852r90250000000-朱昭卿.html'
     # file = '10052356-安敬辉.html'
     # file = 'jm615458412r90250000000-曾德阳.html'
     # file = 'jm375383835r90250000000-姜丽婷.html'

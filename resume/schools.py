@@ -38,3 +38,12 @@ class Schools:
             '延边大学', '内蒙古大学', '四川农业大学', '海南大学', '贵州大学', '郑州大学',
             '新疆大学', '宁夏大学', '石河子大学', '青海大学', '国防科技大学', '中央音乐学院']
         return school in school211
+
+    @staticmethod
+    def get_rank(school):
+        if Schools.is_985(school):
+            return 2
+        elif Schools.is_211(school):
+            return 1
+        else:
+            return 0
