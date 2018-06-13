@@ -56,12 +56,15 @@ class HtmlJL(ABCParser):
         return Person(file, name, gender, birth, phone, email, education, years, self.get_objective())
 
     def get_objective(self):
-        spot = fields = industries = None
+        fields = industries = None
         salary = '-1'
 
+        spots = []
         text = self.soup.body.find(text=re.compile(r'期望工作地点:.*'))
         if text is not None:
-            spot = re.compile(r'期望工作地点:(.*)$').search(text).group(1).strip()
+            text = re.compile(r'期望工作地点:(.*)$').search(text).group(1).strip()
+            for spot in re.split('，|、', text):
+                spots.append(spot)
 
         text = self.soup.body.find(text=re.compile(r'期望月薪\(税前\):.*'))
         if text is not None:
@@ -85,7 +88,7 @@ class HtmlJL(ABCParser):
             for industry in re.split('，|、', text):
                 industries.append(industry)
 
-        return Objective(spot, salary, fields, industries)
+        return Objective(spots, salary, fields, industries)
 
     def get_experiences(self):
         text = self.soup.body.getText()
@@ -212,9 +215,9 @@ class HtmlJL(ABCParser):
 
 def main():
     folder = '/home/xixisun/suzy/resumes/html/jl'
-    # file = '10022353-季文清.html'
-    file = 'jm329830852r90250000000-朱昭卿.html'
+    file = '10022353-季文清.html'
     # file = '10052356-安敬辉.html'
+    # file = 'jm329830852r90250000000-朱昭卿.html'
     # file = 'jm615458412r90250000000-曾德阳.html'
     # file = 'jm375383835r90250000000-姜丽婷.html'
     parser = HtmlJL(folder + '/' + file)

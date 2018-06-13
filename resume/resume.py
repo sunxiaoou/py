@@ -2,17 +2,17 @@
 
 
 class Objective:
-    def __init__(self, spot, salary, fields, industries):
-        self.spot = spot
+    def __init__(self, spots, salary, fields, industries):
+        self.spots = spots
         self.salary = salary
         self.fields = fields
         self.industries = industries
 
     def __str__(self):
-        return self.spot + ', ' + self.salary + ', ' + self.fields + ', ' + self.industries
+        return self.spots + ', ' + self.salary + ', ' + self.fields + ', ' + self.industries
 
     def to_dictionary(self):
-        return {'期望工作地点': self.spot, '期望月薪': self.salary, '期望从事职业': self.fields,
+        return {'期望工作地点': self.spots, '期望月薪': self.salary, '期望从事职业': self.fields,
                 '期望从事行业': self.industries}
 
 
@@ -134,19 +134,20 @@ class Resume:
 
     def to_dictionary(self):
         resume = self.person.to_dictionary()
+        """
         resume['工作经历'] = []
         for experience in self.experiences:
             resume['工作经历'].append(experience.to_dictionary())
+        """
+        companys = []
+        for experience in self.experiences:
+            companys.append(experience.company)
+        if companys:
+            resume['雇主'] = companys
+        """
         resume['项目经验'] = []
         for project in self.projects:
             resume['项目经验'].append(project.to_dictionary())
-        """
-        resume['教育经历'] = []
-        for education in self.educations:
-            resume['教育经历'].append(education.to_dictionary())
-        resume['技能'] = []
-        for skill in self.skills:
-            resume['技能'].append(skill.to_dictionary())
         """
         if self.educations is not None:
             resume['教育经历'] = self.educations.to_dictionary()
