@@ -42,8 +42,8 @@ class Schools:
     @staticmethod
     def get_rank(school):
         if Schools.is_985(school):
-            return 2
+            return 3
         elif Schools.is_211(school):
-            return 1
+            return 2
         else:
-            return 0
+            return 1
