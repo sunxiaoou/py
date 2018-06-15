@@ -1,6 +1,31 @@
 #! /usr/bin/python3
 
 
+class Keys:
+    spots = '期望工作地点'
+    salary = '期望月薪'
+    fields = '期望从事职业'
+    industries = '期望从事行业'
+    file = 'file'
+    name = '姓名'
+    gender = '性别'
+    birth = '出生日期'
+    phone = '手机号码'
+    email = '电子邮箱'
+    education = '学历'
+    years = '工作经验'
+    school_rank = '学校类别'
+    companies = '雇主'
+    educations = '教育经历'
+    schools = '学校'
+    majors = '专业'
+    degrees = '学位'
+    skills = '技能'
+    skill_level1 = '一般'
+    skill_level2 = '熟练'
+    skill_level3 = '精通'
+
+
 class Objective:
     def __init__(self, spots, salary, fields, industries):
         self.spots = spots
@@ -12,8 +37,8 @@ class Objective:
         return self.spots + ', ' + self.salary + ', ' + self.fields + ', ' + self.industries
 
     def to_dictionary(self):
-        return {'期望工作地点': self.spots, '期望月薪': self.salary, '期望从事职业': self.fields,
-                '期望从事行业': self.industries}
+        return {Keys.spots: self.spots, Keys.salary: self.salary, Keys.fields: self.fields,
+                Keys.industries: self.industries}
 
 
 class Person:
@@ -34,8 +59,9 @@ class Person:
                self.education + self.years + str(self.objective)
 
     def to_dictionary(self):
-        person = {'file': self.file, '姓名': self.name, '性别': self.gender, '出生日期': self.birth,
-                  '手机号码': self.phone, '电子邮箱': self.email, '学历': self.education, '工作经验': self.years}
+        person = {Keys.file: self.file, Keys.name: self.name, Keys.gender: self.gender, Keys.birth: self.birth,
+                  Keys.phone: self.phone, Keys.email: self.email, Keys.education: self.education,
+                  Keys.years: self.years}
         return {**person, **self.objective.to_dictionary()}     # merge 2 dictionaries
 
 
@@ -85,7 +111,8 @@ class Educations:
         return ' '.join(self.schools) + '\n' + ' '.join(self.majors) + '\n' + ' '.join(self.degrees)
 
     def to_dictionary(self):
-        return {'学校': self.schools, '专业': self.majors, '学位': self.degrees, '学校类别': self.school_rank}
+        return {Keys.schools: self.schools, Keys.majors: self.majors, Keys.degrees: self.degrees,
+                Keys.school_rank: self.school_rank}
 
 
 class Skills:
@@ -100,11 +127,11 @@ class Skills:
     def to_dictionary(self):
         skills = {}
         if self.level1 is not None:
-            skills['一般'] = self.level1
+            skills[Keys.skill_level1] = self.level1
         if self.level2 is not None:
-            skills['熟练'] = self.level2
+            skills[Keys.skill_level2] = self.level2
         if self.level3 is not None:
-            skills['精通'] = self.level3
+            skills[Keys.skill_level3] = self.level3
         return skills
 
 
@@ -124,9 +151,6 @@ class Resume:
         msg += 'Projects:\n'
         for project in self.projects:
             msg = msg + str(project) + '\n'
-        # msg += 'Educations:\n'
-        # for education in self.educations:
-        #    msg = msg + str(education) + '\n'
         msg += 'Skills:\n'
         for skill in self.skills:
             msg = msg + str(skill) + '\n'
@@ -139,18 +163,18 @@ class Resume:
         for experience in self.experiences:
             resume['工作经历'].append(experience.to_dictionary())
         """
-        companys = []
+        companies = []
         for experience in self.experiences:
-            companys.append(experience.company)
-        if companys:
-            resume['雇主'] = companys
+            companies.append(experience.company)
+        if companies:
+            resume[Keys.companies] = companies
         """
         resume['项目经验'] = []
         for project in self.projects:
             resume['项目经验'].append(project.to_dictionary())
         """
         if self.educations is not None:
-            resume['教育经历'] = self.educations.to_dictionary()
+            resume[Keys.educations] = self.educations.to_dictionary()
         if self.skills is not None:
-            resume['技能'] = self.skills.to_dictionary()
+            resume[Keys.skills] = self.skills.to_dictionary()
         return resume
