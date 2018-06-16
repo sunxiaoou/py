@@ -32,14 +32,16 @@ class Condition:
         Condition.industry = Condition.input_string('行业')
         Condition.field = Condition.input_string('职业')
         Condition.skill = Condition.input_string('技能')
+        if Condition.skill is not None:
+            Condition.skill = Condition.skill.upper()
         Condition.major = Condition.input_string('专业')
         Condition.school_rank = Condition.input_number('毕业学校类别（1:一般 2:211 3:985）')
-        Condition.education1 = Condition.input_number('学历下限（含）（1:大专 2:本科 3:硕士 4:MBA 5:EMBA 6:博士 7:博士后）')
-        Condition.education2 = Condition.input_number('学历上限（1:大专 2:本科 3:硕士 4:MBA 5:EMBA 6:博士 7:博士后）')
-        Condition.year1 = Condition.input_number('工作经验下限（含）（年）')
-        Condition.year2 = Condition.input_number('工作经验上限（年）')
-        Condition.age1 = Condition.input_number('年龄下限（含）（岁）')
-        Condition.age2 = Condition.input_number('年龄上限（岁）')
+        Condition.education1 = Condition.input_number('学历（1:大专 2:本科 3:硕士 4:MBA 5:EMBA 6:博士 7:博士后）以上（含）')
+        Condition.education2 = Condition.input_number('学历（1:大专 2:本科 3:硕士 4:MBA 5:EMBA 6:博士 7:博士后）以下')
+        Condition.year1 = Condition.input_number('工作经验_年以上（含）')
+        Condition.year2 = Condition.input_number('工作经验_年以下')
+        Condition.age1 = Condition.input_number('年龄_岁以上（含）')
+        Condition.age2 = Condition.input_number('年龄_岁以下')
 
     @staticmethod
     def __str__():
@@ -79,7 +81,9 @@ class Condition:
         return conditions
 
     @staticmethod
-    def to_dictionary():
+    def create_conditions():
+        Condition.input()
+
         conditions = {}
         if Condition.spot is not None:
             conditions[Keys.spots] = Condition.spot
@@ -87,13 +91,13 @@ class Condition:
             conditions[Keys.industries] = {'$regex': Condition.industry}
         if Condition.field is not None:
             conditions[Keys.fields] = {'$regex': Condition.field}
-        if Condition.field is not None:
+        if Condition.skill is not None:
             conditions['$or'] = [{Keys.skills + '.' + Keys.skill_level2: Condition.skill},
                                  {Keys.skills + '.' + Keys.skill_level3: Condition.skill}]
         if Condition.major is not None:
             conditions[Keys.majors] = Condition.major
         if Condition.school_rank is not None:
-            conditions[Keys.school_rank] = Condition.school_rank
+            conditions[Keys.educations + '.' + Keys.school_rank] = Condition.school_rank
 
         c = Condition.range_int(Condition.education1, Condition.education2)
         if c is not None:
@@ -107,10 +111,8 @@ class Condition:
         if c is not None:
             conditions[Keys.birth] = c
 
-        return conditions if conditions else None
+        return conditions
 
 
 if __name__ == "__main__":
-    Condition.input()
-    # print(Condition.__str__())
-    pprint(Condition.to_dictionary())
+    pprint(Condition.create_conditions())
