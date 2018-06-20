@@ -13,7 +13,7 @@ class Keys:
     phone = '手机号码'
     email = '电子邮箱'
     education = '学历'
-    years = '工作经验'
+    years = '工作年限'
     school_rank = '学校类别'
     companies = '雇主'
     educations = '教育经历'
@@ -24,6 +24,8 @@ class Keys:
     skill_level1 = '一般'
     skill_level2 = '熟练'
     skill_level3 = '精通'
+    experiences = '工作经历'
+    projects = '项目经历'
 
 
 class Objective:
@@ -79,7 +81,7 @@ class Experience:
                self.job + ', ' + self.job_desc
 
     def to_dictionary(self):
-        return {'开始日期': self.start_date, '结束日期': self.end_date, '单位': self.company,
+        return {'开始日期': self.start_date, '结束日期': self.end_date, '雇主': self.company,
                 '单位描述': self.company_desc, '岗位': self.job, '岗位描述': self.job_desc}
 
 
@@ -158,21 +160,18 @@ class Resume:
 
     def to_dictionary(self):
         resume = self.person.to_dictionary()
-        """
-        resume['工作经历'] = []
-        for experience in self.experiences:
-            resume['工作经历'].append(experience.to_dictionary())
-        """
-        companies = []
-        for experience in self.experiences:
-            companies.append(experience.company)
-        if companies:
-            resume[Keys.companies] = companies
-        """
-        resume['项目经验'] = []
-        for project in self.projects:
-            resume['项目经验'].append(project.to_dictionary())
-        """
+        if self.experiences:
+            resume[Keys.experiences] = []
+            companies = []
+            for experience in self.experiences:
+                resume[Keys.experiences].append(experience.to_dictionary())
+                companies.append(experience.company)
+            if companies:
+                resume[Keys.companies] = companies
+        if self.projects:
+            resume[Keys.projects] = []
+            for project in self.projects:
+                resume[Keys.projects].append(project.to_dictionary())
         if self.educations is not None:
             resume[Keys.educations] = self.educations.to_dictionary()
         if self.skills is not None:
