@@ -25,7 +25,16 @@ class Keys:
     skill_level2 = '熟练'
     skill_level3 = '精通'
     experiences = '工作经历'
+    start_date = '开始日期'
+    end_date = '结束日期'
+    company = '雇主'
+    company_desc = '单位描述'
+    job = '岗位'
+    job_desc = '岗位描述'
     projects = '项目经历'
+    project = '项目'
+    project_desc = '项目描述'
+    duty = '责任描述'
 
 
 class Objective:
@@ -81,8 +90,8 @@ class Experience:
                self.job + ', ' + self.job_desc
 
     def to_dictionary(self):
-        return {'开始日期': self.start_date, '结束日期': self.end_date, '雇主': self.company,
-                '单位描述': self.company_desc, '岗位': self.job, '岗位描述': self.job_desc}
+        return {Keys.start_date: self.start_date, Keys.end_date: self.end_date, Keys.company: self.company,
+                Keys.company_desc: self.company_desc, Keys.job: self.job, Keys.job_desc: self.job_desc}
 
 
 class Project:
@@ -94,8 +103,8 @@ class Project:
         self.duty = duty
 
     def to_dictionary(self):
-        return {'开始日期': self.start_date, '结束日期': self.end_date, '项目': self.name, '项目描述': self.description,
-                '责任描述': self.duty}
+        return {Keys.start_date: self.start_date, Keys.end_date: self.end_date, Keys.project: self.name,
+                Keys.project_desc: self.description, Keys.duty: self.duty}
 
     def __str__(self):
         return self.start_date + ', ' + self.end_date + ', ' + self.name + ', ' + self.description + '\n' + \

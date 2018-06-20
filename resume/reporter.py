@@ -18,37 +18,43 @@ class Reporter:
         return result
 
     @staticmethod
-    def age2str(birth):
+    def str2p(str):
+        if str is None:
+            return None
+        return '<p>{}</p>'.format(str)
+
+    @staticmethod
+    def age2p(birth):
         if birth is None:
             return None
         today = datetime.today()
         age = today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
-        return str(age) + '岁'
+        return '<p>{}岁</p>'.format(age)
 
     @staticmethod
-    def spots2str(spots):
+    def spots2p(spots):
         if spots is None:
             return None
-        return ','.join(spots)
+        return '<p>{}</p>'.format(','.join(spots))
 
     @staticmethod
-    def edu2str(education):
+    def education2p(education):
         if education is None:
             return None
-        return ['大专', '本科', '硕士', 'MBA', 'EMBA', '博士',  '博士后'][education - 1]
+        return '<p>{}</p>'.format(['大专', '本科', '硕士', 'MBA', 'EMBA', '博士',  '博士后'][education - 1])
 
     @staticmethod
-    def years2str(years):
+    def years2p(years):
         if years is None:
             return None
-        return str(years) + '年'
+        return '<p>{}年</p>'.format(years)
 
     @staticmethod
-    def edus2str(educations):
+    def educations2p(educations):
         if educations is None:
             return None
         rank = educations.get(Keys.school_rank, 1)  # if None then 1
-        text = ['', '211', '985'][rank - 1]  # if None then 1
+        text = ['', '211', '985'][rank - 1]
         if text:
             text = '<p>{}</p>'.format(rank)
         schools = educations.get(Keys.schools)
@@ -59,8 +65,28 @@ class Reporter:
         return text
 
     @staticmethod
+    def experiences2p(experiences):
+        if experiences is None:
+            return None
+        a = experiences[0]
+        text = '<p>{} | {} | {} | {}</p>'.format(a.get(Keys.start_date), a.get(Keys.end_date), a.get(Keys.company),
+                                                 a.get(Keys.company_desc))
+        text += '<p>{}</p>'.format(a.get(Keys.job_desc))
+        return text if len(text) <= 100 else text[:100] + '...'
+
+    @staticmethod
+    def projects2p(projects):
+        if projects is None:
+            return None
+        a = projects[0]
+        text = '<p>{} | {} | {}</p>'.format(a.get(Keys.start_date), a.get(Keys.end_date), a.get(Keys.project))
+        text += '<p>{}</p>'.format(a.get(Keys.project_desc))
+        text += '<p>{}</p>'.format(a.get(Keys.duty))
+        return text if len(text) <= 100 else text[:150] + '...'
+
+    @staticmethod
     def output(documents):
-        head ='''<!DOCTYPE html>
+        head = '''<!DOCTYPE html>
 <html>
     <head>
         <meta charset="utf-8">
@@ -78,10 +104,10 @@ class Reporter:
 
         tr = '''
             <tr>
-                <td>{} {} {} {} {} {}</td>
+                <td>{}{}{}{}{}{}</td>
                 <td>{}</td>
-                <td>75</td>
-                <td>1,204 ft</td>
+                <td>{}</td>
+                <td>{}</td>
             </tr>'''
 
         tail = '''
@@ -95,14 +121,16 @@ class Reporter:
         html.write(head)
 
         for document in documents:
-            age = Reporter.age2str(document.get(Keys.birth))
-            spots = Reporter.spots2str(document.get(Keys.spots))
-            education = Reporter.edu2str(document.get(Keys.education))
-            years = Reporter.years2str(document.get(Keys.years))
-            educations = Reporter.edus2str(document.get(Keys.educations))
-
-            html.write(tr.format(document.get(Keys.name), document.get(Keys.gender), age, education, years, spots,
-                                 educations))
+            name = Reporter.str2p(document.get(Keys.name))
+            gender = Reporter.str2p(document.get(Keys.gender))
+            age = Reporter.age2p(document.get(Keys.birth))
+            spots = Reporter.spots2p(document.get(Keys.spots))
+            education = Reporter.education2p(document.get(Keys.education))
+            years = Reporter.years2p(document.get(Keys.years))
+            educations = Reporter.educations2p(document.get(Keys.educations))
+            experiences = Reporter.experiences2p(document.get(Keys.experiences))
+            projects = Reporter.projects2p(document.get(Keys.projects))
+            html.write(tr.format(name, gender, age, education, years, spots, educations, experiences, projects))
 
         html.write(tail)
         html.close()
