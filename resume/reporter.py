@@ -92,7 +92,7 @@ class Reporter:
         return text if len(text) <= 100 else text[:150] + '...'
 
     @staticmethod
-    def output(documents):
+    def output(documents, file):
         head = '''<!DOCTYPE html>
 <html>
     <head>
@@ -123,8 +123,7 @@ class Reporter:
 </html>
 '''
 
-        output_file = 'result.html'
-        html = open(output_file, 'w')
+        html = open(file, 'w')
         num = len(documents)
         show_num = min(100, len(documents))
         html.write(head.format(num, show_num))
@@ -145,9 +144,10 @@ class Reporter:
 
         html.write(tail)
         html.close()
-        webbrowser.open(output_file)
 
 
 if __name__ == "__main__":
     docs = Reporter.unshelve('result.dat')
-    Reporter.output(docs)
+    output = 'result.html'
+    Reporter.output(docs, output)
+    webbrowser.open(output)

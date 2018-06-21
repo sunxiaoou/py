@@ -2,62 +2,59 @@
 
 import datetime
 import shelve
+import webbrowser
 from pymongo import MongoClient
-from pprint import pprint
 
 from condition import Condition
-from resume import Keys
+from reporter import Reporter
 
 
 class Finder:
 
-    def __init__(self, host, port, database, collection):
+    @staticmethod
+    def get_collection(host, port, database, collection_name):
         client = MongoClient(host, port)
-        self.collection = client.get_database(database).get_collection(collection)
-        self.conditions = {'$or': [{'技能.熟练': 'JAVA'}, {'技能.精通': 'JAVA'}],
-                           # '专业': '计算机科学',
-                           '出生日期': {'$gte': datetime.datetime(1978, 6, 16, 0, 0)},
-                           '学历': {'$gte': 2},
-                           '教育经历.学校类别': 1,
-                           '工作年限': {'$gte': 5, '$lt': 10},
-                           # '期望从事职业': {'$regex': '程序员'},
-                           # '期望从事行业': {'$regex': 'IT'},
-                           '期望工作地点': '北京'}
-        # self.conditions = Condition.create_conditions()
+        return client.get_database(database).get_collection(collection_name)
 
-    def find(self):
-        key = 'file'
-        # cursor = self.collection.find(self.conditions, {'_id': 0, key: 1})
-        cursor = self.collection.find(self.conditions)
+    @staticmethod
+    def get_conditions():
+        """
+        ex = {'$or': [{'技能.熟练': 'JAVA'}, {'技能.精通': 'JAVA'}],
+              '出生日期': {'$gte': datetime.datetime(1978, 6, 16, 0, 0)},
+              '学历': {'$gte': 2},
+              '教育经历.学校类别': 1,
+              '工作年限': {'$gte': 5, '$lt': 10},
+              # '期望从事职业': {'$regex': '程序员'},
+              # '期望从事行业': {'$regex': 'IT'},
+              '期望工作地点': '北京'}
+        """
+        conditions = Condition.create_conditions()
+        print('\nInput any key to continue ...')
+        input()
+        return conditions
+
+    @staticmethod
+    def find(resumes, conditions):
+        cursor = resumes.find(conditions)
         num = cursor.count()
         print('Found {} documents'.format(num))
-        """
-        files = []
-        # for entry in cursor.limit(num if num < 10 else 10):
-        for entry in cursor:
-            files.append(entry.get(key))
-        return files if files else None
-        """
         return list(cursor)
 
     @staticmethod
-    def shelve(result, fname):
-        file = shelve.open(fname)
-        file['result'] = result
-        file.close()
+    def shelve(documents, file):
+        print('Shelved to ' + file)
+        shelf = shelve.open(file)
+        shelf['result'] = documents
+        shelf.close()
+
+    @staticmethod
+    def to_html(documents, file):
+        Reporter.output(documents, file)
+        webbrowser.open(file)
 
 
 if __name__ == "__main__":
-    finder = Finder('localhost', 27017, 'shoulie', 'resumes')
-    pprint(finder.conditions)
-    print('\nInput any key to continue ...')
-    input()
-    print('Searching ...')
-    r = finder.find()
-    if r is not None:
-        fn = 'result.dat'
-        Finder.shelve(r, fn)
-        print('Shelved to ' + fn)
-        path = '/home/xixisun/suzy/resumes/html/jl'
-        for i in range(min(5, len(r))):
-            pprint(r[i])
+    result = Finder.find(Finder.get_collection('localhost', 27017, 'shoulie', 'resumes'), Finder.get_conditions())
+    if result is not None:
+        Finder.shelve(result, 'result.dat')
+        Finder.to_html(result, 'result.html')

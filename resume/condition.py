@@ -117,8 +117,9 @@ class Condition:
         if c is not None:
             conditions[Keys.birth] = c
 
+        pprint(conditions)
         return conditions
 
 
 if __name__ == "__main__":
-    pprint(Condition.create_conditions())
+    Condition.create_conditions()
