@@ -1,5 +1,6 @@
 #! /usr/bin/python3
 
+import os
 import shelve
 import webbrowser
 from datetime import datetime
@@ -150,4 +151,4 @@ if __name__ == "__main__":
     docs = Reporter.unshelve('result.dat')
     output = 'result.html'
     Reporter.output(docs, output)
-    webbrowser.open(output)
+    webbrowser.open('file://{}/{}'.format(os.getcwd(), output))

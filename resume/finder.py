@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 
 import datetime
+import os
 import shelve
 import webbrowser
 from pymongo import MongoClient
@@ -50,7 +51,8 @@ class Finder:
     @staticmethod
     def to_html(documents, file):
         Reporter.output(documents, file)
-        webbrowser.open(file)
+        # webbrowser.open(file)
+        webbrowser.open('file://{}/{}'.format(os.getcwd(), file))
 
 
 if __name__ == "__main__":
