@@ -57,6 +57,6 @@ class Finder:
 
 if __name__ == "__main__":
     result = Finder.find(Finder.get_collection('localhost', 27017, 'shoulie', 'resumes'), Finder.get_conditions())
-    if result is not None:
+    if result:
         Finder.shelve(result, 'result.dat')
         Finder.to_html(result, 'result.html')

@@ -23,6 +23,7 @@ class Reporter:
         if str is None:
             return None
         path = '/home/xixisun/suzy/resumes/html/jl'
+        # path = '/Users/sunxiaoou/suzy/shoulie/jl'
         return '<a href="file://{}/{}"title="resume">{}</a><br>'.format(path, file, name)
 
     @staticmethod
