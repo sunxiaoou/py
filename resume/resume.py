@@ -17,9 +17,9 @@ class Keys:
     school_rank = '学校类别'
     companies = '雇主'
     educations = '教育经历'
-    schools = '学校'
-    majors = '专业'
-    degrees = '学位'
+    school = schools = '学校'
+    major = majors = '专业'
+    degree = degrees = '学位'
     skills = '技能'
     skill_level1 = '一般'
     skill_level2 = '熟练'
@@ -111,6 +111,22 @@ class Project:
                self.duty
 
 
+class Education:
+    def __init__(self, start_date, end_date, school, major, degree):
+        self.start_date = start_date
+        self.end_date = end_date
+        self.school = school
+        self.major = major
+        self.degree = degree
+
+    def to_dictionary(self):
+        return {Keys.start_date: self.start_date, Keys.end_date: self.end_date, Keys.school: self.school,
+                Keys.major: self.major, Keys.degree: self.degree}
+
+    def __str__(self):
+        return self.start_date + ', ' + self.end_date + ', ' + self.school + ', ' + self.major + ', ' + self.degree
+
+
 class Educations:
     def __init__(self, schools, majors, degrees, school_rank):
         self.schools = schools
@@ -181,8 +197,12 @@ class Resume:
             resume[Keys.projects] = []
             for project in self.projects:
                 resume[Keys.projects].append(project.to_dictionary())
-        if self.educations is not None:
-            resume[Keys.educations] = self.educations.to_dictionary()
+        if self.educations:
+            resume[Keys.educations] = []
+            for education in self.educations:
+                resume[Keys.educations].append(education.to_dictionary())
+        # if self.educations is not None:
+        #    resume[Keys.educations] = self.educations.to_dictionary()
         if self.skills is not None:
             resume[Keys.skills] = self.skills.to_dictionary()
         return resume

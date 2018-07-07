@@ -2,61 +2,63 @@
 
 import re
 import os
+from datetime import datetime
+from pprint import pprint
+
 from abcParser import ABCParser
 from resume import Person
 from resume import Objective
 from resume import Experience
+from resume import Project
 from resume import Education
 
 
 class HtmlParser(ABCParser):
-    """
-    def __init__(self, html):
-        self.html = html
-        self.soup = BeautifulSoup(open(html), 'lxml')
-    """
 
     def get_person(self):
-        gender = birth = email = 'null'
-
         file = os.path.basename(self.html)
 
-        # elements = self.soup.select('#userName')
-        elements = self.soup.select('.resume-preview-main-title [class$=fc6699cc]')
-        name = elements[0].getText().strip()
+        try:
+            # elements = self.soup.select('#userName')
+            elements = self.soup.select('.resume-preview-main-title [class$=fc6699cc]')
+            name = elements[0].getText().strip()
 
-        elements = self.soup.select('.summary-top')
-        mo = re.compile(r'男|女').search(elements[0].getText())
-        if mo is not None:
-            gender = mo.group()
-
-        elements = self.soup.select('.summary-top')
-        mo = re.compile(r'\d{4}年\d{1,2}月').search(elements[0].getText())
-        if mo is not None:
-            birth = mo.group()
-
-        elements = self.soup.select('.summary-bottom')
-        mo = re.compile(r'\D(\d{11})\D').search(elements[0].getText())
-        if mo is not None:
+            elements = self.soup.select('.summary-bottom')
+            mo = re.compile(r'\D(\d{11})\D').search(elements[0].getText())
             phone = mo.group(1)
-        else:
-            raise Exception('Cannot find phone')
 
-        regex = re.compile(r'''(
-                [a-zA-Z0-9._%+-]+      # username
-                @                      # @ symbol
-                [a-zA-Z0-9.-]+         # domain name
-                (\.[a-zA-Z]{2,4})      # dot-something
-        )''', re.VERBOSE)
-        mo = regex.search(elements[0].getText())
-        if mo is not None:
-            email = mo.group()
+            email = None
+            elements = self.soup.select('.summary-bottom')
+            regex = re.compile(r'''(
+                    [a-zA-Z0-9._%+-]+      # username
+                    @                      # @ symbol
+                    [a-zA-Z0-9.-]+         # domain name
+                    (\.[a-zA-Z]{2,4})      # dot-something
+            )''', re.VERBOSE)
+            mo = regex.search(elements[0].getText())
+            if mo is not None:
+                email = mo.group()
 
-        return Person(file, name, gender, birth, phone, email, self.get_objective())
+            elements = self.soup.select('.summary-top')
+            texts = elements[0].getText().split('\n')
+            # print(":".join("{:02x}".format(ord(c)) for c in text))
+            a = re.split(u'\xa0\xa0\xa0\xa0', texts[1])     # 4 non Break Spaces
+
+            gender = a[0]
+
+            mo = re.compile(r'(\d{4})年(\d{1,2})月').search(a[1])
+            birth = datetime(int(mo.group(1)), int(mo.group(2)), 15)
+
+            mo = re.compile(r'(\d{1,2})年工作经验').search(a[2])
+            years = int(mo.group(1))
+
+            education = ['大专', '本科', '硕士', 'MBA', 'EMBA', '博士', '博士后'].index(a[3].upper()) + 1
+        except (TypeError, AttributeError) as err:
+            raise err
+
+        return Person(file, name, gender, birth, phone, email, education, years, self.get_objective())
 
     def get_objective(self):
-        spot = field = industry = 'null'
-        salary = '-1'
         elements = self.soup.select('.resume-preview-top')
         texts = elements[0].getText().strip().split('\n')
         items = []
@@ -64,48 +66,51 @@ class HtmlParser(ABCParser):
         for text in texts:
             if regex.search(text) is None:
                 items.append(text)
+
+        spots = []
+        for spot in re.split('，|、', items[0]):
+            spots.append(spot)
+
+        salary = -1
         try:
-            spot = items[0]
             salaries = re.compile(r'\d+').findall(items[1])
-            salary = salaries[len(salaries) - 1]
-            field = items[4]
-            industry = items[5]
+            salary = int(salaries[len(salaries) - 1])
         except IndexError:
             pass
-        return Objective(spot, salary, field, industry)
+
+        fields = []
+        for field in re.split('，|、', items[4]):
+            fields.append(field.upper())
+
+        industries = []
+        for industry in re.split('，|、', items[5]):
+            industries.append(industry)
+        return Objective(spots, salary, fields, industries)
 
     def get_experiences(self):
-        experiences = []
-        # tag = self.soup.find('div', class_='resume-preview-all workExperience')
-        tag = self.soup.find('h3', text=re.compile(r'工作经历|项目经历'))
+        tag = self.soup.find('h3', text='工作经历')
         if tag is None:
-            return experiences
+            return []
         tag = tag.find_parent()
         if not tag['class'][0].startswith('resume-preview-all'):
-            return experiences
+            return []
 
+        experiences = []
         for h2 in tag.findAll('h2'):
+            date1 = date2 = company = company_desc = job = job_desc = ''
+
             text = h2.getText().strip()
-            date1 = date2 = company = company_desc = job = job_desc = 'null'
-            mo = re.compile(r'\d{4}\D\d{1,2}\D').search(text)
-            if mo is not None:
-                date1 = mo.group().strip()
-                text = text.replace(date1, '')
-            mo = re.compile(r'\d{4}\D\d{1,2}\D|至今').search(text)
-            if mo is not None:
-                date2 = mo.group().strip()
-                text = text.replace(date2, '')
-            # mo = re.compile(r'\S*(公司)\S*').search(text)
-            mo = re.compile(r'[^-\s]+').search(text)
-            if mo is not None:
-                company = mo.group()
+            a = re.split(u'\xa0\xa0| - ', text)
+            try:
+                date1 = a[0]
+                date2 = a[1]
+                company = a[2]
+            except IndexError:
+                pass
+
             sibling = h2.find_next_sibling()
             while sibling is not None and sibling.name != 'h2':
                 if sibling.name == 'h5':
-                    # jobs = '(生|员|工|师|代|理|总|监|书|顾|计)'
-                    # mo = re.compile(r'\S*{0}\S*'.format(jobs)).search(sibling.getText())
-                    # if mo is not None:
-                    #    job = mo.group()
                     job = sibling.getText().strip()
                 elif sibling['class'][0] == 'resume-preview-dl':
                     if sibling.string is not None:
@@ -118,42 +123,79 @@ class HtmlParser(ABCParser):
             experiences.append(Experience(date1, date2, company, company_desc, job, job_desc))
         return experiences
 
+    def get_projects(self):
+        tag = self.soup.find('h3', text='项目经历')
+        if tag is None:
+            return []
+        tag = tag.find_parent()
+        if not tag['class'][0].startswith('resume-preview-all'):
+            return []
+
+        projects = []
+        for h2 in tag.findAll('h2'):
+            date1 = date2 = name = description = duty = ''
+
+            text = h2.getText().strip()
+            a = re.split(u'\xa0\xa0| - ', text)
+            try:
+                date1 = a[0]
+                date2 = a[1]
+                name = a[2]
+            except IndexError:
+                pass
+
+            sibling = h2.find_next_sibling()
+            while sibling is not None and sibling.name != 'h2':
+                tds = sibling.findAll('td')
+                for i in range(len(tds)):
+                    if tds[i].getText() == '责任描述：':
+                        i += 1
+                        duty = tds[i].getText().replace('\'', '’')
+                    elif tds[i].getText() == '项目描述：':
+                        i += 1
+                        description = tds[i].getText().replace('\'', '’')
+                sibling = sibling.find_next_sibling()
+
+            projects.append(Project(date1, date2, name, description, duty))
+        return projects
+
     def get_educations(self):
+        tag = self.soup.find('h3', text='教育经历')
+        if tag is None:
+            return []
+        tag = tag.find_parent()
+        if not tag['class'][0].startswith('resume-preview-all'):
+            return []
+
         educations = []
-        element = self.soup.find('div', class_='resume-preview-dl educationContent')
-        if element is None:
-            element = self.soup.find('h3', text='教育经历')
-            if element is None:
-                return educations
-            element = element.find_next_sibling()
-        text = element.getText().strip()
-        texts = text.split('\n')
-        for text in texts:
-            date1 = date2 = school = major = degree = 'null'
-            mo = re.compile(r'(\d{4}\D\d{1,2}\D)').search(text)
-            if mo is not None:
-                date1 = mo.group().strip()
-                text = text.replace(date1, '')
-            mo = re.compile(r'(\d{4}\D\d{1,2}\D)').search(text)
-            if mo is not None:
-                date2 = mo.group().strip()
-                text = text.replace(date2, '')
-            mo = re.compile(r'\S*(大学|学院)').search(text)
-            if mo is not None:
-                school = mo.group()
-                text = text.replace(school, '')
-            majors = '(科学|语|数|理|化|光|机|电|计|通|仪|材料|应用|工程)'
-            mo = re.compile(r'\S*{0}\S*'.format(majors)).search(text)
-            if mo is not None:
-                major = mo.group()
-                text = text.replace(major, '')
-            mo = re.compile(r'\S*(专|本|生|士)\S*').search(text)
-            if mo is not None:
-                degree = mo.group()
+        for element in tag.findAll(class_='resume-preview-dl'):
+            date1 = date2 = school = major = degree = ''
+
+            text = element.getText().strip()
+            a = re.split(u'\xa0\xa0| - ', text)
+            try:
+                date1 = a[0]
+                date2 = a[1]
+                school = a[2]
+                major = a[3]
+                degree = a[4]
+            except IndexError:
+                pass
             educations.append(Education(date1, date2, school, major, degree))
         return educations
 
-    """
-    def new_resume(self):
-        return Resume(self.get_person(), self.get_experiences(), self.get_educations())
-    """
+    def get_skills(self):
+        return None
+
+
+def main():
+    folder = '/home/xixisun/suzy/resumes/html/zljl'
+    file = '1001275097619586627470818947.html'
+    # file = '智联招聘_陶秀玲_法务部部长_中文_20130502_24441247.html'
+    # file = '朱斌国简历_智联招聘.html'
+    parser = HtmlParser(folder + '/' + file)
+    resume = parser.new_resume()
+    pprint(resume.to_dictionary())
+
+if __name__ == "__main__":
+    main()

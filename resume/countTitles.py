@@ -39,8 +39,6 @@ def count_titles():
             print('{:07d}, '.format(i + 1) + fn + ', ' + title)
             i += 1
 
-            print('{:06d}, '.format(i + 1) + fn + ', ' + title)
-            i += 1
             if title not in titles.keys():
                 titles[title] = 1
             else:
