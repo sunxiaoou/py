@@ -150,7 +150,7 @@ class Educations:
         return {Keys.schools: self.schools, Keys.majors: self.majors, Keys.degrees: self.degrees,
                 Keys.school_rank: self.school_rank}
 
-
+"""
 class Skills:
     def __init__(self, level1, level2, level3):
         self.level1 = level1
@@ -169,6 +169,7 @@ class Skills:
         if self.level3 is not None:
             skills[Keys.skill_level3] = self.level3
         return skills
+"""
 
 
 class Resume:
@@ -218,6 +219,10 @@ class Resume:
         if self.educations:
             resume[Keys.educations] = Educations(self.educations).to_dictionary()
 
+        """
         if self.skills is not None:
             resume[Keys.skills] = self.skills.to_dictionary()
+        """
+        if self.skills:
+            resume[Keys.skills] = self.skills
         return resume

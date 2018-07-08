@@ -10,7 +10,6 @@ from resume import Objective
 from resume import Experience
 from resume import Project
 from resume import Education
-from resume import Skills
 
 
 class HtmlJL(ABCParser):
@@ -177,32 +176,22 @@ class HtmlJL(ABCParser):
         text = self.soup.body.getText()
         mo = re.compile(r'技能:(.*)', re.DOTALL).search(text)
         if mo is None:
-            return None
+            return []
+
+        skills = []
         texts = mo.group(1).split('\n')
-        level1 = []
-        level2 = []
-        level3 = []
         for text in texts:
             if re.compile('^ *$').search(text) is not None:
                 continue
             a = [x.strip() for x in text.split('-') if x != '']
             try:
                 b = re.split('&nbsp', a[1])
-                if b[0] == '一般':
+                if b[0] == '良好' or b[0] == '熟练' or b[0] == '精通':
                     for skill in re.split('，|、', a[0]):
-                        level1.append(skill.upper())
-                elif b[0] == '熟练':
-                    for skill in re.split('，|、', a[0]):
-                        level2.append(skill.upper())
-                elif b[0] == '精通':
-                    for skill in re.split('，|、', a[0]):
-                        level3.append(skill.upper())
+                        skills.append(skill.upper())
             except IndexError:
                 pass
-        # Ignore level1
-        if not level2 and not level3:
-            return None
-        return Skills(None, level2 if level2 else None, level3 if level3 else None)
+        return skills
 
 
 def main():

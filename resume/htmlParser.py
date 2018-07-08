@@ -74,7 +74,7 @@ class HtmlParser(ABCParser):
         salary = -1
         try:
             salaries = re.compile(r'\d+').findall(items[1])
-            salary = int(salaries[len(salaries) - 1])
+            salary = int(salaries[-1])
         except IndexError:
             pass
 
@@ -185,14 +185,34 @@ class HtmlParser(ABCParser):
         return educations
 
     def get_skills(self):
-        return None
+        tag = self.soup.find('h3', text='专业技能')
+        if tag is None:
+            return []
+        tag = tag.find_next_sibling()
+        if not tag['class'][0].startswith('resume-preview-dl'):
+            return []
+
+        skills = []
+        texts = tag.getText().split('\n')
+        for text in texts:
+            if re.compile('^ *$').search(text) is not None:
+                continue
+            a = re.split(r'：| \| ', text)
+            try:
+                if a[1] == '良好' or a[1] == '熟练' or a[1] == '精通':
+                    for skill in re.compile(r'[\da-zA-Z/#]+').findall(a[0]):
+                        skills.append(skill.upper())
+            except IndexError:
+                pass
+        return list(set(skills))        # no duplicate
 
 
 def main():
-    folder = '/home/xixisun/suzy/resumes/html/zljl'
-    file = '1001275097619586627470818947.html'
+    folder = '/home/xixisun/suzy/shoulie/resumes/zljl'
+    # file = '1001275097619586627470818947.html'
+    # file = '10157404450912834562061694406.html'
     # file = '智联招聘_陶秀玲_法务部部长_中文_20130502_24441247.html'
-    # file = '朱斌国简历_智联招聘.html'
+    file = '朱斌国简历_智联招聘.html'
     parser = HtmlParser(folder + '/' + file)
     resume = parser.new_resume()
     pprint(resume.to_dictionary())
