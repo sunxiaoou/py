@@ -9,9 +9,8 @@ from resume import Person
 from resume import Objective
 from resume import Experience
 from resume import Project
-from resume import Educations
+from resume import Education
 from resume import Skills
-from schools import Schools
 
 
 class HtmlJL(ABCParser):
@@ -33,31 +32,28 @@ class HtmlJL(ABCParser):
                 birth = datetime(int(mo.group(1)), int(mo.group(2)), int(mo.group(3)))
             text = self.soup.body.find(text=re.compile(r'手机号码:.*'))
             phone = re.compile(r'手机号码:(.*)').search(text).group(1).strip()
-        except (TypeError, AttributeError) as err:
-            raise err
 
-        email = None
-        education = years = -1
-        try:
+            email = None
             text = self.soup.body.find(text=re.compile(r'Email:.*'))
-            email = re.compile(r'Email:(.*)').search(text).group(1).strip()
+            mo = re.compile(r'Email:(.*)').search(text)
+            if mo is not None:
+                email = mo.group(1).strip()
 
             text = self.soup.body.find(text=re.compile(r'学历:.*'))
             text = re.compile(r'学历:(.*)').search(text).group(1).strip()
             education = ['大专', '本科', '硕士', 'MBA', 'EMBA', '博士',  '博士后'].index(text.upper()) + 1
 
             text = self.soup.body.find(text=re.compile(r'工作经验:.*'))
-            years = int(re.compile(r'工作经验:\D*(\d+)年\D*工作经验').search(text).group(1))
-            if years < 1 or years > 99:
-                raise TypeError
-        except (TypeError, AttributeError, ValueError):
-            pass
+            a = re.compile(r'\d{1,2}').findall(text)
+            years = int(a[-1])          # -1 is last one
+        except (TypeError, AttributeError) as err:
+            raise err
 
         return Person(file, name, gender, birth, phone, email, education, years, self.get_objective())
 
     def get_objective(self):
         fields = industries = None
-        salary = '-1'
+        salary = -1
 
         spots = []
         text = self.soup.body.find(text=re.compile(r'期望工作地点:.*'))
@@ -70,7 +66,7 @@ class HtmlJL(ABCParser):
         if text is not None:
             salaries = re.compile(r'\d+').findall(text)
             if len(salaries) > 0:
-                salary = salaries[len(salaries) - 1]
+                salary = int(salaries[-1])
 
         text = self.soup.body.find(text=re.compile(r'期望从事职业:.*'))
         if text is not None:
@@ -149,7 +145,6 @@ class HtmlJL(ABCParser):
             if mo is None:
                 continue
             duty = mo.group(1).strip()
-            # print(job_desc)
             projects.append(Project(date1, date2, name, description, duty))
         return projects
 
@@ -157,29 +152,26 @@ class HtmlJL(ABCParser):
         text = self.soup.body.getText()
         mo = re.compile(r'教育经历:(.*)语言水平', re.DOTALL).search(text)
         if mo is None:
-            return None
+            return []
+        educations = []
         texts = mo.group(1).split('\n')
-        schools = []
-        majors = []
-        degrees = []
         for text in texts:
             if re.compile('^ *$').search(text) is not None:
                 continue
             text.strip()
+            date1 = date2 = school = major = degree = ''
             # print(":".join("{:02x}".format(ord(c)) for c in text))
             try:
-                a = re.split('&nbsp', text)
-                schools.append(a[1])
-                majors.append(a[3])
-                degrees.append(a[4])
+                a = re.split('&nbsp|- ', text)
+                date1 = a[0]
+                date2 = a[1]
+                school = a[2]
+                major = a[4]
+                degree = a[5]
             except IndexError:
                 pass
-        school_rank = 0
-        for school in schools:
-            rank = Schools.get_rank(school)
-            if rank > school_rank:
-                school_rank = rank
-        return Educations(schools, majors, degrees, school_rank)
+            educations.append(Education(date1, date2, school, major, degree))
+        return educations
 
     def get_skills(self):
         text = self.soup.body.getText()
@@ -214,30 +206,14 @@ class HtmlJL(ABCParser):
 
 
 def main():
-    folder = '/home/xixisun/suzy/resumes/html/jl'
-    file = '10022353-季文清.html'
-    # file = '10052356-安敬辉.html'
+    folder = '/home/xixisun/suzy/shoulie/resumes/jl'
+    # file = '10022353-季文清.html'
+    file = '10052356-安敬辉.html'
     # file = 'jm329830852r90250000000-朱昭卿.html'
     # file = 'jm615458412r90250000000-曾德阳.html'
     # file = 'jm375383835r90250000000-姜丽婷.html'
     parser = HtmlJL(folder + '/' + file)
-    """
-    print(parser.get_person())
-    print('Experiences:')
-    for experience in parser.get_experiences():
-        print(experience)
-    print('Projects:')
-    for project in parser.get_projects():
-        print(project)
-    print('Educations:')
-    for education in parser.get_educations():
-        print(education)
-    print('Skills:')
-    for skill in parser.get_skills():
-        print(skill)
-    """
     resume = parser.new_resume()
-    # print(resume)
     pprint(resume.to_dictionary())
     # print(json.dumps(resume.to_dictionary()))
 

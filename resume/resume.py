@@ -1,5 +1,6 @@
 #! /usr/bin/python3
 
+from schools import Schools
 
 class Keys:
     spots = '期望工作地点'
@@ -28,7 +29,7 @@ class Keys:
     start_date = '开始日期'
     end_date = '结束日期'
     company = '雇主'
-    company_desc = '单位描述'
+    company_desc = '雇主描述'
     job = '岗位'
     job_desc = '岗位描述'
     projects = '项目经历'
@@ -128,11 +129,19 @@ class Education:
 
 
 class Educations:
-    def __init__(self, schools, majors, degrees, school_rank):
-        self.schools = schools
-        self.majors = majors
-        self.degrees = degrees
-        self.school_rank = school_rank
+    def __init__(self, educations):
+        self.schools = []
+        self.majors = []
+        self.degrees = []
+        for education in educations:
+            self.schools.append(education.school)
+            self.majors.append(education.major)
+            self.degrees.append(education.degree)
+        self.school_rank = 0
+        for school in self.schools:
+            rank = Schools.get_rank(school)
+            if rank > self.school_rank:
+                self.school_rank = rank
 
     def __str__(self):
         return ' '.join(self.schools) + '\n' + ' '.join(self.majors) + '\n' + ' '.join(self.degrees)
@@ -185,6 +194,7 @@ class Resume:
 
     def to_dictionary(self):
         resume = self.person.to_dictionary()
+
         if self.experiences:
             resume[Keys.experiences] = []
             companies = []
@@ -193,16 +203,21 @@ class Resume:
                 companies.append(experience.company)
             if companies:
                 resume[Keys.companies] = companies
+
         if self.projects:
             resume[Keys.projects] = []
             for project in self.projects:
                 resume[Keys.projects].append(project.to_dictionary())
+
+        """
         if self.educations:
             resume[Keys.educations] = []
             for education in self.educations:
                 resume[Keys.educations].append(education.to_dictionary())
-        # if self.educations is not None:
-        #    resume[Keys.educations] = self.educations.to_dictionary()
+        """
+        if self.educations:
+            resume[Keys.educations] = Educations(self.educations).to_dictionary()
+
         if self.skills is not None:
             resume[Keys.skills] = self.skills.to_dictionary()
         return resume
