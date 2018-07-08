@@ -2,12 +2,11 @@
 
 import json
 import os
+import shutil
 import sys
-import time
 from bson import json_util
-# from htmlParser import HtmlParser
+from htmlParser import HtmlParser
 from htmlJL import HtmlJL
-# from dbClient import DbClient
 
 
 def test_one():
@@ -32,23 +31,30 @@ def test_one():
 
 
 def parse():
-    folder = '/home/xixisun/suzy/resumes/html/jl'
-    output = open('jl.out', 'w')
+    folder = '/home/xixisun/suzy/shoulie/resumes/zljl'
+    fail = '/home/xixisun/suzy/shoulie/resumes/fail'
+    if not os.path.exists(fail):
+        os.makedirs(fail)
+
+    output = open('zljl.out', 'w')
     # i = 0
     for folderName, subfolders, fileNames in os.walk(folder):
         for fileName in fileNames:
             if os.path.splitext(fileName)[1] != '.html':
                 continue
-            fn = folderName + '/' + fileName
-            print(fn)
-            parser = HtmlJL(fn)
+            fn = os.path.join(folderName, fileName)
+            # parser = HtmlJL(fn)
+            parser = HtmlParser(fn)
             try:
                 resume = parser.new_resume()
                 dictionary = resume.to_dictionary()
-            except AttributeError:
+            except (AttributeError, IndexError, TypeError, ValueError):
+                shutil.move(fn, os.path.join(fail, fileName))
+                print(fn + ' failed')
                 continue
             output.write(json.dumps(dictionary, default=json_util.default))
             output.write('\n')
+            print(fn)
             # i += 1
             # if i == 1000:
                 # break

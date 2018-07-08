@@ -44,6 +44,8 @@ class HtmlParser(ABCParser):
             # print(":".join("{:02x}".format(ord(c)) for c in text))
             a = re.split(u'\xa0\xa0\xa0\xa0', texts[1])     # 4 non Break Spaces
 
+            if a[0] != '男' and a[0] != '女':
+                raise TypeError             # maybe english
             gender = a[0]
 
             mo = re.compile(r'(\d{4})年(\d{1,2})月').search(a[1])
@@ -212,7 +214,8 @@ def main():
     # file = '1001275097619586627470818947.html'
     # file = '10157404450912834562061694406.html'
     # file = '智联招聘_陶秀玲_法务部部长_中文_20130502_24441247.html'
-    file = '朱斌国简历_智联招聘.html'
+    # file = '朱斌国简历_智联招聘.html'
+    file = '智联招聘_donghui wang_英文_20151216_91732764.html'
     parser = HtmlParser(folder + '/' + file)
     resume = parser.new_resume()
     pprint(resume.to_dictionary())
