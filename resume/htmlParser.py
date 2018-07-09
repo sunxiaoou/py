@@ -16,7 +16,7 @@ from resume import Education
 class HtmlParser(ABCParser):
 
     def get_person(self):
-        file = os.path.basename(self.html)
+        # file = os.path.basename(self.html)
 
         try:
             # elements = self.soup.select('#userName')
@@ -58,7 +58,7 @@ class HtmlParser(ABCParser):
         except (TypeError, AttributeError) as err:
             raise err
 
-        return Person(file, name, gender, birth, phone, email, education, years, self.get_objective())
+        return Person(self.file, name, gender, birth, phone, email, education, years, self.get_objective())
 
     def get_objective(self):
         elements = self.soup.select('.resume-preview-top')
@@ -211,12 +211,13 @@ class HtmlParser(ABCParser):
 
 def main():
     folder = '/home/xixisun/suzy/shoulie/resumes/zljl'
-    # file = '1001275097619586627470818947.html'
+    file = '1001275097619586627470818947.html'
     # file = '10157404450912834562061694406.html'
     # file = '智联招聘_陶秀玲_法务部部长_中文_20130502_24441247.html'
     # file = '朱斌国简历_智联招聘.html'
-    file = '智联招聘_donghui wang_英文_20151216_91732764.html'
-    parser = HtmlParser(folder + '/' + file)
+    # file = '智联招聘_donghui wang_英文_20151216_91732764.html'
+    # parser = HtmlParser(folder + '/' + file)
+    parser = HtmlParser(os.path.join(folder, file), 'zljl0012978.html')
     resume = parser.new_resume()
     pprint(resume.to_dictionary())
 

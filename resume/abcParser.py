@@ -6,8 +6,9 @@ from resume import Resume
 
 
 class ABCParser(abc.ABC):
-    def __init__(self, html):
+    def __init__(self, html, file):
         self.html = html
+        self.file = file
         self.soup = BeautifulSoup(open(html), 'lxml')
 
     @abc.abstractclassmethod

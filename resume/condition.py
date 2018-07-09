@@ -96,8 +96,11 @@ class Condition:
         if Condition.company is not None:
             conditions[Keys.companies] = {'$regex': Condition.company}
         if Condition.skill is not None:
+            """
             conditions['$or'] = [{Keys.skills + '.' + Keys.skill_level2: Condition.skill},
                                  {Keys.skills + '.' + Keys.skill_level3: Condition.skill}]
+            """
+            conditions[Keys.skills] = {'$regex': Condition.skill}
         if Condition.school is not None:
             conditions[Keys.educations + '.' + Keys.schools] = {'$regex': Condition.school}
         if Condition.school_rank is not None:

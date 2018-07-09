@@ -4,6 +4,8 @@ import json
 import os
 import shutil
 import sys
+import traceback
+
 from bson import json_util
 from htmlParser import HtmlParser
 from htmlJL import HtmlJL
@@ -31,33 +33,38 @@ def test_one():
 
 
 def parse():
-    folder = '/home/xixisun/suzy/shoulie/resumes/zljl'
-    fail = '/home/xixisun/suzy/shoulie/resumes/fail'
-    if not os.path.exists(fail):
-        os.makedirs(fail)
+    base_folder = '/home/xixisun/suzy/shoulie/resumes'
+    html_type = 'zljl'
+    html_folder = os.path.join(base_folder, html_type)
+    err_folder = os.path.join(base_folder, html_type + 'err')
+    if not os.path.exists(err_folder):
+        os.makedirs(err_folder)
 
-    output = open('zljl.out', 'w')
-    # i = 0
-    for folderName, subfolders, fileNames in os.walk(folder):
+    output = open(html_type + '.json', 'w')
+    i = 1
+    for folderName, subfolders, fileNames in os.walk(html_folder):
         for fileName in fileNames:
             if os.path.splitext(fileName)[1] != '.html':
                 continue
             fn = os.path.join(folderName, fileName)
             # parser = HtmlJL(fn)
-            parser = HtmlParser(fn)
+            new_filename = '{}{:07d}.html'.format(html_type, i)
+            parser = HtmlParser(fn, new_filename)
             try:
                 resume = parser.new_resume()
                 dictionary = resume.to_dictionary()
-            except (AttributeError, IndexError, TypeError, ValueError):
-                shutil.move(fn, os.path.join(fail, fileName))
+            except:
+                print(traceback.format_exc())
                 print(fn + ' failed')
+                shutil.move(fn, os.path.join(err_folder, fileName))
                 continue
             output.write(json.dumps(dictionary, default=json_util.default))
             output.write('\n')
-            print(fn)
-            # i += 1
+            os.rename(fn, os.path.join(folderName, new_filename))
+            print(fileName + ' to ' + new_filename)
+            i += 1
             # if i == 1000:
-                # break
+            # break
     output.close()
 
 
