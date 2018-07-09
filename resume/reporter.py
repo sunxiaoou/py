@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 
 import os
+import re
 import shelve
 import webbrowser
 from datetime import datetime
@@ -9,6 +10,7 @@ from resume import Keys
 
 
 class Reporter:
+    base_folder = '/home/xixisun/suzy/shoulie/resumes'
 
     @staticmethod
     def unshelve(shelf_name):
@@ -20,11 +22,9 @@ class Reporter:
 
     @staticmethod
     def name_html(name, file):
-        if str is None:
-            return None
-        path = '/home/xixisun/suzy/resumes/html/jl'
-        # path = '/Users/sunxiaoou/suzy/shoulie/jl'
-        return '<a href="file://{}/{}"title="resume">{}</a><br>'.format(path, file, name)
+        html_type = re.compile(r'(\D+)\d+').search(file).group(1)
+        full_file_name = os.path.join(Reporter.base_folder, html_type, file)
+        return '<a href="file://{}"title="resume">{}</a><br>'.format(full_file_name, name)
 
     @staticmethod
     def gender_html(gender):

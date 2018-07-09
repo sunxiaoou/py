@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+#or /opt/python/bin/python3
 
 import json
 import os
@@ -34,6 +35,7 @@ def test_one():
 
 def parse():
     base_folder = '/home/xixisun/suzy/shoulie/resumes'
+    # base_folder = '/scratch/xixisun/shoulie/resumes'
     html_type = 'zljl'
     html_folder = os.path.join(base_folder, html_type)
     err_folder = os.path.join(base_folder, html_type + 'err')
