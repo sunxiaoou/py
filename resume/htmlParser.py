@@ -16,18 +16,18 @@ from resume import Education
 class HtmlParser(ABCParser):
 
     def get_person(self):
-        # file = os.path.basename(self.html)
+        elements = self.soup.select('.resume-preview-main-title [class$=fc6699cc]')
+        name = elements[0].getText()
+        name = re.sub(r'[^\w]', '', name)          # remove special chars
+        if not name:
+            raise ValueError
+        file = 'zljl_{:07d}_{}.html'.format(self.no, name)
+
+        elements = self.soup.select('.summary-bottom')
+        mo = re.compile(r'\D(\d{11})\D').search(elements[0].getText())
+        phone = mo.group(1)
 
         try:
-            # elements = self.soup.select('#userName')
-            elements = self.soup.select('.resume-preview-main-title [class$=fc6699cc]')
-            name = elements[0].getText().strip()
-
-            elements = self.soup.select('.summary-bottom')
-            mo = re.compile(r'\D(\d{11})\D').search(elements[0].getText())
-            phone = mo.group(1)
-
-            email = None
             elements = self.soup.select('.summary-bottom')
             regex = re.compile(r'''(
                     [a-zA-Z0-9._%+-]+      # username
@@ -35,30 +35,34 @@ class HtmlParser(ABCParser):
                     [a-zA-Z0-9.-]+         # domain name
                     (\.[a-zA-Z]{2,4})      # dot-something
             )''', re.VERBOSE)
-            mo = regex.search(elements[0].getText())
-            if mo is not None:
-                email = mo.group()
+            email = regex.search(elements[0].getText()).group()
+        except AttributeError:
+            email = ''
 
-            elements = self.soup.select('.summary-top')
-            texts = elements[0].getText().split('\n')
-            # print(":".join("{:02x}".format(ord(c)) for c in text))
-            a = re.split(u'\xa0\xa0\xa0\xa0', texts[1])     # 4 non Break Spaces
+        elements = self.soup.select('.summary-top')
+        texts = elements[0].getText().split('\n')
+        # print(":".join("{:02x}".format(ord(c)) for c in text))
+        a = re.split(u'\xa0\xa0\xa0\xa0', texts[1])     # 4 non Break Spaces
 
-            if a[0] != '男' and a[0] != '女':
-                raise TypeError             # maybe english
-            gender = a[0]
+        if a[0] != '男' and a[0] != '女':
+            raise TypeError             # maybe english
+        gender = a[0]
 
-            mo = re.compile(r'(\d{4})年(\d{1,2})月').search(a[1])
-            birth = datetime(int(mo.group(1)), int(mo.group(2)), 15)
+        mo = re.compile(r'(\d{4})年(\d{1,2})月').search(a[1])
+        birth = datetime(int(mo.group(1)), int(mo.group(2)), 15)
 
+        try:
             mo = re.compile(r'(\d{1,2})年工作经验').search(a[2])
             years = int(mo.group(1))
+        except AttributeError:
+            years = -1
 
-            education = ['大专', '本科', '硕士', 'MBA', 'EMBA', '博士', '博士后'].index(a[3].upper()) + 1
-        except (TypeError, AttributeError) as err:
-            raise err
+        try:
+            education = Education.educationList.index(a[3].upper()) + 1
+        except ValueError:
+            education = -1
 
-        return Person(self.file, name, gender, birth, phone, email, education, years, self.get_objective())
+        return Person(file, name, gender, birth, phone, email, education, years, self.get_objective())
 
     def get_objective(self):
         elements = self.soup.select('.resume-preview-top')
@@ -172,7 +176,6 @@ class HtmlParser(ABCParser):
         educations = []
         for element in tag.findAll(class_='resume-preview-dl'):
             date1 = date2 = school = major = degree = ''
-
             text = element.getText().strip()
             a = re.split(u'\xa0\xa0| - ', text)
             try:
@@ -180,8 +183,8 @@ class HtmlParser(ABCParser):
                 date2 = a[1]
                 school = a[2]
                 major = a[3]
-                degree = a[4]
-            except IndexError:
+                degree = Education.educationList.index(a[4].upper()) + 1
+            except (IndexError, ValueError):
                 pass
             educations.append(Education(date1, date2, school, major, degree))
         return educations
@@ -211,13 +214,12 @@ class HtmlParser(ABCParser):
 
 def main():
     folder = '/home/xixisun/suzy/shoulie/resumes/zljl'
-    file = '1001275097619586627470818947.html'
+    # file = '1001275097619586627470818947.html'
     # file = '10157404450912834562061694406.html'
     # file = '智联招聘_陶秀玲_法务部部长_中文_20130502_24441247.html'
     # file = '朱斌国简历_智联招聘.html'
-    # file = '智联招聘_donghui wang_英文_20151216_91732764.html'
-    # parser = HtmlParser(folder + '/' + file)
-    parser = HtmlParser(os.path.join(folder, file), 'zljl0012978.html')
+    file = 'zljl0435506.html'
+    parser = HtmlParser(os.path.join(folder, file), 1)
     resume = parser.new_resume()
     pprint(resume.to_dictionary())
 
