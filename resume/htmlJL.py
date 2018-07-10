@@ -15,38 +15,43 @@ from resume import Education
 class HtmlJL(ABCParser):
 
     def get_person(self):
-        file = os.path.basename(self.html)
+        text = self.soup.body.find(text=re.compile(r'姓名:.*'))
+        name = re.compile(r'姓名:(.*)$').search(text).group(1)
+        name = re.sub(r'[^\w]', '', name)          # remove special chars
+        file = 'jl_{:07d}_{}.html'.format(self.no, name)
+
+        text = self.soup.body.find(text=re.compile(r'性别:.*'))
+        gender = re.compile(r'性别:(.*)').search(text).group(1)
+
+        text = self.soup.body.find(text=re.compile(r'出生日期:.*'))
+        mo = re.compile(r'出生日期:\D*(\d{4})\D*(\d{1,2})\D*(\d{1,2})?\D*').search(text)    # ? to a optional group
+        if mo.group(3) is None:
+            birth = datetime(int(mo.group(1)), int(mo.group(2)), 15)
+        else:
+            birth = datetime(int(mo.group(1)), int(mo.group(2)), int(mo.group(3)))
+
+        text = self.soup.body.find(text=re.compile(r'手机号码:.*'))
+        phone = re.compile(r'手机号码:(.*)').search(text).group(1).strip()
+
+        email = None
+        text = self.soup.body.find(text=re.compile(r'Email:.*'))
+        mo = re.compile(r'Email:(.*)').search(text)
+        if mo is not None:
+            email = mo.group(1).strip()
 
         try:
-            text = self.soup.body.find(text=re.compile(r'姓名:.*'))
-            name = re.compile(r'姓名:(.*)$').search(text).group(1)
-            text = self.soup.body.find(text=re.compile(r'性别:.*'))
-            gender = re.compile(r'性别:(.*)').search(text).group(1)
-            text = self.soup.body.find(text=re.compile(r'出生日期:.*'))
-            # birth = re.compile(r'出生日期:(.*)').search(text).group(1).strip()
-            mo = re.compile(r'出生日期:\D*(\d{4})\D*(\d{1,2})\D*(\d{1,2})?\D*').search(text)    # ? to a optional group
-            if mo.group(3) is None:
-                birth = datetime(int(mo.group(1)), int(mo.group(2)), 15)
-            else:
-                birth = datetime(int(mo.group(1)), int(mo.group(2)), int(mo.group(3)))
-            text = self.soup.body.find(text=re.compile(r'手机号码:.*'))
-            phone = re.compile(r'手机号码:(.*)').search(text).group(1).strip()
-
-            email = None
-            text = self.soup.body.find(text=re.compile(r'Email:.*'))
-            mo = re.compile(r'Email:(.*)').search(text)
-            if mo is not None:
-                email = mo.group(1).strip()
-
             text = self.soup.body.find(text=re.compile(r'学历:.*'))
             text = re.compile(r'学历:(.*)').search(text).group(1).strip()
-            education = ['大专', '本科', '硕士', 'MBA', 'EMBA', '博士',  '博士后'].index(text.upper()) + 1
+            education = Education.educationList.index(text.upper()) + 1
+        except ValueError:
+            education = -1
 
+        try:
             text = self.soup.body.find(text=re.compile(r'工作经验:.*'))
             a = re.compile(r'\d{1,2}').findall(text)
             years = int(a[-1])          # -1 is last one
-        except (TypeError, AttributeError) as err:
-            raise err
+        except IndexError:
+            years = -1
 
         return Person(file, name, gender, birth, phone, email, education, years, self.get_objective())
 
@@ -94,7 +99,7 @@ class HtmlJL(ABCParser):
         texts = re.compile(r'.*?离职理由:', re.DOTALL).findall(text)    # ? = non greedy
         experiences = []
         for text in texts:
-            date1 = date2 = company = company_desc = job = job_desc = 'null'
+            date1 = date2 = company = company_desc = job = job_desc = ''
             for item in text.split('\n'):
                 if item == '' or '离职理由' in item:
                     continue
@@ -158,7 +163,8 @@ class HtmlJL(ABCParser):
             if re.compile('^ *$').search(text) is not None:
                 continue
             text.strip()
-            date1 = date2 = school = major = degree = ''
+            date1 = date2 = school = major = ''
+            degree = -1
             # print(":".join("{:02x}".format(ord(c)) for c in text))
             try:
                 a = re.split('&nbsp|- ', text)
@@ -166,8 +172,8 @@ class HtmlJL(ABCParser):
                 date2 = a[1]
                 school = a[2]
                 major = a[4]
-                degree = a[5]
-            except IndexError:
+                degree = Education.educationList.index(a[5].upper()) + 1
+            except (IndexError, ValueError):
                 pass
             educations.append(Education(date1, date2, school, major, degree))
         return educations
@@ -197,11 +203,12 @@ class HtmlJL(ABCParser):
 def main():
     folder = '/home/xixisun/suzy/shoulie/resumes/jl'
     # file = '10022353-季文清.html'
-    file = '10052356-安敬辉.html'
+    # file = '10052356-安敬辉.html'
     # file = 'jm329830852r90250000000-朱昭卿.html'
     # file = 'jm615458412r90250000000-曾德阳.html'
     # file = 'jm375383835r90250000000-姜丽婷.html'
-    parser = HtmlJL(folder + '/' + file)
+    file = 'jr107601526r90000000000-胡跃群.html'
+    parser = HtmlJL(os.path.join(folder, file), 1)
     resume = parser.new_resume()
     pprint(resume.to_dictionary())
     # print(json.dumps(resume.to_dictionary()))

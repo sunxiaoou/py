@@ -113,6 +113,8 @@ class Project:
 
 
 class Education:
+    educationList = ['大专', '本科', '硕士', 'MBA', 'EMBA', '博士',  '博士后']
+
     def __init__(self, start_date, end_date, school, major, degree):
         self.start_date = start_date
         self.end_date = end_date

@@ -10,6 +10,7 @@ import traceback
 from bson import json_util
 from htmlParser import HtmlParser
 from htmlJL import HtmlJL
+from resume import Keys
 
 
 def test_one():
@@ -36,22 +37,21 @@ def test_one():
 def parse():
     base_folder = '/home/xixisun/suzy/shoulie/resumes'
     # base_folder = '/scratch/xixisun/shoulie/resumes'
-    html_type = 'zljl'
+    html_type = 'jl'
     html_folder = os.path.join(base_folder, html_type)
     err_folder = os.path.join(base_folder, html_type + 'err')
     if not os.path.exists(err_folder):
         os.makedirs(err_folder)
 
-    output = open(html_type + '.json', 'w')
+    output = open(os.path.join(base_folder, html_type + '.json'), 'w')
     i = 1
     for folderName, subfolders, fileNames in os.walk(html_folder):
         for fileName in fileNames:
             if os.path.splitext(fileName)[1] != '.html':
                 continue
             fn = os.path.join(folderName, fileName)
-            # parser = HtmlJL(fn)
-            new_filename = '{}{:07d}.html'.format(html_type, i)
-            parser = HtmlParser(fn, new_filename)
+            # parser = HtmlParser(fn, i)
+            parser = HtmlJL(fn, i)
             try:
                 resume = parser.new_resume()
                 dictionary = resume.to_dictionary()
@@ -62,6 +62,7 @@ def parse():
                 continue
             output.write(json.dumps(dictionary, default=json_util.default))
             output.write('\n')
+            new_filename = dictionary.get(Keys.file)
             os.rename(fn, os.path.join(folderName, new_filename))
             print(fileName + ' to ' + new_filename)
             i += 1
