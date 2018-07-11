@@ -19,7 +19,7 @@ class HtmlParser(ABCParser):
         elements = self.soup.select('.resume-preview-main-title [class$=fc6699cc]')
         name = elements[0].getText()
         name = re.sub(r'[^\w]', '', name)          # remove special chars
-        if not name:
+        if not name or len(name) > 10:
             raise ValueError
         file = 'zljl_{:07d}_{}.html'.format(self.no, name)
 
@@ -58,8 +58,11 @@ class HtmlParser(ABCParser):
             years = -1
 
         try:
-            education = Education.educationList.index(a[3].upper()) + 1
-        except ValueError:
+            if years == -1:
+                education = Education.educationList.index(a[2].upper()) + 1
+            else:
+                education = Education.educationList.index(a[3].upper()) + 1
+        except (IndexError, ValueError):
             education = -1
 
         return Person(file, name, gender, birth, phone, email, education, years, self.get_objective())
