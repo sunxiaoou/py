@@ -2,9 +2,11 @@
 
 import re
 import os
+from bs4 import BeautifulSoup
 from datetime import datetime
 from pprint import pprint
-from abcParser import ABCParser
+
+from resume import Resume
 from resume import Person
 from resume import Objective
 from resume import Experience
@@ -12,67 +14,28 @@ from resume import Project
 from resume import Education
 
 
-class HtmlJL(ABCParser):
+class HtmlJL:
+    soup = None
 
-    def get_person(self):
-        text = self.soup.body.find(text=re.compile(r'姓名:.*'))
-        name = re.compile(r'姓名:(.*)$').search(text).group(1)
-        name = re.sub(r'[^\w]', '', name)          # remove special chars
-        file = 'jl_{:07d}_{}.html'.format(self.no, name)
-
-        text = self.soup.body.find(text=re.compile(r'性别:.*'))
-        gender = re.compile(r'性别:(.*)').search(text).group(1)
-
-        text = self.soup.body.find(text=re.compile(r'出生日期:.*'))
-        mo = re.compile(r'出生日期:\D*(\d{4})\D*(\d{1,2})\D*(\d{1,2})?\D*').search(text)    # ? to a optional group
-        if mo.group(3) is None:
-            birth = datetime(int(mo.group(1)), int(mo.group(2)), 15)
-        else:
-            birth = datetime(int(mo.group(1)), int(mo.group(2)), int(mo.group(3)))
-
-        text = self.soup.body.find(text=re.compile(r'手机号码:.*'))
-        phone = re.compile(r'手机号码:(.*)').search(text).group(1).strip()
-
-        email = None
-        text = self.soup.body.find(text=re.compile(r'Email:.*'))
-        mo = re.compile(r'Email:(.*)').search(text)
-        if mo is not None:
-            email = mo.group(1).strip()
-
-        try:
-            text = self.soup.body.find(text=re.compile(r'学历:.*'))
-            text = re.compile(r'学历:(.*)').search(text).group(1).strip()
-            education = Education.educationList.index(text.upper()) + 1
-        except ValueError:
-            education = -1
-
-        try:
-            text = self.soup.body.find(text=re.compile(r'工作经验:.*'))
-            a = re.compile(r'\d{1,2}').findall(text)
-            years = int(a[-1])          # -1 is last one
-        except IndexError:
-            years = -1
-
-        return Person(file, name, gender, birth, phone, email, education, years, self.get_objective())
-
-    def get_objective(self):
+    @staticmethod
+    def get_objective():
         fields = industries = None
         salary = -1
 
         spots = []
-        text = self.soup.body.find(text=re.compile(r'期望工作地点:.*'))
+        text = HtmlJL.soup.body.find(text=re.compile(r'期望工作地点:.*'))
         if text is not None:
             text = re.compile(r'期望工作地点:(.*)$').search(text).group(1).strip()
             for spot in re.split('，|、', text):
                 spots.append(spot)
 
-        text = self.soup.body.find(text=re.compile(r'期望月薪\(税前\):.*'))
+        text = HtmlJL.soup.body.find(text=re.compile(r'期望月薪\(税前\):.*'))
         if text is not None:
             salaries = re.compile(r'\d+').findall(text)
             if len(salaries) > 0:
                 salary = int(salaries[-1])
 
-        text = self.soup.body.find(text=re.compile(r'期望从事职业:.*'))
+        text = HtmlJL.soup.body.find(text=re.compile(r'期望从事职业:.*'))
         if text is not None:
             text = re.compile(r'期望从事职业:(.*)$').search(text).group(1).strip()
             text = re.compile(r'\(.*\)').sub('', text)      # remove embedded ()
@@ -80,7 +43,7 @@ class HtmlJL(ABCParser):
             for field in re.split('，|、', text):
                 fields.append(field.upper())
 
-        text = self.soup.body.find(text=re.compile(r'期望从事行业:.*'))
+        text = HtmlJL.soup.body.find(text=re.compile(r'期望从事行业:.*'))
         if text is not None:
             text = re.compile(r'期望从事行业:(.*)$').search(text).group(1).strip()
             text = re.compile(r'\(.*\)').sub('', text)      # remove embedded ()
@@ -90,8 +53,51 @@ class HtmlJL(ABCParser):
 
         return Objective(spots, salary, fields, industries)
 
-    def get_experiences(self):
-        text = self.soup.body.getText()
+    @staticmethod
+    def get_person(no):
+        text = HtmlJL.soup.body.find(text=re.compile(r'姓名:.*'))
+        name = re.compile(r'姓名:(.*)$').search(text).group(1)
+        name = re.sub(r'[^\w]', '', name)          # remove special chars
+        file = 'jl_{:07d}_{}.html'.format(no, name)
+
+        text = HtmlJL.soup.body.find(text=re.compile(r'性别:.*'))
+        gender = re.compile(r'性别:(.*)').search(text).group(1)
+
+        text = HtmlJL.soup.body.find(text=re.compile(r'出生日期:.*'))
+        mo = re.compile(r'出生日期:\D*(\d{4})\D*(\d{1,2})\D*(\d{1,2})?\D*').search(text)    # ? to a optional group
+        if mo.group(3) is None:
+            birth = datetime(int(mo.group(1)), int(mo.group(2)), 15)
+        else:
+            birth = datetime(int(mo.group(1)), int(mo.group(2)), int(mo.group(3)))
+
+        text = HtmlJL.soup.body.find(text=re.compile(r'手机号码:.*'))
+        phone = re.compile(r'手机号码:(.*)').search(text).group(1).strip()
+
+        email = None
+        text = HtmlJL.soup.body.find(text=re.compile(r'Email:.*'))
+        mo = re.compile(r'Email:(.*)').search(text)
+        if mo is not None:
+            email = mo.group(1).strip()
+
+        try:
+            text = HtmlJL.soup.body.find(text=re.compile(r'学历:.*'))
+            text = re.compile(r'学历:(.*)').search(text).group(1).strip()
+            education = Education.educationList.index(text.upper()) + 1
+        except ValueError:
+            education = -1
+
+        try:
+            text = HtmlJL.soup.body.find(text=re.compile(r'工作经验:.*'))
+            a = re.compile(r'\d{1,2}').findall(text)
+            years = int(a[-1])          # -1 is last one
+        except IndexError:
+            years = -1
+
+        return Person(file, name, gender, birth, phone, email, education, years, HtmlJL.get_objective())
+
+    @staticmethod
+    def get_experiences():
+        text = HtmlJL.soup.body.getText()
         mo = re.compile(r'工作经历(:|：)(.*)项目经验', re.DOTALL).search(text)
         if mo is None:
             return []
@@ -118,8 +124,9 @@ class HtmlJL(ABCParser):
             experiences.append(Experience(date1, date2, company, company_desc, job, job_desc))
         return experiences
 
-    def get_projects(self):
-        text = self.soup.body.getText()
+    @staticmethod
+    def get_projects():
+        text = HtmlJL.soup.body.getText()
         mo = re.compile(r'项目经验:(.*)教育经历', re.DOTALL).search(text)
         if mo is None:
             return []
@@ -152,8 +159,9 @@ class HtmlJL(ABCParser):
             projects.append(Project(date1, date2, name, description, duty))
         return projects
 
-    def get_educations(self):
-        text = self.soup.body.getText()
+    @staticmethod
+    def get_educations():
+        text = HtmlJL.soup.body.getText()
         mo = re.compile(r'教育经历:(.*)语言水平', re.DOTALL).search(text)
         if mo is None:
             return []
@@ -178,8 +186,9 @@ class HtmlJL(ABCParser):
             educations.append(Education(date1, date2, school, major, degree))
         return educations
 
-    def get_skills(self):
-        text = self.soup.body.getText()
+    @staticmethod
+    def get_skills():
+        text = HtmlJL.soup.body.getText()
         mo = re.compile(r'技能:(.*)', re.DOTALL).search(text)
         if mo is None:
             return []
@@ -199,17 +208,23 @@ class HtmlJL(ABCParser):
                 pass
         return skills
 
+    @staticmethod
+    def new_resume(html, no):
+        HtmlJL.soup = BeautifulSoup(open(html), 'lxml')
+        return Resume(HtmlJL.get_person(no), HtmlJL.get_experiences(), HtmlJL.get_projects(),
+                      HtmlJL.get_educations(), HtmlJL.get_skills())
+
 
 def main():
     folder = '/home/xixisun/suzy/shoulie/resumes/jl'
     # file = '10022353-季文清.html'
-    # file = '10052356-安敬辉.html'
+    file = 'jl_0013542_安敬辉.html'
     # file = 'jm329830852r90250000000-朱昭卿.html'
     # file = 'jm615458412r90250000000-曾德阳.html'
     # file = 'jm375383835r90250000000-姜丽婷.html'
-    file = 'jr107601526r90000000000-胡跃群.html'
-    parser = HtmlJL(os.path.join(folder, file), 1)
-    resume = parser.new_resume()
+    # parser = HtmlJL(os.path.join(folder, file), 1)
+    # resume = parser.new_resume()
+    resume = HtmlJL.new_resume(os.path.join(folder, file), 1)
     pprint(resume.to_dictionary())
     # print(json.dumps(resume.to_dictionary()))
 

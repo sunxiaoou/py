@@ -2,10 +2,11 @@
 
 import re
 import os
+from bs4 import BeautifulSoup
 from datetime import datetime
 from pprint import pprint
 
-from abcParser import ABCParser
+from resume import Resume
 from resume import Person
 from resume import Objective
 from resume import Experience
@@ -13,22 +14,60 @@ from resume import Project
 from resume import Education
 
 
-class HtmlParser(ABCParser):
+class HtmlZljl:
+    soup = None
 
-    def get_person(self):
-        elements = self.soup.select('.resume-preview-main-title [class$=fc6699cc]')
+    @staticmethod
+    def get_objective():
+        elements = HtmlZljl.soup.select('.resume-preview-top')
+        texts = elements[0].getText().strip().split('\n')
+        items = []
+        regex = re.compile(r'^$|[：]$')
+        for text in texts:
+            if regex.search(text) is None:
+                items.append(text)
+
+        spots = []
+        for spot in re.split('，|、', items[0]):
+            spots.append(spot)
+
+        salary = -1
+        try:
+            salaries = re.compile(r'\d+').findall(items[1])
+            salary = int(salaries[-1])
+        except IndexError:
+            pass
+
+        fields = []
+        try:
+            for field in re.split('，|、', items[4]):
+                fields.append(field.upper())
+        except IndexError:
+            pass
+
+        industries = []
+        try:
+            for industry in re.split('，|、', items[5]):
+                industries.append(industry)
+        except IndexError:
+            pass
+        return Objective(spots, salary, fields, industries)
+
+    @staticmethod
+    def get_person(no):
+        elements = HtmlZljl.soup.select('.resume-preview-main-title [class$=fc6699cc]')
         name = elements[0].getText()
         name = re.sub(r'[^\w]', '', name)          # remove special chars
         if not name or len(name) > 10:
             raise ValueError
-        file = 'zljl_{:07d}_{}.html'.format(self.no, name)
+        file = 'zljl_{:07d}_{}.html'.format(no, name)
 
-        elements = self.soup.select('.summary-bottom')
+        elements = HtmlZljl.soup.select('.summary-bottom')
         mo = re.compile(r'\D(\d{11})\D').search(elements[0].getText())
         phone = mo.group(1)
 
         try:
-            elements = self.soup.select('.summary-bottom')
+            elements = HtmlZljl.soup.select('.summary-bottom')
             regex = re.compile(r'''(
                     [a-zA-Z0-9._%+-]+      # username
                     @                      # @ symbol
@@ -39,7 +78,7 @@ class HtmlParser(ABCParser):
         except AttributeError:
             email = ''
 
-        elements = self.soup.select('.summary-top')
+        elements = HtmlZljl.soup.select('.summary-top')
         texts = elements[0].getText().split('\n')
         # print(":".join("{:02x}".format(ord(c)) for c in text))
         a = re.split(u'\xa0\xa0\xa0\xa0', texts[1])     # 4 non Break Spaces
@@ -65,39 +104,11 @@ class HtmlParser(ABCParser):
         except (IndexError, ValueError):
             education = -1
 
-        return Person(file, name, gender, birth, phone, email, education, years, self.get_objective())
+        return Person(file, name, gender, birth, phone, email, education, years, HtmlZljl.get_objective())
 
-    def get_objective(self):
-        elements = self.soup.select('.resume-preview-top')
-        texts = elements[0].getText().strip().split('\n')
-        items = []
-        regex = re.compile(r'^$|[：]$')
-        for text in texts:
-            if regex.search(text) is None:
-                items.append(text)
-
-        spots = []
-        for spot in re.split('，|、', items[0]):
-            spots.append(spot)
-
-        salary = -1
-        try:
-            salaries = re.compile(r'\d+').findall(items[1])
-            salary = int(salaries[-1])
-        except IndexError:
-            pass
-
-        fields = []
-        for field in re.split('，|、', items[4]):
-            fields.append(field.upper())
-
-        industries = []
-        for industry in re.split('，|、', items[5]):
-            industries.append(industry)
-        return Objective(spots, salary, fields, industries)
-
-    def get_experiences(self):
-        tag = self.soup.find('h3', text='工作经历')
+    @staticmethod
+    def get_experiences():
+        tag = HtmlZljl.soup.find('h3', text='工作经历')
         if tag is None:
             return []
         tag = tag.find_parent()
@@ -132,8 +143,9 @@ class HtmlParser(ABCParser):
             experiences.append(Experience(date1, date2, company, company_desc, job, job_desc))
         return experiences
 
-    def get_projects(self):
-        tag = self.soup.find('h3', text='项目经历')
+    @staticmethod
+    def get_projects():
+        tag = HtmlZljl.soup.find('h3', text='项目经历')
         if tag is None:
             return []
         tag = tag.find_parent()
@@ -168,8 +180,9 @@ class HtmlParser(ABCParser):
             projects.append(Project(date1, date2, name, description, duty))
         return projects
 
-    def get_educations(self):
-        tag = self.soup.find('h3', text='教育经历')
+    @staticmethod
+    def get_educations():
+        tag = HtmlZljl.soup.find('h3', text='教育经历')
         if tag is None:
             return []
         tag = tag.find_parent()
@@ -192,8 +205,9 @@ class HtmlParser(ABCParser):
             educations.append(Education(date1, date2, school, major, degree))
         return educations
 
-    def get_skills(self):
-        tag = self.soup.find('h3', text='专业技能')
+    @staticmethod
+    def get_skills():
+        tag = HtmlZljl.soup.find('h3', text='专业技能')
         if tag is None:
             return []
         tag = tag.find_next_sibling()
@@ -214,6 +228,12 @@ class HtmlParser(ABCParser):
                 pass
         return list(set(skills))        # no duplicate
 
+    @staticmethod
+    def new_resume(html, no):
+        HtmlZljl.soup = BeautifulSoup(open(html), 'lxml')
+        return Resume(HtmlZljl.get_person(no), HtmlZljl.get_experiences(), HtmlZljl.get_projects(),
+                      HtmlZljl.get_educations(), HtmlZljl.get_skills())
+
 
 def main():
     folder = '/home/xixisun/suzy/shoulie/resumes/zljl'
@@ -222,8 +242,9 @@ def main():
     # file = '智联招聘_陶秀玲_法务部部长_中文_20130502_24441247.html'
     # file = '朱斌国简历_智联招聘.html'
     file = 'zljl0435506.html'
-    parser = HtmlParser(os.path.join(folder, file), 1)
-    resume = parser.new_resume()
+    # parser = HtmlParser(os.path.join(folder, file), 1)
+    # resume = parser.new_resume()
+    resume = HtmlZljl.new_resume(os.path.join(folder, file), 2)
     pprint(resume.to_dictionary())
 
 if __name__ == "__main__":
