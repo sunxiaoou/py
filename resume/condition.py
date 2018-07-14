@@ -6,7 +6,7 @@ from resume import Keys
 
 
 class Condition:
-    spot = industry = field = company = skill = school = school_rank = major = None
+    spot = industry = field = company = skills = school = school_rank = major = None
     education1 = education2 = year1 = year2 = age1 = age2 = None
 
     @staticmethod
@@ -32,11 +32,14 @@ class Condition:
         Condition.industry = Condition.input_string('行业')
         Condition.field = Condition.input_string('职业')
         Condition.company = Condition.input_string('（前）雇主')
-        Condition.skill = Condition.input_string('技能')
-        if Condition.skill is not None:
-            Condition.skill = Condition.skill.upper()
+        Condition.skills = []
+        for i in range(3):
+            skill = Condition.input_string('技能-' + str(i + 1))
+            if skill is None:
+                break
+            Condition.skills.append(skill.upper())
+        Condition.school_rank = Condition.input_number('毕业学校类别（1:一般 2:211 3:985）以上（含）')
         Condition.school = Condition.input_string('学校')
-        Condition.school_rank = Condition.input_number('毕业学校类别（1:一般 2:211 3:985）')
         Condition.major = Condition.input_string('专业')
         Condition.education1 = Condition.input_number('学历（1:大专 2:本科 3:硕士 4:MBA 5:EMBA 6:博士 7:博士后）以上（含）')
         Condition.education2 = Condition.input_number('学历（1:大专 2:本科 3:硕士 4:MBA 5:EMBA 6:博士 7:博士后）以下')
@@ -89,22 +92,33 @@ class Condition:
         conditions = {}
         if Condition.spot is not None:
             conditions[Keys.spots] = Condition.spot
+
         if Condition.industry is not None:
             conditions[Keys.industries] = {'$regex': Condition.industry}
+
         if Condition.field is not None:
             conditions[Keys.fields] = {'$regex': Condition.field}
+
         if Condition.company is not None:
             conditions[Keys.companies] = {'$regex': Condition.company}
-        if Condition.skill is not None:
+
+        if Condition.skills:
             """
             conditions['$or'] = [{Keys.skills + '.' + Keys.skill_level2: Condition.skill},
                                  {Keys.skills + '.' + Keys.skill_level3: Condition.skill}]
-            """
             conditions[Keys.skills] = {'$regex': Condition.skill}
+            """
+            conditions[Keys.skills] = {'$all': Condition.skills}
+
+        # if Condition.school_rank is not None:
+            # conditions[Keys.educations + '.' + Keys.school_rank] = Condition.school_rank
+        c = Condition.range_int(Condition.school_rank, None)
+        if c is not None:
+            conditions[Keys.educations + '.' + Keys.school_rank] = c
+
         if Condition.school is not None:
             conditions[Keys.educations + '.' + Keys.schools] = {'$regex': Condition.school}
-        if Condition.school_rank is not None:
-            conditions[Keys.educations + '.' + Keys.school_rank] = Condition.school_rank
+
         if Condition.major is not None:
             conditions[Keys.educations + '.' + Keys.majors] = {'$regex': Condition.major}
 

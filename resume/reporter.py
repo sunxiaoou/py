@@ -22,7 +22,7 @@ class Reporter:
 
     @staticmethod
     def name_html(name, file):
-        html_type = re.compile(r'(\D+)\d+').search(file).group(1)
+        html_type = re.compile(r'^(\w+)_\d+').search(file).group(1)
         full_file_name = os.path.join(Reporter.base_folder, html_type, file)
         return '<a href="file://{}"title="resume">{}</a><br>'.format(full_file_name, name)
 

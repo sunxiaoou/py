@@ -15,7 +15,12 @@ from resume import Education
 
 
 class HtmlJL:
+    type = 'jl'
     soup = None
+
+    @staticmethod
+    def get_type():
+        return HtmlJL.type
 
     @staticmethod
     def get_objective():
@@ -58,7 +63,7 @@ class HtmlJL:
         text = HtmlJL.soup.body.find(text=re.compile(r'姓名:.*'))
         name = re.compile(r'姓名:(.*)$').search(text).group(1)
         name = re.sub(r'[^\w]', '', name)          # remove special chars
-        file = 'jl_{:07d}_{}.html'.format(no, name)
+        file = '{}_{:07d}_{}.html'.format(HtmlJL.type, no, name)
 
         text = HtmlJL.soup.body.find(text=re.compile(r'性别:.*'))
         gender = re.compile(r'性别:(.*)').search(text).group(1)
@@ -218,12 +223,10 @@ class HtmlJL:
 def main():
     folder = '/home/xixisun/suzy/shoulie/resumes/jl'
     # file = '10022353-季文清.html'
-    file = 'jl_0013542_安敬辉.html'
+    file = 'jl_0124952_安敬辉.html'
     # file = 'jm329830852r90250000000-朱昭卿.html'
     # file = 'jm615458412r90250000000-曾德阳.html'
     # file = 'jm375383835r90250000000-姜丽婷.html'
-    # parser = HtmlJL(os.path.join(folder, file), 1)
-    # resume = parser.new_resume()
     resume = HtmlJL.new_resume(os.path.join(folder, file), 1)
     pprint(resume.to_dictionary())
     # print(json.dumps(resume.to_dictionary()))

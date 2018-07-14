@@ -8,7 +8,7 @@ import sys
 import traceback
 
 from bson import json_util
-from htmlParser import HtmlParser
+from htmlZljl import HtmlZljl
 from htmlJL import HtmlJL
 from resume import Keys
 
@@ -37,7 +37,8 @@ def test_one():
 def parse():
     base_folder = '/home/xixisun/suzy/shoulie/resumes'
     # base_folder = '/scratch/xixisun/shoulie/resumes'
-    html_type = 'jl'
+    parser = HtmlJL
+    html_type = parser.get_type()
     html_folder = os.path.join(base_folder, html_type)
     err_folder = os.path.join(base_folder, html_type + 'err')
     if not os.path.exists(err_folder):
@@ -50,10 +51,8 @@ def parse():
             if os.path.splitext(fileName)[1] != '.html':
                 continue
             fn = os.path.join(folderName, fileName)
-            # parser = HtmlParser(fn, i)
-            parser = HtmlJL(fn, i)
             try:
-                resume = parser.new_resume()
+                resume = parser.new_resume(fn, i)
                 dictionary = resume.to_dictionary()
             except:
                 print(traceback.format_exc())

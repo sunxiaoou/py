@@ -15,7 +15,12 @@ from resume import Education
 
 
 class HtmlZljl:
+    type = 'zljl'
     soup = None
+
+    @staticmethod
+    def get_type():
+        return HtmlZljl.type
 
     @staticmethod
     def get_objective():
@@ -60,7 +65,7 @@ class HtmlZljl:
         name = re.sub(r'[^\w]', '', name)          # remove special chars
         if not name or len(name) > 10:
             raise ValueError
-        file = 'zljl_{:07d}_{}.html'.format(no, name)
+        file = '{}_{:07d}_{}.html'.format(HtmlZljl.type, no, name)
 
         elements = HtmlZljl.soup.select('.summary-bottom')
         mo = re.compile(r'\D(\d{11})\D').search(elements[0].getText())
@@ -237,13 +242,8 @@ class HtmlZljl:
 
 def main():
     folder = '/home/xixisun/suzy/shoulie/resumes/zljl'
-    # file = '1001275097619586627470818947.html'
-    # file = '10157404450912834562061694406.html'
-    # file = '智联招聘_陶秀玲_法务部部长_中文_20130502_24441247.html'
-    # file = '朱斌国简历_智联招聘.html'
-    file = 'zljl0435506.html'
-    # parser = HtmlParser(os.path.join(folder, file), 1)
-    # resume = parser.new_resume()
+    # file = 'zljl_0000009_史京绮.html'
+    file = 'zljl_0031286_刘卓.html'
     resume = HtmlZljl.new_resume(os.path.join(folder, file), 2)
     pprint(resume.to_dictionary())
 
