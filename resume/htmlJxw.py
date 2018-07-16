@@ -256,29 +256,21 @@ class HtmlJxw:
 
     @staticmethod
     def get_skills():
-        """
-        tag = HtmlJxw.soup.find('h3', text='专业技能')
+        tag = HtmlJxw.soup.find('h3', text='自我评价')
         if tag is None:
-            return []
+            return None
+        tag = tag.find_parent()
+        if tag['class'][0] != 'title_h3v6':
+            return None
         tag = tag.find_next_sibling()
-        if not tag['class'][0].startswith('resume-preview-dl'):
+        if tag.name != 'table':
             return []
 
         skills = []
-        texts = tag.getText().split('\n')
-        for text in texts:
-            if re.compile('^ *$').search(text) is not None:
-                continue
-            a = re.split(r'：| \| ', text)
-            try:
-                if a[1] == '良好' or a[1] == '熟练' or a[1] == '精通':
-                    for skill in re.compile(r'[\da-zA-Z/#]+').findall(a[0]):
-                        skills.append(skill.upper())
-            except IndexError:
-                pass
+        for skill in re.compile(r'([a-zA-Z]+)([a-zA-Z\.\d/#]*)').findall(tag.getText()):
+            skills.append(skill[0].upper())     # skill is a tuple
+
         return list(set(skills))        # no duplicate
-        """
-        return []
 
     @staticmethod
     def new_resume(html, no):
@@ -289,8 +281,8 @@ class HtmlJxw:
 
 def main():
     folder = os.path.join('/home/xixisun/suzy/shoulie/resumes', HtmlJxw.type)
-    # file = '000258b20ff44361831ab87ad389cc16.html'
-    file = '74e547d642454e8f92022b72a5300741.html'
+    file = '000258b20ff44361831ab87ad389cc16.html'
+    # file = '74e547d642454e8f92022b72a5300741.html'
     resume = HtmlJxw.new_resume(os.path.join(folder, file), 2)
     pprint(resume.to_dictionary())
 
