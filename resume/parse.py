@@ -8,8 +8,9 @@ import sys
 import traceback
 
 from bson import json_util
-from htmlZljl import HtmlZljl
 from htmlJL import HtmlJL
+from htmlJxw import HtmlJxw
+from htmlZljl import HtmlZljl
 from resume import Keys
 
 
@@ -37,7 +38,7 @@ def test_one():
 def parse():
     base_folder = '/home/xixisun/suzy/shoulie/resumes'
     # base_folder = '/scratch/xixisun/shoulie/resumes'
-    parser = HtmlJL
+    parser = HtmlJxw
     html_type = parser.get_type()
     html_folder = os.path.join(base_folder, html_type)
     err_folder = os.path.join(base_folder, html_type + 'err')
