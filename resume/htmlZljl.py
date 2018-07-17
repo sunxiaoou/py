@@ -97,19 +97,22 @@ class HtmlZljl:
 
         try:
             mo = re.compile(r'(\d{1,2})年工作经验').search(a[2])
-            years = int(mo.group(1))
+            delta = int(mo.group(1))
+            text = HtmlZljl.soup.find(id='resumeUpdateTime').getText()
+            year2 = int(re.compile(r'(\d{4}).').search(text).group(1))
+            year = year2 - delta
         except AttributeError:
-            years = -1
+            year = -1
 
         try:
-            if years == -1:
+            if year == -1:
                 education = Education.educationList.index(a[2].upper()) + 1
             else:
                 education = Education.educationList.index(a[3].upper()) + 1
         except (IndexError, ValueError):
             education = -1
 
-        return Person(file, name, gender, birth, phone, email, education, years, HtmlZljl.get_objective())
+        return Person(file, name, gender, birth, phone, email, education, year, HtmlZljl.get_objective())
 
     @staticmethod
     def get_experiences():
@@ -242,8 +245,8 @@ class HtmlZljl:
 
 def main():
     folder = '/home/xixisun/suzy/shoulie/resumes/zljl'
-    # file = 'zljl_0000009_史京绮.html'
-    file = 'zljl_0031286_刘卓.html'
+    file = 'zljl_0000009_史京绮.html'
+    # file = 'zljl_0031286_刘卓.html'
     resume = HtmlZljl.new_resume(os.path.join(folder, file), 2)
     pprint(resume.to_dictionary())
 

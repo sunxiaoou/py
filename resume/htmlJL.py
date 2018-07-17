@@ -94,11 +94,14 @@ class HtmlJL:
         try:
             text = HtmlJL.soup.body.find(text=re.compile(r'工作经验:.*'))
             a = re.compile(r'\d{1,2}').findall(text)
-            years = int(a[-1])          # -1 is last one
+            delta = int(a[-1])          # -1 is last one
+            text = HtmlJL.soup.body.find(text=re.compile(r'更新日期:.*'))
+            year2 = int(re.compile(r'(\d{4})-').search(text).group(1))
+            year = year2 - delta
         except IndexError:
-            years = -1
+            year = -1
 
-        return Person(file, name, gender, birth, phone, email, education, years, HtmlJL.get_objective())
+        return Person(file, name, gender, birth, phone, email, education, year, HtmlJL.get_objective())
 
     @staticmethod
     def get_experiences():
@@ -222,11 +225,8 @@ class HtmlJL:
 
 def main():
     folder = '/home/xixisun/suzy/shoulie/resumes/jl'
-    # file = '10022353-季文清.html'
-    file = 'jl_0124952_安敬辉.html'
-    # file = 'jm329830852r90250000000-朱昭卿.html'
-    # file = 'jm615458412r90250000000-曾德阳.html'
-    # file = 'jm375383835r90250000000-姜丽婷.html'
+    file = 'jl_0085242_季文清.html'
+    # file = 'jl_0124952_安敬辉.html'
     resume = HtmlJL.new_resume(os.path.join(folder, file), 1)
     pprint(resume.to_dictionary())
     # print(json.dumps(resume.to_dictionary()))

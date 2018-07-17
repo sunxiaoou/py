@@ -2,6 +2,7 @@
 
 from schools import Schools
 
+
 class Keys:
     spots = '期望工作地点'
     salary = '期望月薪'
@@ -15,6 +16,7 @@ class Keys:
     email = '电子邮箱'
     education = '学历'
     years = '工作年限'
+    year = '参加工作年份'
     school_rank = '学校类别'
     companies = '雇主'
     educations = '教育经历'
@@ -54,7 +56,7 @@ class Objective:
 
 
 class Person:
-    def __init__(self, file, name, gender, birth, phone, email, education, years, objective):
+    def __init__(self, file, name, gender, birth, phone, email, education, year, objective):
         self.file = file
         self.name = name
         self.gender = gender
@@ -62,18 +64,18 @@ class Person:
         self.phone = phone
         self.email = email
         self.education = education
-        self.years = years
+        self.year = year
         self.objective = objective
 
     def __str__(self):
         return self.file + '\n' +\
                self.name + ', ' + self.gender + ', ' + self.birth + ', ' + self.phone + ', ' + self.email + '\n' +\
-               self.education + self.years + str(self.objective)
+               self.education + self.year + str(self.objective)
 
     def to_dictionary(self):
         person = {Keys.file: self.file, Keys.name: self.name, Keys.gender: self.gender, Keys.birth: self.birth,
                   Keys.phone: self.phone, Keys.email: self.email, Keys.education: self.education,
-                  Keys.years: self.years}
+                  Keys.year: self.year}
         return {**person, **self.objective.to_dictionary()}     # merge 2 dictionaries
 
 

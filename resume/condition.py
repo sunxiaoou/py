@@ -1,12 +1,13 @@
 #! /usr/bin/python3
 
+import sys
 from datetime import datetime
 from pprint import pprint
 from resume import Keys
 
 
 class Condition:
-    spot = industry = field = company = skills = school = school_rank = major = None
+    name = spot = industry = field = company = skills = school = school_rank = major = None
     education1 = education2 = year1 = year2 = age1 = age2 = None
 
     @staticmethod
@@ -27,26 +28,37 @@ class Condition:
             print('请输入数字')
 
     @staticmethod
+    def interrupt():
+        print('Input "y" to exit, any others to continue:')
+        flag = input()
+        if flag == 'y' or flag == 'Y':
+            sys.exit(0)
+
+    @staticmethod
     def input():
-        Condition.spot = Condition.input_string('城市')
-        Condition.industry = Condition.input_string('行业')
-        Condition.field = Condition.input_string('职业')
-        Condition.company = Condition.input_string('（前）雇主')
-        Condition.skills = []
-        for i in range(3):
-            skill = Condition.input_string('技能-' + str(i + 1))
-            if skill is None:
-                break
-            Condition.skills.append(skill.upper())
-        Condition.school_rank = Condition.input_number('毕业学校类别（1:一般 2:211 3:985）以上（含）')
-        Condition.school = Condition.input_string('学校')
-        Condition.major = Condition.input_string('专业')
-        Condition.education1 = Condition.input_number('学历（1:大专 2:本科 3:硕士 4:MBA 5:EMBA 6:博士 7:博士后）以上（含）')
-        Condition.education2 = Condition.input_number('学历（1:大专 2:本科 3:硕士 4:MBA 5:EMBA 6:博士 7:博士后）以下')
-        Condition.year1 = Condition.input_number('工作经验_年以上（含）')
-        Condition.year2 = Condition.input_number('工作经验_年以下')
-        Condition.age1 = Condition.input_number('年龄_岁以上（含）')
-        Condition.age2 = Condition.input_number('年龄_岁以下')
+        try:
+            Condition.name = Condition.input_string('姓名')
+            Condition.spot = Condition.input_string('城市')
+            Condition.industry = Condition.input_string('行业')
+            Condition.field = Condition.input_string('职业')
+            Condition.company = Condition.input_string('（前）雇主')
+            Condition.skills = []
+            for i in range(3):
+                skill = Condition.input_string('技能-' + str(i + 1))
+                if skill is None:
+                    break
+                Condition.skills.append(skill.upper())
+            Condition.school_rank = Condition.input_number('毕业学校类别（1:一般 2:211 3:985）以上（含）')
+            Condition.school = Condition.input_string('学校')
+            Condition.major = Condition.input_string('专业')
+            Condition.education1 = Condition.input_number('学历（1:大专 2:本科 3:硕士 4:MBA 5:EMBA 6:博士 7:博士后）以上（含）')
+            # Condition.education2 = Condition.input_number('学历（1:大专 2:本科 3:硕士 4:MBA 5:EMBA 6:博士 7:博士后）以下')
+            Condition.year1 = Condition.input_number('工作经验_年以上（含）')
+            # Condition.year2 = Condition.input_number('工作经验_年以下')
+            # Condition.age1 = Condition.input_number('年龄_岁以上（含）')
+            Condition.age2 = Condition.input_number('年龄_岁以下')
+        except KeyboardInterrupt:
+            Condition.interrupt()
 
     @staticmethod
     def __str__():
@@ -90,6 +102,9 @@ class Condition:
         Condition.input()
 
         conditions = {}
+        if Condition.name is not None:
+            conditions[Keys.name] = Condition.name
+
         if Condition.spot is not None:
             conditions[Keys.spots] = Condition.spot
 
