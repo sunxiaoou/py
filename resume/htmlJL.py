@@ -23,6 +23,11 @@ class HtmlJL:
         return HtmlJL.type
 
     @staticmethod
+    def get_year():
+        text = HtmlJL.soup.body.find(text=re.compile(r'更新日期:.*'))
+        return int(re.compile(r'(\d{4})-').search(text).group(1))
+
+    @staticmethod
     def get_objective():
         fields = industries = None
         salary = -1
@@ -95,10 +100,8 @@ class HtmlJL:
             text = HtmlJL.soup.body.find(text=re.compile(r'工作经验:.*'))
             a = re.compile(r'\d{1,2}').findall(text)
             delta = int(a[-1])          # -1 is last one
-            text = HtmlJL.soup.body.find(text=re.compile(r'更新日期:.*'))
-            year2 = int(re.compile(r'(\d{4})-').search(text).group(1))
-            year = year2 - delta
-        except IndexError:
+            year = HtmlJL.get_year() - delta
+        except (AttributeError, IndexError):
             year = -1
 
         return Person(file, name, gender, birth, phone, email, education, year, HtmlJL.get_objective())
@@ -172,7 +175,7 @@ class HtmlJL:
         text = HtmlJL.soup.body.getText()
         mo = re.compile(r'教育经历:(.*)语言水平', re.DOTALL).search(text)
         if mo is None:
-            return []
+            raise ValueError    # no educations
         educations = []
         texts = mo.group(1).split('\n')
         for text in texts:
@@ -184,12 +187,15 @@ class HtmlJL:
             # print(":".join("{:02x}".format(ord(c)) for c in text))
             try:
                 a = re.split('&nbsp|- ', text)
-                date1 = a[0]
-                date2 = a[1]
+                date1 = int(re.compile(r'(\d{4})').search(a[0]).group(1))
+                if a[1] == '至今':
+                    date2 = HtmlJL.get_year()
+                else:
+                    date2 = int(re.compile(r'(\d{4})').search(a[1]).group(1))
                 school = a[2]
                 major = a[4]
                 degree = Education.educationList.index(a[5].upper()) + 1
-            except (IndexError, ValueError):
+            except (AttributeError, IndexError, ValueError):
                 pass
             educations.append(Education(date1, date2, school, major, degree))
         return educations
@@ -219,14 +225,33 @@ class HtmlJL:
     @staticmethod
     def new_resume(html, no):
         HtmlJL.soup = BeautifulSoup(open(html), 'lxml')
-        return Resume(HtmlJL.get_person(no), HtmlJL.get_experiences(), HtmlJL.get_projects(),
-                      HtmlJL.get_educations(), HtmlJL.get_skills())
+
+        person = HtmlJL.get_person(no)
+        experiences = HtmlJL.get_experiences()
+        projects = HtmlJL.get_projects()
+        educations = HtmlJL.get_educations()
+        skills = HtmlJL.get_skills()
+
+        if person.year == -1:
+            end_dates = []
+            for education in educations:
+                end_dates.append(education.end_date)
+            person.year = max(end_dates)
+
+        if person.education == -1:
+            degrees = []
+            for education in educations:
+                degrees.append(education.degree)
+            person.education = max(degrees)
+
+        return Resume(person, experiences, projects, educations, skills)
 
 
 def main():
     folder = '/home/xixisun/suzy/shoulie/resumes/jl'
-    file = 'jl_0085242_季文清.html'
+    # file = 'jl_0085242_季文清.html'
     # file = 'jl_0124952_安敬辉.html'
+    file = 'jl_0000123_郝锐强.html'
     resume = HtmlJL.new_resume(os.path.join(folder, file), 1)
     pprint(resume.to_dictionary())
     # print(json.dumps(resume.to_dictionary()))

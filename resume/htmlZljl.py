@@ -23,6 +23,11 @@ class HtmlZljl:
         return HtmlZljl.type
 
     @staticmethod
+    def get_year():
+        text = HtmlZljl.soup.find(id='resumeUpdateTime').getText()
+        return int(re.compile(r'(\d{4}).').search(text).group(1))
+
+    @staticmethod
     def get_objective():
         elements = HtmlZljl.soup.select('.resume-preview-top')
         texts = elements[0].getText().strip().split('\n')
@@ -98,9 +103,7 @@ class HtmlZljl:
         try:
             mo = re.compile(r'(\d{1,2})年工作经验').search(a[2])
             delta = int(mo.group(1))
-            text = HtmlZljl.soup.find(id='resumeUpdateTime').getText()
-            year2 = int(re.compile(r'(\d{4}).').search(text).group(1))
-            year = year2 - delta
+            year = HtmlZljl.get_year() - delta
         except AttributeError:
             year = -1
 
@@ -192,10 +195,10 @@ class HtmlZljl:
     def get_educations():
         tag = HtmlZljl.soup.find('h3', text='教育经历')
         if tag is None:
-            return []
+            raise ValueError    # no educations
         tag = tag.find_parent()
         if not tag['class'][0].startswith('resume-preview-all'):
-            return []
+            raise ValueError    # no educations
 
         educations = []
         for element in tag.findAll(class_='resume-preview-dl'):
@@ -203,8 +206,11 @@ class HtmlZljl:
             text = element.getText().strip()
             a = re.split(u'\xa0\xa0| - ', text)
             try:
-                date1 = a[0]
-                date2 = a[1]
+                date1 = int(re.compile(r'(\d{4})').search(a[0]).group(1))
+                if a[1] == '至今':
+                    date2 = HtmlZljl.get_year()
+                else:
+                    date2 = int(re.compile(r'(\d{4})').search(a[1]).group(1))
                 school = a[2]
                 major = a[3]
                 degree = Education.educationList.index(a[4].upper()) + 1
@@ -239,8 +245,26 @@ class HtmlZljl:
     @staticmethod
     def new_resume(html, no):
         HtmlZljl.soup = BeautifulSoup(open(html), 'lxml')
-        return Resume(HtmlZljl.get_person(no), HtmlZljl.get_experiences(), HtmlZljl.get_projects(),
-                      HtmlZljl.get_educations(), HtmlZljl.get_skills())
+
+        person = HtmlZljl.get_person(no)
+        experiences = HtmlZljl.get_experiences()
+        projects = HtmlZljl.get_projects()
+        educations = HtmlZljl.get_educations()
+        skills = HtmlZljl.get_skills()
+
+        if person.year == -1:
+            end_dates = []
+            for education in educations:
+                end_dates.append(education.end_date)
+            person.year = max(end_dates)
+
+        if person.education == -1:
+            degrees = []
+            for education in educations:
+                degrees.append(education.degree)
+            person.education = max(degrees)
+
+        return Resume(person, experiences, projects, educations, skills)
 
 
 def main():
