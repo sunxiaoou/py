@@ -24,8 +24,12 @@ class HtmlZljl:
 
     @staticmethod
     def get_year():
-        text = HtmlZljl.soup.find(id='resumeUpdateTime').getText()
-        return int(re.compile(r'(\d{4})').search(text).group(1))
+        try:
+            text = HtmlZljl.soup.find(id='resumeUpdateTime').getText()
+            year = int(re.compile(r'(\d{4})').search(text).group(1))
+        except AttributeError:
+            year = 2015
+        return year
 
     @staticmethod
     def get_objective():
