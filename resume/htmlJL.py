@@ -25,7 +25,7 @@ class HtmlJL:
     @staticmethod
     def get_year():
         text = HtmlJL.soup.body.find(text=re.compile(r'更新日期:.*'))
-        return int(re.compile(r'(\d{4})-').search(text).group(1))
+        return int(re.compile(r'(\d{4})').search(text).group(1))
 
     @staticmethod
     def get_objective():
@@ -66,8 +66,8 @@ class HtmlJL:
     @staticmethod
     def get_person(no):
         text = HtmlJL.soup.body.find(text=re.compile(r'姓名:.*'))
-        name = re.compile(r'姓名:(.*)$').search(text).group(1)
-        name = re.sub(r'[^\w]', '', name)          # remove special chars
+        name = re.compile(r'姓名:\W*(\w+)').search(text).group(1)
+        # name = re.sub(r'[^\w]', '', name)          # remove special chars
         file = '{}_{:07d}_{}.html'.format(HtmlJL.type, no, name)
 
         text = HtmlJL.soup.body.find(text=re.compile(r'性别:.*'))
@@ -175,7 +175,7 @@ class HtmlJL:
         text = HtmlJL.soup.body.getText()
         mo = re.compile(r'教育经历:(.*)语言水平', re.DOTALL).search(text)
         if mo is None:
-            raise ValueError    # no educations
+            return []
         educations = []
         texts = mo.group(1).split('\n')
         for text in texts:
@@ -234,24 +234,31 @@ class HtmlJL:
 
         if person.year == -1:
             end_dates = []
-            for education in educations:
-                end_dates.append(education.end_date)
-            person.year = max(end_dates)
+            if educations:
+                for education in educations:
+                    end_dates.append(education.end_date)
+                person.year = max(end_dates)
+            else:
+                person.year = HtmlJL.get_year()
 
         if person.education == -1:
             degrees = []
-            for education in educations:
-                degrees.append(education.degree)
-            person.education = max(degrees)
+            if educations:
+                for education in educations:
+                    degrees.append(education.degree)
+                person.education = max(degrees)
+            else:
+                person.education = 0
 
         return Resume(person, experiences, projects, educations, skills)
 
 
 def main():
     folder = '/home/xixisun/suzy/shoulie/resumes/jl'
+    # file = 'jl_0000123_郝锐强.html'
+    # file = 'jl_0023037_王倩.html'
     # file = 'jl_0085242_季文清.html'
     file = 'jl_0124952_安敬辉.html'
-    # file = 'jl_0000123_郝锐强.html'
     resume = HtmlJL.new_resume(os.path.join(folder, file), 1)
     pprint(resume.to_dictionary())
     # print(json.dumps(resume.to_dictionary()))

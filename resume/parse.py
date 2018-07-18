@@ -3,6 +3,7 @@
 
 import json
 import os
+import re
 import shutil
 import sys
 import traceback
@@ -31,7 +32,7 @@ def test_one():
 def parse():
     base_folder = '/home/xixisun/suzy/shoulie/resumes'
     # base_folder = '/scratch/xixisun/shoulie/resumes'
-    parser = HtmlJxw
+    parser = HtmlJL
     html_type = parser.get_type()
     html_folder = os.path.join(base_folder, html_type)
     err_folder = os.path.join(base_folder, html_type + 'err')
@@ -46,7 +47,11 @@ def parse():
                 continue
             fn = os.path.join(folderName, fileName)
             try:
-                resume = parser.new_resume(fn, i)
+                mo = re.compile(re.escape(html_type) + r'_(\d{7})_\w+\.html').search(fileName)
+                if mo is not None:      # no need to change file name
+                    resume = parser.new_resume(fn, int(mo.group(1)))
+                else:
+                    resume = parser.new_resume(fn, i)
                 dictionary = resume.to_dictionary()
             except:
                 print(traceback.format_exc())
@@ -56,14 +61,15 @@ def parse():
             output.write(json.dumps(dictionary, default=json_util.default))
             output.write('\n')
             new_filename = dictionary.get(Keys.file)
-            os.rename(fn, os.path.join(folderName, new_filename))
-            print(fileName + ' to ' + new_filename)
+            if fileName != new_filename:
+                os.rename(fn, os.path.join(folderName, new_filename))
+                print(fileName + ' to ' + new_filename)
             i += 1
             # if i == 1000:
             # break
     output.close()
 
 
-test_one()
-# parse()
+# test_one()
+parse()
 sys.exit(0)

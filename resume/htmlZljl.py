@@ -25,7 +25,7 @@ class HtmlZljl:
     @staticmethod
     def get_year():
         text = HtmlZljl.soup.find(id='resumeUpdateTime').getText()
-        return int(re.compile(r'(\d{4}).').search(text).group(1))
+        return int(re.compile(r'(\d{4})').search(text).group(1))
 
     @staticmethod
     def get_objective():
@@ -66,8 +66,9 @@ class HtmlZljl:
     @staticmethod
     def get_person(no):
         elements = HtmlZljl.soup.select('.resume-preview-main-title [class$=fc6699cc]')
-        name = elements[0].getText()
-        name = re.sub(r'[^\w]', '', name)          # remove special chars
+        text = elements[0].getText()
+        name = re.compile(r'\W*(\w+)').search(text).group(1)
+        # name = re.sub(r'[^\w]', '', name)          # remove special chars
         if not name or len(name) > 10:
             raise ValueError
         file = '{}_{:07d}_{}.html'.format(HtmlZljl.type, no, name)
@@ -195,10 +196,10 @@ class HtmlZljl:
     def get_educations():
         tag = HtmlZljl.soup.find('h3', text='教育经历')
         if tag is None:
-            raise ValueError    # no educations
+            return []
         tag = tag.find_parent()
         if not tag['class'][0].startswith('resume-preview-all'):
-            raise ValueError    # no educations
+            return []
 
         educations = []
         for element in tag.findAll(class_='resume-preview-dl'):
@@ -254,23 +255,29 @@ class HtmlZljl:
 
         if person.year == -1:
             end_dates = []
-            for education in educations:
-                end_dates.append(education.end_date)
-            person.year = max(end_dates)
+            if educations:
+                for education in educations:
+                    end_dates.append(education.end_date)
+                person.year = max(end_dates)
+            else:
+                person.year = HtmlZljl.get_year()
 
         if person.education == -1:
             degrees = []
-            for education in educations:
-                degrees.append(education.degree)
-            person.education = max(degrees)
+            if educations:
+                for education in educations:
+                    degrees.append(education.degree)
+                person.education = max(degrees)
+            else:
+                person.education = 0
 
         return Resume(person, experiences, projects, educations, skills)
 
 
 def main():
     folder = '/home/xixisun/suzy/shoulie/resumes/zljl'
-    # file = 'zljl_0000009_史京绮.html'
-    file = 'zljl_0031286_刘卓.html'
+    file = 'zljl_0000009_史京绮.html'
+    # file = 'zljl_0031286_刘卓.html'
     resume = HtmlZljl.new_resume(os.path.join(folder, file), 2)
     pprint(resume.to_dictionary())
 
