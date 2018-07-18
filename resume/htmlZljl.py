@@ -269,8 +269,8 @@ class HtmlZljl:
 
 def main():
     folder = '/home/xixisun/suzy/shoulie/resumes/zljl'
-    file = 'zljl_0000009_史京绮.html'
-    # file = 'zljl_0031286_刘卓.html'
+    # file = 'zljl_0000009_史京绮.html'
+    file = 'zljl_0031286_刘卓.html'
     resume = HtmlZljl.new_resume(os.path.join(folder, file), 2)
     pprint(resume.to_dictionary())
 

@@ -200,6 +200,7 @@ class Resume:
     def to_dictionary(self):
         resume = self.person.to_dictionary()
 
+        """
         if self.experiences:
             resume[Keys.experiences] = []
             companies = []
@@ -208,11 +209,28 @@ class Resume:
                 companies.append(experience.company)
             if companies:
                 resume[Keys.companies] = companies
+        """
+        if self.experiences:
+            companies = []
+            experiences = []
+            for experience in self.experiences:
+                experiences.append(experience.to_dictionary())
+                companies.append(experience.company)
+            if companies:
+                resume[Keys.companies] = companies
+            resume[Keys.experiences] = str(experiences)
 
+        """
         if self.projects:
             resume[Keys.projects] = []
             for project in self.projects:
                 resume[Keys.projects].append(project.to_dictionary())
+        """
+        if self.projects:
+            projects = []
+            for project in self.projects:
+                projects.append(project.to_dictionary())
+            resume[Keys.projects] = str(projects)
 
         """
         if self.educations:

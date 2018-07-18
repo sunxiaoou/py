@@ -250,8 +250,8 @@ class HtmlJL:
 def main():
     folder = '/home/xixisun/suzy/shoulie/resumes/jl'
     # file = 'jl_0085242_季文清.html'
-    # file = 'jl_0124952_安敬辉.html'
-    file = 'jl_0000123_郝锐强.html'
+    file = 'jl_0124952_安敬辉.html'
+    # file = 'jl_0000123_郝锐强.html'
     resume = HtmlJL.new_resume(os.path.join(folder, file), 1)
     pprint(resume.to_dictionary())
     # print(json.dumps(resume.to_dictionary()))

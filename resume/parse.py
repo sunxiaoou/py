@@ -15,23 +15,16 @@ from resume import Keys
 
 
 def test_one():
-    # folder = '/home/xixisun/suzy/resumes/0001/2'
-    # file = 'jm089638951r90250000000_2015-01-28_0.html'
-    # file = 'jm090122773r90250000000_2015-03-08_0.html'
-    # file = 'jm089867313r90250005000_2015-08-06_0.html'
-    # file = 'jm170222194r90250000000.html'
-    # file = 'jm337520048r90250001000.html'
-    # file = 'jm328873785r90250000000.html'
-    # parser = HtmlParser(folder + '/' + file)
+    folder = '/home/xixisun/suzy/shoulie/resumes/jl'
+    # file = 'jl_0124952_安敬辉.html'
+    file = 'jl_0085242_季文清.html'
+    # file = 'jl_0000123_郝锐强.html'
 
-    folder = '/home/xixisun/suzy/resumes/html/jl'
-    file = '10052356-安敬辉.html'
-
-    output = open('jl.out', 'w')
-    parser = HtmlJL(folder + '/' + file)
-    resume = parser.new_resume()
+    output = open('test.json', 'a')
+    resume = HtmlJL.new_resume(os.path.join(folder, file), 1)
     # print(json.dumps(resume.to_dictionary()))
-    output.write(json.dumps(resume.to_dictionary()))
+    output.write(json.dumps(resume.to_dictionary(), default=json_util.default))
+    output.write('\n')
     output.close()
 
 
@@ -71,6 +64,6 @@ def parse():
     output.close()
 
 
-# test_one()
-parse()
+test_one()
+# parse()
 sys.exit(0)
