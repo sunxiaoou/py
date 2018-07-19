@@ -77,54 +77,42 @@ class HtmlJxw:
         tag = HtmlJxw.soup.find('h3', text=re.compile('个人信息'))
         if tag is None:
             return None
-        tag = tag.find_parent()
-        if tag['class'][0] != 'title_h3v6':
+        tag = tag.find_parent().find_next_sibling()
+        if tag.name != 'table':
             return None
 
-        texts = tag.find_next_sibling().getText().split('\n')
-        items = []
-        regex = re.compile(r'^\s*$|[：]$')       # delete lines of empty or title
-        for text in texts:
-            if regex.search(text) is None:
-                items.append(text.strip())
-
-        name = re.sub(r'[^\w]', '', items[0])          # remove special chars
-        if not name or len(name) > 10:
+        tds = tag.findAll('td')
+        name = re.compile(r'\w+').search(tds[1].getText()).group()
+        if len(name) > 10:
             raise ValueError
         file = '{}_{:07d}_{}.html'.format(HtmlJxw.type, no, name)
 
-        if items[1] != '男' and items[1] != '女':
-            raise TypeError             # maybe english
-        gender = items[1]
+        gender = re.compile(r'\w+').search(tds[3].getText()).group()
+        if gender != '男' and gender != '女':
+            raise TypeError
 
         try:
-            regex = re.compile(r'''(
-                    [a-zA-Z0-9._%+-]+      # username
-                    @                      # @ symbol
-                    [a-zA-Z0-9.-]+         # domain name
-                    (\.[a-zA-Z]{2,4})      # dot-something
-            )''', re.VERBOSE)
-            email = regex.search(items[2]).group()
+            email = re.compile(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}').search(tds[5].getText()).group()
         except AttributeError:
             email = ''
 
-        mo = re.compile(r'(\d{4})年(\d{1,2})月').search(items[3])
+        mo = re.compile(r'(\d{4})年(\d{1,2})月').search(tds[7].getText())
         birth = datetime(int(mo.group(1)), int(mo.group(2)), 15)
 
-        mo = re.compile(r'\d{11}').search(items[4])
-        phone = mo.group()
+        phone = re.compile(r'\d{11}').search(tds[10].getText()).group()
 
         try:
-            mo = re.compile(r'(\d{4})').search(items[7])
-            years = int(datetime.today().strftime('%Y')) - int(mo.group(1))
+            year = int(re.compile(r'\d{4}').search(tds[16].getText()).group())
         except AttributeError:
-            years = -1
+            year = -1
 
         try:
-            education = Education.educationList.index(items[8].upper()) + 1
+            mo = re.compile(r'\w+').search(tds[18].getText())
+            education = Education.educationList.index(mo.group().upper()) + 1
         except (IndexError, ValueError):
             education = -1
-        return Person(file, name, gender, birth, phone, email, education, years, HtmlJxw.get_objective())
+
+        return Person(file, name, gender, birth, phone, email, education, year, HtmlJxw.get_objective())
 
     @staticmethod
     def get_experiences():
@@ -243,8 +231,8 @@ class HtmlJxw:
                 if regex.search(text) is None:
                     a.append(text.strip())
             try:
-                date1 = a[0]
-                date2 = a[1]
+                date1 = int(re.compile(r'(\d{4})').search(a[0]).group(1))
+                date2 = int(re.compile(r'(\d{4})').search(a[1]).group(1))
                 school = a[2]
                 degree = Education.educationList.index(a[3].upper()) + 1
                 major = a[4]
@@ -275,14 +263,39 @@ class HtmlJxw:
     @staticmethod
     def new_resume(html, no):
         HtmlJxw.soup = BeautifulSoup(open(html), 'lxml')
-        return Resume(HtmlJxw.get_person(no), HtmlJxw.get_experiences(), HtmlJxw.get_projects(),
-                      HtmlJxw.get_educations(), HtmlJxw.get_skills())
+
+        person = HtmlJxw.get_person(no)
+        experiences = HtmlJxw.get_experiences()
+        projects = HtmlJxw.get_projects()
+        educations = HtmlJxw.get_educations()
+        skills = HtmlJxw.get_skills()
+
+        if person.year == -1:
+            end_dates = []
+            if educations:
+                for education in educations:
+                    end_dates.append(education.end_date)
+                person.year = max(end_dates)
+            else:
+                person.year = 2015
+
+        if person.education == -1:
+            degrees = []
+            if educations:
+                for education in educations:
+                    degrees.append(education.degree)
+                person.education = max(degrees)
+            else:
+                person.education = 0
+
+        return Resume(person, experiences, projects, educations, skills)
 
 
 def main():
     folder = os.path.join('/home/xixisun/suzy/shoulie/resumes', HtmlJxw.type)
-    file = '000258b20ff44361831ab87ad389cc16.html'
-    # file = '74e547d642454e8f92022b72a5300741.html'
+    file = 'jxw_0000005_孟祥冰.html'
+    # file = 'jxw_0207510_谭越.html'
+    # file = 'jxw_0185431_代鹏飞.html'
     resume = HtmlJxw.new_resume(os.path.join(folder, file), 2)
     pprint(resume.to_dictionary())
 
