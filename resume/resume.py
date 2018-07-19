@@ -15,7 +15,6 @@ class Keys:
     phone = '手机号码'
     email = '电子邮箱'
     education = '学历'
-    years = '工作年限'
     year = '参加工作年份'
     school_rank = '学校类别'
     companies = '雇主'

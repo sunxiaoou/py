@@ -82,6 +82,23 @@ class Condition:
         return conditions
 
     @staticmethod
+    def range_year(num1, num2):
+        if num1 is None and num2 is None:
+            return None
+
+        this_year = int(datetime.today().strftime('%Y'))
+        if num1 is not None and num1 == num2:
+            return this_year - num1
+
+        conditions = {}
+        if num2 is not None:
+            conditions['$gte'] = this_year - num2
+        if num1 is not None:
+            conditions['$lt'] = this_year - num1
+        return conditions
+
+
+    @staticmethod
     def range_date(num1, num2):
         if num1 is None and num2 is None:
             return None
@@ -92,9 +109,9 @@ class Condition:
 
         conditions = {}
         if num2 is not None:
-            conditions['$gte'] = datetime(today.year - num2, today.month, today.day)
+            conditions['$gte'] = datetime(today.year - num2, today.month, today.day)    # >= birth equals <= age
         if num1 is not None:
-            conditions['$lt'] = datetime(today.year - num1, today.month, today.day)
+            conditions['$lt'] = datetime(today.year - num1, today.month, today.day)     # < birth equals > age
         return conditions
 
     @staticmethod
@@ -141,9 +158,9 @@ class Condition:
         if c is not None:
             conditions[Keys.education] = c
 
-        c = Condition.range_int(Condition.year1, Condition.year2)
+        c = Condition.range_year(Condition.year1, Condition.year2)
         if c is not None:
-            conditions[Keys.years] = c
+            conditions[Keys.year] = c
 
         c = Condition.range_date(Condition.age1, Condition.age2)
         if c is not None:

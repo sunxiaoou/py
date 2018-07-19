@@ -11,6 +11,7 @@ from resume import Keys
 
 class Reporter:
     base_folder = '/home/xixisun/suzy/shoulie/resumes'
+    truncation = 300
 
     @staticmethod
     def unshelve(shelf_name):
@@ -24,7 +25,7 @@ class Reporter:
     def name_html(name, file):
         html_type = re.compile(r'^(\w+)_\d+').search(file).group(1)
         full_file_name = os.path.join(Reporter.base_folder, html_type, file)
-        return '<a href="file://{}"title="resume">{}</a><br>'.format(full_file_name, name)
+        return '<a href="file://{}"title={}>{}</a><br>'.format(full_file_name, file, name)
 
     @staticmethod
     def gender_html(gender):
@@ -53,10 +54,10 @@ class Reporter:
         return '{}<br>'.format(['大专', '本科', '硕士', 'MBA', 'EMBA', '博士',  '博士后'][education - 1])
 
     @staticmethod
-    def years_html(years):
-        if years is None:
+    def year_html(year):
+        if year is None:
             return None
-        return '{}年<br>'.format(years)
+        return '{}年<br>'.format(year)
 
     @staticmethod
     def educations_html(educations):
@@ -77,21 +78,26 @@ class Reporter:
     def experiences_html(experiences):
         if experiences is None:
             return None
+        """
         a = experiences[0]
         text = '{} | {} | {} | {}<br>'.format(a.get(Keys.start_date), a.get(Keys.end_date), a.get(Keys.company),
                                               a.get(Keys.company_desc))
         text += '{}<br>'.format(a.get(Keys.job_desc))
         return text if len(text) <= 100 else text[:150] + '...'
+        """
+        return experiences if len(experiences) <= Reporter.truncation else experiences[:Reporter.truncation] + ' ...'
 
     @staticmethod
     def projects_html(projects):
         if projects is None:
             return None
+        """
         a = projects[0]
         text = '{} | {} | {}<br>'.format(a.get(Keys.start_date), a.get(Keys.end_date), a.get(Keys.project))
         text += '{}<br>'.format(a.get(Keys.project_desc))
         text += '{}<br>'.format(a.get(Keys.duty))
-        return text if len(text) <= 100 else text[:150] + '...'
+        """
+        return projects if len(projects) <= Reporter.truncation else projects[:Reporter.truncation] + ' ...'
 
     @staticmethod
     def output(documents, file):
@@ -138,11 +144,11 @@ class Reporter:
             age = Reporter.age_html(document.get(Keys.birth))
             spots = Reporter.spots_html(document.get(Keys.spots))
             education = Reporter.education_html(document.get(Keys.education))
-            years = Reporter.years_html(document.get(Keys.years))
+            year = Reporter.year_html(document.get(Keys.year))
             educations = Reporter.educations_html(document.get(Keys.educations))
             experiences = Reporter.experiences_html(document.get(Keys.experiences))
             projects = Reporter.projects_html(document.get(Keys.projects))
-            html.write(tr.format(no, name, gender, age, education, years, spots, educations, experiences, projects))
+            html.write(tr.format(no, name, gender, age, education, year, spots, educations, experiences, projects))
 
         html.write(tail)
         html.close()
