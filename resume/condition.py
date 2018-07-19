@@ -9,6 +9,7 @@ from resume import Keys
 class Condition:
     name = spot = industry = field = company = skills = school = school_rank = major = None
     education1 = education2 = year1 = year2 = age1 = age2 = None
+    experience_key = project_key = None
 
     @staticmethod
     def input_string(title):
@@ -48,15 +49,18 @@ class Condition:
                 if skill is None:
                     break
                 Condition.skills.append(skill.upper())
-            Condition.school_rank = Condition.input_number('毕业学校类别（1:一般 2:211 3:985）以上（含）')
+            Condition.school_rank = Condition.input_number('毕业学校类别(1:一般 2:211 3:985)以上(含)')
             Condition.school = Condition.input_string('学校')
             Condition.major = Condition.input_string('专业')
-            Condition.education1 = Condition.input_number('学历（1:大专 2:本科 3:硕士 4:MBA 5:EMBA 6:博士 7:博士后）以上（含）')
-            # Condition.education2 = Condition.input_number('学历（1:大专 2:本科 3:硕士 4:MBA 5:EMBA 6:博士 7:博士后）以下')
-            Condition.year1 = Condition.input_number('工作经验_年以上（含）')
+            Condition.education1 = Condition.input_number('学历(1:大专 2:本科 3:硕士 4:MBA 5:EMBA 6:博士 7:博士后)以上(含)')
+            # Condition.education2 = Condition.input_number('学历(1:大专 2:本科 3:硕士 4:MBA 5:EMBA 6:博士 7:博士后)以下')
+            Condition.year1 = Condition.input_number('工作经验_年以上(含)')
             # Condition.year2 = Condition.input_number('工作经验_年以下')
-            # Condition.age1 = Condition.input_number('年龄_岁以上（含）')
+            # Condition.age1 = Condition.input_number('年龄_岁以上(含)')
             Condition.age2 = Condition.input_number('年龄_岁以下')
+            Condition.experience_key = Condition.input_string('工作经历(关键字)')
+            Condition.project_key = Condition.input_string('项目经历(关键字)')
+
         except KeyboardInterrupt:
             Condition.interrupt()
 
@@ -165,6 +169,12 @@ class Condition:
         c = Condition.range_date(Condition.age1, Condition.age2)
         if c is not None:
             conditions[Keys.birth] = c
+
+        if Condition.experience_key is not None:
+            conditions[Keys.experiences] = {'$regex': Condition.experience_key}
+
+        if Condition.project_key is not None:
+            conditions[Keys.projects] = {'$regex': Condition.project_key}
 
         pprint(conditions)
         return conditions
