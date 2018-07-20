@@ -109,7 +109,7 @@ class HtmlJxw:
         try:
             mo = re.compile(r'\w+').search(tds[18].getText())
             education = Education.educationList.index(mo.group().upper()) + 1
-        except (IndexError, ValueError):
+        except (AttributeError, ValueError):
             education = -1
 
         return Person(file, name, gender, birth, phone, email, education, year, HtmlJxw.get_objective())
@@ -214,31 +214,23 @@ class HtmlJxw:
         tag = HtmlJxw.soup.find('h3', text='教育经历')
         if tag is None:
             return []
-        tag = tag.find_parent()
-        if tag['class'][0] != 'title_h3v6':
-            return []
-        tag = tag.find_next_sibling()
+        tag = tag.find_parent().find_next_sibling()
         if tag.name != 'table':
             return []
 
         educations = []
         for tr in tag.findAll('tr'):
-            date1 = date2 = school = major = degree = ''
-            texts = tr.getText().split('\n')
-            a = []
-            regex = re.compile(r'^\s*$')       # delete lines of empty
-            for text in texts:
-                if regex.search(text) is None:
-                    a.append(text.strip())
+            tds = tr.findAll('td')
             try:
-                date1 = int(re.compile(r'(\d{4})').search(a[0]).group(1))
-                date2 = int(re.compile(r'(\d{4})').search(a[1]).group(1))
-                school = a[2]
-                degree = Education.educationList.index(a[3].upper()) + 1
-                major = a[4]
-            except (IndexError, ValueError):
-                pass
-
+                mo = re.compile(r'(\d{4}).*(\d{4})', re.DOTALL | re.MULTILINE).search(tds[1].getText())
+                date1 = int(mo.group(1))
+                date2 = int(mo.group(2))
+                school = re.compile(r'\w+').search(tds[2].getText()).group()
+                major = re.compile(r'\w+').search(tds[4].getText()).group()
+                mo = re.compile(r'\w+').search(tds[3].getText())
+                degree = Education.educationList.index(mo.group().upper()) + 1
+            except (AttributeError, ValueError):
+                continue
             educations.append(Education(date1, date2, school, major, degree))
         return educations
 
@@ -293,9 +285,9 @@ class HtmlJxw:
 
 def main():
     folder = os.path.join('/home/xixisun/suzy/shoulie/resumes', HtmlJxw.type)
-    file = 'jxw_0000005_孟祥冰.html'
-    # file = 'jxw_0207510_谭越.html'
-    # file = 'jxw_0185431_代鹏飞.html'
+    file = 'jxw_0076028_李兴琨.html'
+    # file = 'jxw_0146878_洪聪贵.html'
+    # file = 'jxw_0142316_郑红霞.html'
     resume = HtmlJxw.new_resume(os.path.join(folder, file), 2)
     pprint(resume.to_dictionary())
 
