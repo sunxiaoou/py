@@ -105,61 +105,40 @@ class HtmlJ51:
 
     @staticmethod
     def get_experiences():
-        tag = HtmlJ51.soup.find('h3', text='工作经历')
+        tag = HtmlJ51.soup.find('td', text='工作经验').find_next('table')
         if tag is None:
             return []
-        tag = tag.find_parent()
-        if tag['class'][0] != 'title_h3v6':
-            return []
+
+        tds = tag.findAll('td')
 
         experiences = []
-        div = tag.find_next_sibling()
-        while div is not None and div['class'][0] == 'gongzuojl':
-            date1 = date2 = company = company_desc = job = job_desc = ''
-            try:
-                date = div.find('div', class_='gztime fl').getText()
-                mo = re.compile(r'(\d{4}\.\d{2})-(\d{4}\.\d{2})').search(date)
+        j = 0
+        date1 = date2 = company = company_desc = job = job_desc = ''
+        for i in range(len(tds)):
+            if j == 0:
+                mo = re.compile(r'(\d{4}.*/\d{1,2}).*(\d{4}.*/\d{1,2}|至今)：(\w+)', re.DOTALL).\
+                    search(tds[i].getText())
                 date1 = mo.group(1)
+                date1 = re.sub(r'[\s\n]', '', date1)
                 date2 = mo.group(2)
-            except AttributeError:
+                if date2 != '至今':
+                    date2 = re.sub(r'[\s\n]', '', date2)
+                company = mo.group(3)
+            elif j == 1 or j == 3:
                 pass
+            elif j == 2:
+                company_desc = tds[i].getText()
+            elif j == 4:
+                job = tds[i].getText()
+            elif j == 5:
+                job_desc = tds[i].getText()
+                experiences.append(Experience(date1, date2, company, company_desc, job, job_desc))
+                date1 = date2 = company = company_desc = job = job_desc = ''
+            elif j > 5:
+                if not tds[i].getText():
+                    j = -1      # to zero
+            j += 1
 
-            try:
-                company = div.find('div', class_='gzcomp_title').getText()
-                mo = re.compile(r'(\w+)').search(company)
-                company = mo.group(1)
-            except AttributeError:
-                pass
-
-            try:
-                for tr in div.find('table').findAll('tr'):
-                    if company_desc:
-                        company_desc += ', '
-                    company_desc += re.sub(r'[\s]', '', tr.getText())
-            except AttributeError:
-                pass
-
-            try:
-                job = div.find('div', class_='wid594 fl').getText()
-                mo = re.compile(r'(\w+)').search(job)
-                job = mo.group(1)
-            except AttributeError:
-                pass
-
-            try:
-                for tr in div.find('div', class_='wid594 fl').find_parent().find('table').findAll('tr'):
-                    if job_desc:
-                        job_desc += ', '
-                    job_desc += re.sub(r'[\s]', '', tr.getText())
-            except AttributeError:
-                pass
-
-            experiences.append(Experience(date1, date2, company, company_desc, job, job_desc))
-            div = div.find_next_sibling()
-            if div.get('class') is None:
-                div = div.find_next_sibling()
-
-        experiences.reverse()
         return experiences
 
     @staticmethod
@@ -246,13 +225,12 @@ class HtmlJ51:
         HtmlJ51.soup = BeautifulSoup(open(html), 'lxml')
 
         person = HtmlJ51.get_person(no)
-        experiences = []
+        experiences = HtmlJ51.get_experiences()
         projects = []
         educations = []
         skills = []
 
         """
-        experiences = HtmlJ51.get_experiences()
         projects = HtmlJ51.get_projects()
         educations = HtmlJ51.get_educations()
         skills = HtmlJ51.get_skills()
