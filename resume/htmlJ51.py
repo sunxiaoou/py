@@ -82,18 +82,22 @@ class HtmlJ51:
             return None
 
         tds = tag.findAll('td')
-        mo = re.compile(r'(\d{1,2})年工作经验.*(男|女).*(\d{4})年(\d{1,2})月', re.DOTALL).search(tds[1].getText())
+        mo = re.compile(r'(\d{1,2})年.*(男|女).*(\d{4})年(\d{1,2})月', re.DOTALL).search(tds[1].getText())
         try:
             year = HtmlJ51.get_year() - int(mo.group(1))
         except AttributeError:
             year = -1
         gender = mo.group(2)
         birth = datetime(int(mo.group(3)), int(mo.group(4)), 15)
-        phone = re.compile(r'\d{11}').search(tds[8].getText()).group()
+        if tds[7].getText() == '电　话：':
+            i = 8
+        else:
+            i = 10
+        phone = re.compile(r'\d{11}').search(tds[i].getText()).group()
 
         try:
-            email = re.compile(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}').search(tds[10].getText()).group()
-        except AttributeError:
+            email = re.compile(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}').search(tds[i + 2].getText()).group()
+        except (AttributeError, IndexError):
             email = ''
 
         try:
@@ -106,8 +110,9 @@ class HtmlJ51:
 
     @staticmethod
     def get_experiences():
-        tag = HtmlJ51.soup.find('td', text='工作经验').find_next('table')
-        if tag is None:
+        try:
+            tag = HtmlJ51.soup.find('td', text='工作经验').find_next('table')
+        except AttributeError:
             return []
 
         tds = tag.findAll('td')
@@ -142,8 +147,9 @@ class HtmlJ51:
 
     @staticmethod
     def get_projects():
-        tag = HtmlJ51.soup.find('td', text='项目经验').find_next('table')
-        if tag is None:
+        try:
+            tag = HtmlJ51.soup.find('td', text='项目经验').find_next('table')
+        except AttributeError:
             return []
 
         tds = tag.findAll('td')
@@ -181,8 +187,9 @@ class HtmlJ51:
 
     @staticmethod
     def get_educations():
-        tag = HtmlJ51.soup.find('td', text='教育经历').find_next('table')
-        if tag is None:
+        try:
+            tag = HtmlJ51.soup.find('td', text='教育经历').find_next('table')
+        except AttributeError:
             return []
 
         tds = tag.findAll('td')
@@ -254,7 +261,9 @@ class HtmlJ51:
 
 def main():
     folder = os.path.join('/home/xixisun/suzy/shoulie/resumes', HtmlJ51.type)
-    file = '16486510.html'
+    # file = '16486510.html'
+    file = '6245342678.html'
+    file = '311890184.html'
     resume = HtmlJ51.new_resume(os.path.join(folder, file), 4)
     pprint(resume.to_dictionary(False))
 
