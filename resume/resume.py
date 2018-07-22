@@ -196,19 +196,9 @@ class Resume:
             msg = msg + str(skill) + '\n'
         return msg
 
-    def to_dictionary(self):
+    def to_dictionary(self, list2str):
         resume = self.person.to_dictionary()
 
-        """
-        if self.experiences:
-            resume[Keys.experiences] = []
-            companies = []
-            for experience in self.experiences:
-                resume[Keys.experiences].append(experience.to_dictionary())
-                companies.append(experience.company)
-            if companies:
-                resume[Keys.companies] = companies
-        """
         if self.experiences:
             companies = []
             experiences = []
@@ -217,33 +207,23 @@ class Resume:
                 companies.append(experience.company)
             if companies:
                 resume[Keys.companies] = companies
-            resume[Keys.experiences] = str(experiences)
+            if not list2str:
+                resume[Keys.experiences] = experiences
+            else:
+                resume[Keys.experiences] = str(experiences)
 
-        """
-        if self.projects:
-            resume[Keys.projects] = []
-            for project in self.projects:
-                resume[Keys.projects].append(project.to_dictionary())
-        """
         if self.projects:
             projects = []
             for project in self.projects:
                 projects.append(project.to_dictionary())
-            resume[Keys.projects] = str(projects)
+            if not list2str:
+                resume[Keys.projects] = projects
+            else:
+                resume[Keys.projects] = str(projects)
 
-        """
-        if self.educations:
-            resume[Keys.educations] = []
-            for education in self.educations:
-                resume[Keys.educations].append(education.to_dictionary())
-        """
         if self.educations:
             resume[Keys.educations] = Educations(self.educations).to_dictionary()
 
-        """
-        if self.skills is not None:
-            resume[Keys.skills] = self.skills.to_dictionary()
-        """
         if self.skills:
             resume[Keys.skills] = self.skills
         return resume

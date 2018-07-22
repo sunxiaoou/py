@@ -260,7 +260,7 @@ def main():
     # file = 'jl_0085242_季文清.html'
     file = 'jl_0124952_安敬辉.html'
     resume = HtmlJL.new_resume(os.path.join(folder, file), 1)
-    pprint(resume.to_dictionary())
+    pprint(resume.to_dictionary(False))
     # print(json.dumps(resume.to_dictionary()))
 
 if __name__ == "__main__":

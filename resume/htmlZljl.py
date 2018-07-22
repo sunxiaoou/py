@@ -283,7 +283,7 @@ def main():
     file = 'zljl_0000009_史京绮.html'
     # file = 'zljl_0031286_刘卓.html'
     resume = HtmlZljl.new_resume(os.path.join(folder, file), 2)
-    pprint(resume.to_dictionary())
+    pprint(resume.to_dictionary(False))
 
 if __name__ == "__main__":
     main()

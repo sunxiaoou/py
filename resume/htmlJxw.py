@@ -289,7 +289,7 @@ def main():
     # file = 'jxw_0146878_洪聪贵.html'
     # file = 'jxw_0142316_郑红霞.html'
     resume = HtmlJxw.new_resume(os.path.join(folder, file), 2)
-    pprint(resume.to_dictionary())
+    pprint(resume.to_dictionary(False))
 
 if __name__ == "__main__":
     main()

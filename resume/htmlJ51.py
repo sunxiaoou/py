@@ -17,6 +17,7 @@ from resume import Education
 class HtmlJ51:
     type = 'j51'
     soup = None
+    skills = []
 
     @staticmethod
     def get_type():
@@ -124,8 +125,6 @@ class HtmlJ51:
                 if date2 != '至今':
                     date2 = re.sub(r'[\s\n]', '', date2)
                 company = mo.group(3)
-            elif j == 1 or j == 3:
-                pass
             elif j == 2:
                 company_desc = tds[i].getText()
             elif j == 4:
@@ -143,80 +142,82 @@ class HtmlJ51:
 
     @staticmethod
     def get_projects():
-        tag = HtmlJ51.soup.find('h3', text='项目经验')
+        tag = HtmlJ51.soup.find('td', text='项目经验').find_next('table')
         if tag is None:
             return []
-        tag = tag.find_parent()
-        if tag['class'][0] != 'title_h3v6':
-            return []
+
+        tds = tag.findAll('td')
 
         projects = []
-        div = tag.find_next_sibling()
-        while div is not None and div['class'][0] == 'gongzuojl':
-            date1 = date2 = name = description = duty = ''
-            try:
-                date = div.find('div', class_='gztime fl').getText()
-                mo = re.compile(r'(\d{4}\.\d{2})\D*-\D*(\d{4}\.\d{2})', re.DOTALL | re.MULTILINE).search(date)
+        j = 0
+        date1 = date2 = name = description = duty = ''
+        for i in range(len(tds)):
+            if j == 0:
+                mo = re.compile(r'(\d{4}.*/\d{1,2}).*(\d{4}.*/\d{1,2}|至今)：\W*(\w+)', re.DOTALL). \
+                    search(tds[i].getText())
                 date1 = mo.group(1)
+                date1 = re.sub(r'[\s\n]', '', date1)
                 date2 = mo.group(2)
-            except AttributeError:
-                pass
-
-            try:
-                t = div.find('div', class_='gzcomp_title')
-                name = t.getText()
-                description = t.find_parent().find('td', text=re.compile('项目描述')).find_next_sibling().getText()
-                description = re.sub(r'[\n]', '', description).strip()
-            except AttributeError:
-                pass
-
-            projects.append(Project(date1, date2, name, description, duty))
-            div = div.find_next_sibling()
-            if div.get('class') is None:
-                div = div.find_next_sibling()
+                if date2 != '至今':
+                    date2 = re.sub(r'[\s\n]', '', date2)
+                name = mo.group(3)
+            elif j == 1:
+                if tds[i].getText() == '项目描述：':
+                    j += 2
+            elif j == 2:
+                HtmlJ51.skills.append(tds[i].getText())
+            elif j == 4:
+                description = tds[i].getText()
+            elif j == 6:
+                duty = tds[i].getText()
+                projects.append(Project(date1, date2, name, description, duty))
+                date1 = date2 = name = description = duty = ''
+            elif j > 6:
+                if not tds[i].getText():
+                    j = -1      # to zero
+            j += 1
 
         return projects
 
     @staticmethod
     def get_educations():
-        tag = HtmlJ51.soup.find('h3', text='教育经历')
+        tag = HtmlJ51.soup.find('td', text='教育经历').find_next('table')
         if tag is None:
             return []
-        tag = tag.find_parent().find_next_sibling()
-        if tag.name != 'table':
-            return []
+
+        tds = tag.findAll('td')
 
         educations = []
-        for tr in tag.findAll('tr'):
-            tds = tr.findAll('td')
-            try:
-                mo = re.compile(r'(\d{4}).*(\d{4})', re.DOTALL | re.MULTILINE).search(tds[1].getText())
-                date1 = int(mo.group(1))
-                date2 = int(mo.group(2))
-                school = re.compile(r'\w+').search(tds[2].getText()).group()
-                major = re.compile(r'\w+').search(tds[4].getText()).group()
-                mo = re.compile(r'\w+').search(tds[3].getText())
-                degree = Education.educationList.index(mo.group().upper()) + 1
-            except (AttributeError, ValueError):
-                continue
-            educations.append(Education(date1, date2, school, major, degree))
+        j = 0
+        date1 = date2 = school = major = degree = ''
+        for i in range(len(tds)):
+            if j == 0:
+                mo = re.compile(r'(\d{4}.*/\d{1,2}).*(\d{4}.*/\d{1,2}|至今)', re.DOTALL).search(tds[i].getText())
+                date1 = mo.group(1)
+                date1 = re.sub(r'[\s\n]', '', date1)
+                date2 = mo.group(2)
+                if date2 != '至今':
+                    date2 = re.sub(r'[\s\n]', '', date2)
+            elif j == 1:
+                school = tds[i].getText()
+            elif j == 2:
+                major = tds[i].getText()
+            elif j == 3:
+                degree = tds[i].getText()
+                educations.append(Education(date1, date2, school, major, degree))
+                date1 = date2 = school = major = degree = ''
+            elif j > 3:
+                if not tds[i].getText():
+                    j = -1      # to zero
+            j += 1
+
         return educations
 
     @staticmethod
     def get_skills():
-        tag = HtmlJ51.soup.find('h3', text='自我评价')
-        if tag is None:
-            return None
-        tag = tag.find_parent()
-        if tag['class'][0] != 'title_h3v6':
-            return None
-        tag = tag.find_next_sibling()
-        if tag.name != 'table':
-            return []
-
         skills = []
-        for skill in re.compile(r'([a-zA-Z]+)([a-zA-Z\.\d/#]*)').findall(tag.getText()):
-            skills.append(skill[0].upper())     # skill is a tuple
+        for skill in HtmlJ51.skills:
+            skills += re.split(r',', skill.upper())     # merge 2 lists
 
         return list(set(skills))        # no duplicate
 
@@ -226,11 +227,6 @@ class HtmlJ51:
 
         person = HtmlJ51.get_person(no)
         experiences = HtmlJ51.get_experiences()
-        projects = []
-        educations = []
-        skills = []
-
-        """
         projects = HtmlJ51.get_projects()
         educations = HtmlJ51.get_educations()
         skills = HtmlJ51.get_skills()
@@ -252,7 +248,6 @@ class HtmlJ51:
                 person.education = max(degrees)
             else:
                 person.education = 0
-        """
 
         return Resume(person, experiences, projects, educations, skills)
 
@@ -261,7 +256,7 @@ def main():
     folder = os.path.join('/home/xixisun/suzy/shoulie/resumes', HtmlJ51.type)
     file = '16486510.html'
     resume = HtmlJ51.new_resume(os.path.join(folder, file), 4)
-    pprint(resume.to_dictionary())
+    pprint(resume.to_dictionary(False))
 
 if __name__ == "__main__":
     main()

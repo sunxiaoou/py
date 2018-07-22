@@ -9,6 +9,7 @@ import sys
 import traceback
 
 from bson import json_util
+from htmlJ51 import HtmlJ51
 from htmlJL import HtmlJL
 from htmlJxw import HtmlJxw
 from htmlZljl import HtmlZljl
@@ -24,7 +25,7 @@ def test_one():
     output = open('test.json', 'a')
     resume = HtmlJL.new_resume(os.path.join(folder, file), 1)
     # print(json.dumps(resume.to_dictionary()))
-    output.write(json.dumps(resume.to_dictionary(), default=json_util.default))
+    output.write(json.dumps(resume.to_dictionary(True), default=json_util.default))
     output.write('\n')
     output.close()
 
@@ -32,7 +33,7 @@ def test_one():
 def parse():
     base_folder = '/home/xixisun/suzy/shoulie/resumes'
     # base_folder = '/scratch/xixisun/shoulie/resumes'
-    parser = HtmlJL
+    parser = HtmlJ51
     html_type = parser.get_type()
     html_folder = os.path.join(base_folder, html_type)
     err_folder = os.path.join(base_folder, html_type + 'err')
@@ -52,7 +53,7 @@ def parse():
                     resume = parser.new_resume(fn, int(mo.group(1)))
                 else:
                     resume = parser.new_resume(fn, i)
-                dictionary = resume.to_dictionary()
+                dictionary = resume.to_dictionary(True)
             except:
                 print(traceback.format_exc())
                 print(fn + ' failed')
