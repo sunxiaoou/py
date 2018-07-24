@@ -4,13 +4,20 @@
 
 import json
 import os
+import sys
 from pprint import pprint
 
-base_folder = '/home/xixisun/suzy/shoulie/resumes'
-# base_folder = '/scratch/xixisun/shoulie/resumes'
-filename = 'j51.json'
 
-json_file = open(os.path.join(base_folder, filename))
+if len(sys.argv) < 2:
+    print('Usage: ' + sys.argv[0] + ' file')
+    sys.exit(1)
+
+# base_folder = '/home/xixisun/suzy/shoulie/resumes'
+# base_folder = '/scratch/xixisun/shoulie/resumes'
+# filename = 'j51.json'
+# json_file = open(os.path.join(base_folder, filename))
+
+json_file = open(sys.argv[1])
 
 len_count = {}
 len_sum = 0

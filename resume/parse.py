@@ -16,39 +16,59 @@ from htmlZljl import HtmlZljl
 from resume import Keys
 
 
-def test_one():
-    folder = '/home/xixisun/suzy/shoulie/resumes/jl'
-    # file = 'jl_0124952_安敬辉.html'
-    file = 'jl_0085242_季文清.html'
-    # file = 'jl_0000123_郝锐强.html'
+def get_parser(name):
+    if name == 'j51':
+        parser = HtmlJ51
+    elif name == 'jl':
+        parser = HtmlJL
+    elif name == 'jxw':
+        parser = HtmlJxw
+    elif name == 'zljl':
+        parser = HtmlZljl
+    else:
+        raise TypeError
 
+    assert parser.get_type() == name
+    return parser
+
+
+def parse_one(file):
+    # folder = '/home/xixisun/suzy/shoulie/resumes/j51'
+    # file = 'jl_0124952_安敬辉.html'
+    # file = 'j51_0079223_李智惠.html'
+
+    base = os.path.basename(file)
+    parser_name = base.split('_')[0]
+    parser = get_parser(parser_name)
+    resume = parser.new_resume(file, 1)
     output = open('test.json', 'a')
-    resume = HtmlJL.new_resume(os.path.join(folder, file), 1)
     # print(json.dumps(resume.to_dictionary()))
     output.write(json.dumps(resume.to_dictionary(True), default=json_util.default))
     output.write('\n')
     output.close()
 
 
-def parse():
-    base_folder = '/home/xixisun/suzy/shoulie/resumes'
+def parse(folder):
+    # base_folder = '/home/xixisun/suzy/shoulie/resumes'
     # base_folder = '/scratch/xixisun/shoulie/resumes'
-    parser = HtmlJ51
-    html_type = parser.get_type()
-    html_folder = os.path.join(base_folder, html_type)
-    err_folder = os.path.join(base_folder, html_type + 'err')
+
+    parser_name = os.path.basename(folder)
+    parser = get_parser(parser_name)
+
+    parent_folder = os.path.dirname(folder)
+    err_folder = os.path.join(parent_folder, parser_name + 'err')
     if not os.path.exists(err_folder):
         os.makedirs(err_folder)
 
-    output = open(os.path.join(base_folder, html_type + '.json'), 'w')
+    output = open(os.path.join(parent_folder, parser_name + '.json'), 'w')
     i = 1
-    for folderName, subfolders, fileNames in os.walk(html_folder):
+    for folderName, subfolders, fileNames in os.walk(folder):
         for fileName in fileNames:
             if os.path.splitext(fileName)[1] != '.html':
                 continue
             fn = os.path.join(folderName, fileName)
             try:
-                mo = re.compile(re.escape(html_type) + r'_(\d{7})_\w+\.html').search(fileName)
+                mo = re.compile(re.escape(parser_name) + r'_(\d{7})_\w+\.html').search(fileName)
                 if mo is not None:      # no need to change file name
                     resume = parser.new_resume(fn, int(mo.group(1)))
                 else:
@@ -71,6 +91,18 @@ def parse():
     output.close()
 
 
-# test_one()
-parse()
-sys.exit(0)
+def main():
+    if len(sys.argv) < 2:
+        print('Usage: ' + sys.argv[0] + ' file|dir')
+        sys.exit(1)
+
+    if os.path.isfile(sys.argv[1]):
+        parse_one(sys.argv[1])
+    elif os.path.isdir(sys.argv[1]):
+        parse(sys.argv[1])
+    else:
+        raise TypeError
+
+
+if __name__ == "__main__":
+    main()
