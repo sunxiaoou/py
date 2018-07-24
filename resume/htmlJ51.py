@@ -225,6 +225,7 @@ class HtmlJ51:
         skills = []
         for skill in HtmlJ51.skills:
             skills += re.split(r',', skill.upper())     # merge 2 lists
+        HtmlJ51.skills = []     # static variable, must clear
 
         return list(set(skills))        # no duplicate
 
@@ -261,9 +262,8 @@ class HtmlJ51:
 
 def main():
     folder = os.path.join('/home/xixisun/suzy/shoulie/resumes', HtmlJ51.type)
-    # file = '16486510.html'
-    file = '6245342678.html'
-    file = '311890184.html'
+    file = 'j51_0000514_王强.html'
+    # file = 'j51_0079223_李智惠.html'
     resume = HtmlJ51.new_resume(os.path.join(folder, file), 4)
     pprint(resume.to_dictionary(False))
 
