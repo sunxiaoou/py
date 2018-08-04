@@ -210,7 +210,10 @@ class HtmlJ51:
             elif j == 2:
                 major = tds[i].getText()
             elif j == 3:
-                degree = Education.educationList.index(re.sub(r'[\s\n]', '', tds[i].getText()).upper()) + 1
+                try:
+                    degree = Education.educationList.index(re.sub(r'[\s\n]', '', tds[i].getText()).upper()) + 1
+                except ValueError:
+                    degree = -1
                 educations.append(Education(date1, date2, school, major, degree))
                 date1 = date2 = school = major = ''
             elif j > 3:
