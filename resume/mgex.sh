@@ -1,5 +1,13 @@
 #! /bin/sh
 
+count()
+{
+mongo <<-!end
+    use shoulie
+    db.resumes.find({}).count()
+!end
+}
+
 ex1()
 {
 mongo <<-!end
@@ -34,4 +42,6 @@ mongo <<-!end
 !end
 }
 
-ex3
+
+count
+# ex3

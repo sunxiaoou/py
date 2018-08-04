@@ -196,7 +196,7 @@ class HtmlJ51:
 
         educations = []
         j = 0
-        date1 = date2 = school = major = degree = ''
+        date1 = date2 = school = major = ''
         for i in range(len(tds)):
             if j == 0:
                 mo = re.compile(r'(\d{4}.*/\d{1,2}).*(\d{4}.*/\d{1,2}|至今)', re.DOTALL).search(tds[i].getText())
@@ -210,9 +210,9 @@ class HtmlJ51:
             elif j == 2:
                 major = tds[i].getText()
             elif j == 3:
-                degree = tds[i].getText()
+                degree = Education.educationList.index(re.sub(r'[\s\n]', '', tds[i].getText()).upper()) + 1
                 educations.append(Education(date1, date2, school, major, degree))
-                date1 = date2 = school = major = degree = ''
+                date1 = date2 = school = major = ''
             elif j > 3:
                 if not tds[i].getText():
                     j = -1      # to zero
@@ -262,8 +262,8 @@ class HtmlJ51:
 
 def main():
     folder = os.path.join('/home/xixisun/suzy/shoulie/resumes', HtmlJ51.type)
-    file = 'j51_0000514_王强.html'
-    # file = 'j51_0079223_李智惠.html'
+    # file = 'j51_0024167_王强.html'
+    file = 'j51_0014624_李智惠.html'
     resume = HtmlJ51.new_resume(os.path.join(folder, file), 4)
     pprint(resume.to_dictionary(False))
 
