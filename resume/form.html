@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Shoulie</title>
+    </head>
+
+    <body>
+        <h1>Shoulie resume query</h1>
+        <h3>Fill out the form below and click "Submit" to query</h3>
+
+        <form action="http://localhost:5330" method="GET">
+            <p>
+                基本信息:<br>
+                姓名:　　
+                <input type="text" name="name" value=""><br>
+                期望地点:
+                <input type="text" name="spot" value=""><br>
+                期望行业:
+                <input type="text" name="industry" value="" placeholder="关键字"><br>
+                期望职业:
+                <input type="text" name="field" value="" placeholder="关键字"><br>
+                年龄:　　
+                <input type="number" name="age1" min="15" max="60" placeholder="_年及以上">
+                至
+                <input type="number" name="age2" min="15" max="60" placeholder="_年以下"><br>
+                技能:　　
+                <input type="text" name="skills" value="" placeholder="1-3项, 逗号分割"><br>
+            </p>
+
+            <p>
+                教育背景:<br>
+                学校类别:
+                <select name="school_rank">
+                    <option value=1>一般 (及以上)</option>
+                    <option value=2>211 (及以上)</option>
+                    <option value=3>985</option>
+                </select><br>
+                学历要求:
+                <select name="education1">
+                      <option value=1>大专</option>
+                      <option value=2>本科</option>
+                      <option value=3>硕士</option>
+                      <option value=4>MBA</option>
+                      <option value=5>EMBA</option>
+                      <option value=6>博士</option>
+                      <option value=7>博士后</option>
+                </select>
+                至
+                <select name="education2">
+                    <option value=0 disabled selected>及以上</option>
+                    <option value=1>大专</option>
+                    <option value=2>本科</option>
+                    <option value=3>硕士</option>
+                    <option value=4>MBA</option>
+                    <option value=5>EMBA</option>
+                    <option value=6>博士</option>
+                    <option value=7>博士后</option>
+                </select><br>
+                学校:　　
+                <input type="text" name="school" value="" placeholder="关键字"><br>
+                专业:　　
+                <input type="text" name="major" value="" placeholder="关键字"><br>
+            </p>
+
+            <p>
+                职业背景:<br>
+                工作经验:
+                <input type="number" name="year1" min="1" max="30" placeholder="_年及以上">
+                至
+                <input type="number" name="year2" min="1" max="30" placeholder="_年以下"><br>
+                (前)雇主:
+                <input type="text" name="company" value="" placeholder="关键字"><br>
+                工作经历:
+                <input type="text" name="experience_key" value="" placeholder="关键字"><br>
+                项目经历:
+                <input type="text" name="project_key" value="" placeholder="关键字"><br>
+            </p>
+
+            <p>
+                <input type="submit" value="Submit">
+            </p>
+        </form>
+    </body>
+</html>
+
