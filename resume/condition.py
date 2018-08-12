@@ -179,7 +179,7 @@ class Condition:
                                  {Keys.skills + '.' + Keys.skill_level3: Condition.skill}]
             conditions[Keys.skills] = {'$regex': Condition.skill}
             """
-            conditions[Keys.skills] = {'$all': skills.split(',')}
+            conditions[Keys.skills] = {'$all': [x.strip() for x in skills.split(',')]}      # split and strip
 
         # education background
         c = Condition.range_int(entries.get(Condition.education1), entries.get(Condition.education2))
