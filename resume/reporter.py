@@ -17,7 +17,7 @@ class Reporter:
     def unshelve(shelf_name):
         shelf = shelve.open(shelf_name)
         result = shelf['result']
-        print(type(result))
+        # print(type(result))
         shelf.close()
         return result
 
@@ -100,7 +100,7 @@ class Reporter:
         return projects if len(projects) <= Reporter.truncation else projects[:Reporter.truncation] + ' ...'
 
     @staticmethod
-    def output(documents, file):
+    def to_html(documents):
         head = '''<!DOCTYPE html>
 <html>
     <head>
@@ -131,10 +131,9 @@ class Reporter:
 </html>
 '''
 
-        html = open(file, 'w')
         num = len(documents)
-        show_num = min(100, len(documents))
-        html.write(head.format(num, show_num))
+        show_num = min(100, num)
+        html_str = head.format(num, show_num)
 
         for i in range(show_num):
             document = documents[i]
@@ -148,14 +147,19 @@ class Reporter:
             educations = Reporter.educations_html(document.get(Keys.educations))
             experiences = Reporter.experiences_html(document.get(Keys.experiences))
             projects = Reporter.projects_html(document.get(Keys.projects))
-            html.write(tr.format(no, name, gender, age, education, year, spots, educations, experiences, projects))
+            html_str += tr.format(no, name, gender, age, education, year, spots, educations, experiences, projects)
 
-        html.write(tail)
-        html.close()
+        html_str += tail
+        return html_str
+
+
+def main():
+    docs = Reporter.unshelve('result.dat')
+    file = 'result.html'
+    html = open(file, 'w')
+    html.write(Reporter.to_html(docs))
+    webbrowser.open('file://{}/{}'.format(os.getcwd(), file))
 
 
 if __name__ == "__main__":
-    docs = Reporter.unshelve('result.dat')
-    output = 'result.html'
-    Reporter.output(docs, output)
-    webbrowser.open('file://{}/{}'.format(os.getcwd(), output))
+    main()

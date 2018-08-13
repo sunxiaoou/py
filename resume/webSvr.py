@@ -18,8 +18,12 @@ Send a POST request::
 """
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from urllib.parse import urlparse
+from urllib import parse
 import sys
+
+from condition import Condition
+from finder import Finder
+from reporter import Reporter
 
 
 class WebSvr(BaseHTTPRequestHandler):
@@ -30,12 +34,16 @@ class WebSvr(BaseHTTPRequestHandler):
 
     def do_GET(self):
         self._set_headers()
-        path = urlparse(self.path[2:]).path
+        path = parse.urlparse(self.path[2:]).path
+        path = parse.unquote_plus(path)
         entries = {}
         for entry in path.split('&'):
             a = entry.split('=')
-            entries[a[0]] = a[1]
-        message = '<html><body><h1>' + str(entries) + '</h1></body></html>'
+            entries[a[0]] = a[1] if not a[1].isdecimal() else int(a[1])
+        # message = '<html><body><h1>' + str(entries) + '</h1></body></html>'
+        conditions = Condition.create_conditions(entries)
+        documents = Finder.find(Finder.get_collection('localhost', 27017, 'shoulie', 'resumes'), conditions)
+        message = Reporter.to_html(documents)
         self.wfile.write(bytes(message, 'utf8'))
 
     def do_HEAD(self):

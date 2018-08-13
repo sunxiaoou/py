@@ -32,7 +32,8 @@ class Finder:
 
     @staticmethod
     def to_html(documents, file):
-        Reporter.output(documents, file)
+        html = open(file, 'w')
+        html.write(Reporter.to_html(documents))
         webbrowser.open('file://{}/{}'.format(os.getcwd(), file))
 
 
