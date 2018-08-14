@@ -34,6 +34,7 @@ class Finder:
     def to_html(documents, file):
         html = open(file, 'w')
         html.write(Reporter.to_html(documents))
+        html.close()
         webbrowser.open('file://{}/{}'.format(os.getcwd(), file))
 
 
