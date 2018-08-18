@@ -24,8 +24,10 @@ class Condition:
     year1 = 'year1'
     year2 = 'year2'
     company = 'company'
-    experience_key = 'experience_key'
-    project_key = 'project_key'
+    experience_keys = 'experience_keys'
+    ek_flag = 'ek_flag'
+    project_keys = 'project_keys'
+    pk_flag = 'pk_flag'
 
     @staticmethod
     def input_string(title):
@@ -86,8 +88,8 @@ class Condition:
             entries[Condition.year2] = ''
             # Condition.input_number('工作经验_年以下')
             entries[Condition.company] = Condition.input_string('(前)雇主(关键字)')
-            entries[Condition.experience_key] = Condition.input_string('工作经历(关键字)')
-            entries[Condition.project_key] = Condition.input_string('项目经历(关键字)')
+            entries[Condition.experience_keys] = Condition.input_string('工作经历(关键字)')
+            entries[Condition.project_keys] = Condition.input_string('项目经历(关键字)')
         except KeyboardInterrupt:
             Condition.interrupt()
         return entries
@@ -207,13 +209,36 @@ class Condition:
         if company:
             conditions[Keys.companies] = {'$regex': company}
 
-        experience_key = entries.get(Condition.experience_key)
-        if experience_key:
-            conditions[Keys.experiences] = {'$regex': experience_key}
+        and_list = []
+        or_list = []
 
-        project_key = entries.get(Condition.project_key)
-        if project_key:
-            conditions[Keys.projects] = {'$regex': project_key}
+        experience_keys = entries.get(Condition.experience_keys)
+        if experience_keys:
+            ek_flag = entries.get(Condition.ek_flag)
+            for key in experience_keys.split(','):
+                if ek_flag == 'and':
+                    and_list.append({Keys.experiences: {'$regex': key.strip()}})
+                elif ek_flag == 'or':
+                    or_list.append({Keys.experiences: {'$regex': key.strip()}})
+                else:
+                    raise ValueError
+
+        project_keys = entries.get(Condition.project_keys)
+        if project_keys:
+            pk_flag = entries.get(Condition.pk_flag)
+            for key in project_keys.split(','):
+                if pk_flag == 'and':
+                    and_list.append({Keys.projects: {'$regex': key.strip()}})
+                elif pk_flag == 'or':
+                    or_list.append({Keys.projects: {'$regex': key.strip()}})
+                else:
+                    raise ValueError
+
+        if and_list:
+            conditions['$and'] = and_list
+
+        if or_list:
+            conditions['$or'] = or_list
 
         pprint(conditions)
         return conditions

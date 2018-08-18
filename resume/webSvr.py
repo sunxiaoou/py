@@ -46,9 +46,11 @@ class WebSvr(BaseHTTPRequestHandler):
             conditions = Condition.create_conditions(entries)
             documents = Finder.find(Finder.get_collection('localhost', 27017, 'shoulie', 'resumes'), conditions)
             message = Reporter.to_html(documents, WebSvr.base_folder)
+            """
             html = open('{}.html'.format(datetime.now().strftime('%y%m%d_%H%M%S')), 'w')
             html.write(message)
             html.close()
+            """
             self.wfile.write(bytes(message, 'utf8'))
         elif self.path.endswith('.html'):
             path = parse.unquote(self.path)
