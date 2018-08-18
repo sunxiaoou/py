@@ -16,7 +16,6 @@ Send a POST request::
     curl -d "foo=bar&bin=baz" http://localhost:7412
 
 """
-import re
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib import parse
