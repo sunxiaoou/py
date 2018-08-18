@@ -16,7 +16,7 @@ Send a POST request::
     curl -d "foo=bar&bin=baz" http://localhost:7412
 
 """
-
+import re
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib import parse
@@ -37,23 +37,28 @@ class WebSvr(BaseHTTPRequestHandler):
 
     def do_GET(self):
         self._set_headers()
-        path = parse.urlparse(self.path[2:]).path
-        path = parse.unquote_plus(path)
-        if not path.startswith('name='):
-            return
-
-        entries = {}
-        for entry in path.split('&'):
-            a = entry.split('=')
-            entries[a[0]] = a[1] if not a[1].isdecimal() else int(a[1])
-        # message = '<html><body><h1>' + str(entries) + '</h1></body></html>'
-        conditions = Condition.create_conditions(entries)
-        documents = Finder.find(Finder.get_collection('localhost', 27017, 'shoulie', 'resumes'), conditions)
-        message = Reporter.to_html(documents, WebSvr.base_folder)
-        html = open('{}.html'.format(datetime.now().strftime('%y%m%d_%H%M%S')), 'w')
-        html.write(message)
-        html.close()
-        self.wfile.write(bytes(message, 'utf8'))
+        if self.path.startswith('/?'):
+            path = parse.urlparse(self.path[2:]).path
+            path = parse.unquote_plus(path)
+            entries = {}
+            for entry in path.split('&'):
+                a = entry.split('=')
+                entries[a[0]] = a[1] if not a[1].isdecimal() else int(a[1])
+            conditions = Condition.create_conditions(entries)
+            documents = Finder.find(Finder.get_collection('localhost', 27017, 'shoulie', 'resumes'), conditions)
+            message = Reporter.to_html(documents, WebSvr.base_folder)
+            html = open('{}.html'.format(datetime.now().strftime('%y%m%d_%H%M%S')), 'w')
+            html.write(message)
+            html.close()
+            self.wfile.write(bytes(message, 'utf8'))
+        elif self.path.endswith('.html'):
+            path = parse.unquote(self.path)
+            try:
+                f = open(path)
+            except FileNotFoundError:
+                self.send_error(404, 'File Not Found: ' + path)
+                return
+            self.wfile.write(bytes(f.read(), 'utf8'))
 
     def do_HEAD(self):
         self._set_headers()

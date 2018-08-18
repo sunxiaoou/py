@@ -25,7 +25,8 @@ class Reporter:
     def name_html(name, file, folder):
         html_type = re.compile(r'^(\w+)_\d+').search(file).group(1)
         full_file_name = os.path.join(folder, html_type, file)
-        return '<a href="file://{}"title={}>{}</a><br>'.format(full_file_name, file, name)
+        # return '<a href="file://{}"title={}>{}</a><br>'.format(full_file_name, file, name)
+        return '<a href="{}"title={}>{}</a><br>'.format(full_file_name, file, name)
 
     @staticmethod
     def gender_html(gender):
