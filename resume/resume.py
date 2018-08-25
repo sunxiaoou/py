@@ -9,6 +9,7 @@ class Keys:
     fields = '期望从事职业'
     industries = '期望从事行业'
     file = 'file'
+    timestamp = 'timestamp'
     name = '姓名'
     gender = '性别'
     birth = '出生日期'
@@ -16,17 +17,18 @@ class Keys:
     email = '电子邮箱'
     education = '学历'
     year = '参加工作年份'
-    school_rank = '学校类别'
     companies = '雇主'
     educations = '教育经历'
     school = schools = '学校'
     major = majors = '专业'
     degree = degrees = '学位'
+    school_rank = '学校类别'
     skills = '技能'
     skill_level1 = '一般'
     skill_level2 = '熟练'
     skill_level3 = '精通'
     experiences = '工作经历'
+    duration = '最长一次工作年限'
     start_date = '开始日期'
     end_date = '结束日期'
     company = '雇主'
@@ -55,8 +57,9 @@ class Objective:
 
 
 class Person:
-    def __init__(self, file, name, gender, birth, phone, email, education, year, objective):
+    def __init__(self, file, timestamp, name, gender, birth, phone, email, education, year, objective):
         self.file = file
+        self.timestamp = timestamp
         self.name = name
         self.gender = gender
         self.birth = birth
@@ -72,9 +75,9 @@ class Person:
                self.education + self.year + str(self.objective)
 
     def to_dictionary(self):
-        person = {Keys.file: self.file, Keys.name: self.name, Keys.gender: self.gender, Keys.birth: self.birth,
-                  Keys.phone: self.phone, Keys.email: self.email, Keys.education: self.education,
-                  Keys.year: self.year}
+        person = {Keys.file: self.file, Keys.timestamp: self.timestamp, Keys.name: self.name, Keys.gender: self.gender,
+                  Keys.birth: self.birth, Keys.phone: self.phone, Keys.email: self.email,
+                  Keys.education: self.education, Keys.year: self.year}
         return {**person, **self.objective.to_dictionary()}     # merge 2 dictionaries
 
 
@@ -197,16 +200,38 @@ class Resume:
         return msg
 
     def to_dictionary(self, list2str):
+        if self.person.year == -1:
+            end_years = []
+            if self.educations:
+                for education in self.educations:
+                    end_years.append(education.end_date.year)
+                self.person.year = max(end_years)
+            else:
+                self.person.year = self.person.timestamp.year
+
+        if self.person.education == -1:
+            degrees = []
+            if self.educations:
+                for education in self.educations:
+                    degrees.append(education.degree)
+                self.person.education = max(degrees)
+            else:
+                self.person.education = 0
+
         resume = self.person.to_dictionary()
 
         if self.experiences:
             companies = []
+            durations = []
             experiences = []
             for experience in self.experiences:
-                experiences.append(experience.to_dictionary())
                 companies.append(experience.company)
+                durations.append(experience.end_date.year - experience.start_date.year)
+                experiences.append(experience.to_dictionary())
             if companies:
                 resume[Keys.companies] = companies
+            if durations:
+                resume[Keys.duration] = max(durations)
             if not list2str:
                 resume[Keys.experiences] = experiences
             else:
