@@ -17,6 +17,7 @@ from resume import Education
 class HtmlJ51:
     type = 'j51'
     soup = None
+    date = None
     skills = []
 
     @staticmethod
@@ -24,9 +25,14 @@ class HtmlJ51:
         return HtmlJ51.type
 
     @staticmethod
-    def get_year():
-        tag = HtmlJ51.soup.body.find(id='lblResumeUpdateTime')
-        return int(re.compile(r'\d{4}').search(tag.getText()).group())
+    def get_date(file):
+        try:
+            tag = HtmlJ51.soup.body.find(id='lblResumeUpdateTime')
+            mo = re.compile(r'(\d{4}).(\d\d).(\d\d)').search(tag.getText())
+            date = datetime(int(mo.group(1)), int(mo.group(2)), int(mo.group(3)))
+        except AttributeError:
+            date = datetime.fromtimestamp(os.path.getmtime(file))
+        return date
 
     @staticmethod
     def get_objective():
@@ -84,7 +90,7 @@ class HtmlJ51:
         tds = tag.findAll('td')
         mo = re.compile(r'(\d{1,2})年.*(男|女).*(\d{4})年(\d{1,2})月', re.DOTALL).search(tds[1].getText())
         try:
-            year = HtmlJ51.get_year() - int(mo.group(1))
+            year = HtmlJ51.date.year - int(mo.group(1))
         except AttributeError:
             year = -1
         gender = mo.group(2)
@@ -122,14 +128,14 @@ class HtmlJ51:
         date1 = date2 = company = company_desc = job = job_desc = ''
         for i in range(len(tds)):
             if j == 0:
-                mo = re.compile(r'(\d{4}.*/\d{1,2}).*(\d{4}.*/\d{1,2}|至今)：(\w+)', re.DOTALL).\
-                    search(tds[i].getText())
-                date1 = mo.group(1)
-                date1 = re.sub(r'[\s\n]', '', date1)
-                date2 = mo.group(2)
-                if date2 != '至今':
-                    date2 = re.sub(r'[\s\n]', '', date2)
-                company = mo.group(3)
+                text = re.sub(r'[\s\n]', '', tds[i].getText())
+                mo = re.compile(r'(\d{4}).*/(\d{1,2}).*((\d{4}).*/(\d{1,2})|至今)：(\w+)', re.DOTALL).search(text)
+                date1 = datetime(int(mo.group(1)), int(mo.group(2)), 15)
+                if '至今' != mo.group(3):
+                    date2 = datetime(int(mo.group(4)), int(mo.group(5)), 15)
+                else:
+                    date2 = HtmlJ51.date
+                company = mo.group(6)
             elif j == 2:
                 company_desc = tds[i].getText()
             elif j == 4:
@@ -159,14 +165,14 @@ class HtmlJ51:
         date1 = date2 = name = description = duty = ''
         for i in range(len(tds)):
             if j == 0:
-                mo = re.compile(r'(\d{4}.*/\d{1,2}).*(\d{4}.*/\d{1,2}|至今)：\W*(\w+)', re.DOTALL). \
-                    search(tds[i].getText())
-                date1 = mo.group(1)
-                date1 = re.sub(r'[\s\n]', '', date1)
-                date2 = mo.group(2)
-                if date2 != '至今':
-                    date2 = re.sub(r'[\s\n]', '', date2)
-                name = mo.group(3)
+                text = re.sub(r'[\s\n]', '', tds[i].getText())
+                mo = re.compile(r'(\d{4}).*/(\d{1,2}).*((\d{4}).*/(\d{1,2})|至今)：(\w+)', re.DOTALL).search(text)
+                date1 = datetime(int(mo.group(1)), int(mo.group(2)), 15)
+                if '至今' != mo.group(3):
+                    date2 = datetime(int(mo.group(4)), int(mo.group(5)), 15)
+                else:
+                    date2 = HtmlJ51.date
+                name = mo.group(6)
             elif j == 1:
                 if tds[i].getText() == '项目描述：':
                     j += 2
@@ -199,12 +205,13 @@ class HtmlJ51:
         date1 = date2 = school = major = ''
         for i in range(len(tds)):
             if j == 0:
-                mo = re.compile(r'(\d{4}.*/\d{1,2}).*(\d{4}.*/\d{1,2}|至今)', re.DOTALL).search(tds[i].getText())
-                date1 = mo.group(1)
-                date1 = re.sub(r'[\s\n]', '', date1)
-                date2 = mo.group(2)
-                if date2 != '至今':
-                    date2 = re.sub(r'[\s\n]', '', date2)
+                text = re.sub(r'[\s\n]', '', tds[i].getText())
+                mo = re.compile(r'(\d{4}).*/(\d{1,2}).*((\d{4}).*/(\d{1,2})|至今)', re.DOTALL).search(text)
+                date1 = datetime(int(mo.group(1)), int(mo.group(2)), 15)
+                if '至今' != mo.group(3):
+                    date2 = datetime(int(mo.group(4)), int(mo.group(5)), 15)
+                else:
+                    date2 = HtmlJ51.date
             elif j == 1:
                 school = tds[i].getText()
             elif j == 2:
@@ -235,6 +242,7 @@ class HtmlJ51:
     @staticmethod
     def new_resume(html, no):
         HtmlJ51.soup = BeautifulSoup(open(html), 'lxml')
+        HtmlJ51.date = HtmlJ51.get_date(html)
 
         person = HtmlJ51.get_person(no)
         experiences = HtmlJ51.get_experiences()
@@ -243,13 +251,13 @@ class HtmlJ51:
         skills = HtmlJ51.get_skills()
 
         if person.year == -1:
-            end_dates = []
+            end_years = []
             if educations:
                 for education in educations:
-                    end_dates.append(education.end_date)
-                person.year = max(end_dates)
+                    end_years.append(education.end_date.year)
+                person.year = max(end_years)
             else:
-                person.year = 2015
+                person.year = HtmlJ51.date.year
 
         if person.education == -1:
             degrees = []
