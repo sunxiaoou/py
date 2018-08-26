@@ -17,15 +17,21 @@ from resume import Education
 class HtmlJL:
     type = 'jl'
     soup = None
+    timestamp = None
 
     @staticmethod
     def get_type():
         return HtmlJL.type
 
     @staticmethod
-    def get_year():
-        text = HtmlJL.soup.body.find(text=re.compile(r'更新日期:.*'))
-        return int(re.compile(r'(\d{4})').search(text).group(1))
+    def get_timestamp(file):
+        try:
+            tag = HtmlJL.soup.body.find(text=re.compile(r'更新日期:.*'))
+            mo = re.compile(r'(\d{4}).(\d\d).(\d\d)').search(tag.getText())
+            date = datetime(int(mo.group(1)), int(mo.group(2)), int(mo.group(3)))
+        except AttributeError:
+            date = datetime.fromtimestamp(os.path.getmtime(file))
+        return date
 
     @staticmethod
     def get_objective():
@@ -100,16 +106,25 @@ class HtmlJL:
             text = HtmlJL.soup.body.find(text=re.compile(r'工作经验:.*'))
             a = re.compile(r'\d{1,2}').findall(text)
             delta = int(a[-1])          # -1 is last one
-            year = HtmlJL.get_year() - delta
+            year = HtmlJL.timestamp.year - delta
         except (AttributeError, IndexError):
             year = -1
 
-        return Person(file, name, gender, birth, phone, email, education, year, HtmlJL.get_objective())
+        return Person(file, HtmlJL.timestamp, name, gender, birth, phone, email, education, year,
+                      HtmlJL.get_objective())
+
+    @staticmethod
+    def str2date(s):
+        mo = re.compile(r'(\d{4}).+?(\d{1,2})|至今').search(s)
+        if '至今' != mo.group():
+            # print('({}|{})'.format(mo.group(1), mo.group(2)))
+            return datetime(int(mo.group(1)), int(mo.group(2)), 15)
+        return HtmlJL.timestamp
 
     @staticmethod
     def get_experiences():
         text = HtmlJL.soup.body.getText()
-        mo = re.compile(r'工作经历(:|：)(.*)项目经验', re.DOTALL).search(text)
+        mo = re.compile(r'工作经历(:|：)(.*?)项目经验', re.DOTALL).search(text)
         if mo is None:
             return []
         text = mo.group(2)
@@ -117,21 +132,22 @@ class HtmlJL:
         experiences = []
         for text in texts:
             date1 = date2 = company = company_desc = job = job_desc = ''
-            for item in text.split('\n'):
-                if item == '' or '离职理由' in item:
-                    continue
-                if '工作内容:' not in item:
-                    flds = [x.strip() for x in item.split('|') if x != '']
-                    try:
-                        date1 = flds[0]
-                        date2 = flds[1]
-                        company = flds[2]
-                        company_desc = flds[3]
-                        company_desc += ' {}'.format(flds[4])
-                    except IndexError:
-                        pass
-                else:
-                    job_desc = item[7:]
+            mo = re.compile(r'\d{4}.+\d{1,2}.+(\d{4}.+\d{1,2}|至今).*?\n', re.DOTALL).search(text)
+            if mo is not None:
+                items = [x.strip() for x in mo.group().split('|') if x != '']
+                try:
+                    date1 = HtmlJL.str2date(items[0])
+                    date2 = HtmlJL.str2date(items[1])
+                    company = items[2]
+                    company_desc = items[3]
+                    company_desc += ' {}'.format(items[4])
+                except (AttributeError, IndexError):
+                    pass
+
+            mo = re.compile(r'工作内容:(.*?)\n').search(text)
+            if mo is not None:
+                job_desc = mo.group(1)
+
             experiences.append(Experience(date1, date2, company, company_desc, job, job_desc))
         return experiences
 
@@ -142,7 +158,8 @@ class HtmlJL:
         if mo is None:
             return []
         text = mo.group(1)
-        texts = re.compile(r'  \d\d\d\d.*?(?=  \d\d\d\d)', re.DOTALL).findall(text)     # ? non greed, ?= non consuming
+        # texts = re.compile(r'  \d\d\d\d.*?(?=  \d\d\d\d)', re.DOTALL).findall(text)     # ?= non consuming
+        texts = re.compile(r'  \d\d\d\d.*?责任描述:\n.*?\n', re.DOTALL).findall(text)
         projects = []
         for text in texts:
             date1 = date2 = name = 'null'
@@ -152,8 +169,8 @@ class HtmlJL:
             item = mo.group()
             flds = [x.strip() for x in item.split('|') if x != '']
             try:
-                date1 = flds[0]
-                date2 = flds[1]
+                date1 = HtmlJL.str2date(flds[0])
+                date2 = HtmlJL.str2date(flds[1])
                 name = flds[2]
             except IndexError:
                 pass
@@ -187,11 +204,8 @@ class HtmlJL:
             # print(":".join("{:02x}".format(ord(c)) for c in text))
             try:
                 a = re.split('&nbsp|- ', text)
-                date1 = int(re.compile(r'(\d{4})').search(a[0]).group(1))
-                if a[1] == '至今':
-                    date2 = HtmlJL.get_year()
-                else:
-                    date2 = int(re.compile(r'(\d{4})').search(a[1]).group(1))
+                date1 = HtmlJL.str2date(a[0])
+                date2 = HtmlJL.str2date(a[1])
                 school = a[2]
                 major = a[4]
                 degree = Education.educationList.index(a[5].upper()) + 1
@@ -225,30 +239,13 @@ class HtmlJL:
     @staticmethod
     def new_resume(html, no):
         HtmlJL.soup = BeautifulSoup(open(html), 'lxml')
+        HtmlJL.timestamp = HtmlJL.get_timestamp(html)
 
         person = HtmlJL.get_person(no)
         experiences = HtmlJL.get_experiences()
         projects = HtmlJL.get_projects()
         educations = HtmlJL.get_educations()
         skills = HtmlJL.get_skills()
-
-        if person.year == -1:
-            end_dates = []
-            if educations:
-                for education in educations:
-                    end_dates.append(education.end_date)
-                person.year = max(end_dates)
-            else:
-                person.year = HtmlJL.get_year()
-
-        if person.education == -1:
-            degrees = []
-            if educations:
-                for education in educations:
-                    degrees.append(education.degree)
-                person.education = max(degrees)
-            else:
-                person.education = 0
 
         return Resume(person, experiences, projects, educations, skills)
 
