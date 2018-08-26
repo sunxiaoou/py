@@ -142,9 +142,12 @@ class HtmlJxw:
             date1 = date2 = company = company_desc = job = job_desc = ''
             try:
                 date = div.find('div', class_='gztime fl').getText()
-                mo = re.compile(r'(\d{4}\.\d{2})-(\d{4}\.\d{2})').search(date)
+                mo = re.compile(r'(\d{4}\.\d{2})-(\d{4}\.\d{2})?').search(date)     # ? optional match
                 date1 = HtmlJxw.str2date(mo.group(1))
-                date2 = HtmlJxw.str2date(mo.group(2))
+                if mo.group(2) is not None:
+                    date2 = HtmlJxw.str2date(mo.group(2))
+                else:
+                    date2 = HtmlJxw.timestamp
             except AttributeError:
                 pass
 
@@ -201,9 +204,13 @@ class HtmlJxw:
             date1 = date2 = name = description = duty = ''
             try:
                 date = div.find('div', class_='gztime fl').getText()
-                mo = re.compile(r'(\d{4}\.\d{2})\D*-\D*(\d{4}\.\d{2})', re.DOTALL | re.MULTILINE).search(date)
+                # mo = re.compile(r'(\d{4}\.\d{2})\D*-\D*(\d{4}\.\d{2})', re.DOTALL | re.MULTILINE).search(date)
+                mo = re.compile(r'(\d{4}\.\d{2})\D*-\D*(\d{4}\.\d{2})?', re.DOTALL).search(date)
                 date1 = HtmlJxw.str2date(mo.group(1))
-                date2 = HtmlJxw.str2date(mo.group(2))
+                if mo.group(2) is not None:
+                    date2 = HtmlJxw.str2date(mo.group(2))
+                else:
+                    date2 = HtmlJxw.timestamp
             except AttributeError:
                 pass
 
@@ -236,9 +243,12 @@ class HtmlJxw:
             tds = tr.findAll('td')
             try:
                 # mo = re.compile(r'(\d{4}).*(\d{4})', re.DOTALL | re.MULTILINE).search(tds[1].getText())
-                mo = re.compile(r'(\d{4}\.\d{2})\D*-\D*(\d{4}\.\d{2})', re.DOTALL).search(tds[1].getText())
+                mo = re.compile(r'(\d{4}\.\d{2})\D*-\D*(\d{4}\.\d{2})?', re.DOTALL).search(tds[1].getText())
                 date1 = HtmlJxw.str2date(mo.group(1))
-                date2 = HtmlJxw.str2date(mo.group(2))
+                if mo.group(2) is not None:
+                    date2 = HtmlJxw.str2date(mo.group(2))
+                else:
+                    date2 = HtmlJxw.timestamp
                 school = re.compile(r'\w+').search(tds[2].getText()).group()
                 major = re.compile(r'\w+').search(tds[4].getText()).group()
                 mo = re.compile(r'\w+').search(tds[3].getText())
@@ -277,33 +287,15 @@ class HtmlJxw:
         educations = HtmlJxw.get_educations()
         skills = HtmlJxw.get_skills()
 
-        if person.year == -1:
-            end_dates = []
-            if educations:
-                for education in educations:
-                    end_dates.append(education.end_date)
-                person.year = max(end_dates)
-            else:
-                person.year = 2015
-
-        if person.education == -1:
-            degrees = []
-            if educations:
-                for education in educations:
-                    degrees.append(education.degree)
-                person.education = max(degrees)
-            else:
-                person.education = 0
-
         return Resume(person, experiences, projects, educations, skills)
 
 
 def main():
     folder = os.path.join('/home/xixisun/suzy/shoulie/resumes', HtmlJxw.type)
-    # file = 'jxw_0142316_郑红霞.html'
     # file = 'jxw_0000225_周书婷.html'
     # file = 'jxw_0146878_洪聪贵.html'
-    file = 'jxw_0076028_李兴琨.html'
+    # file = 'jxw_0076028_李兴琨.html'
+    file = 'jxw_0052586_于小玉.html'
     resume = HtmlJxw.new_resume(os.path.join(folder, file), 2)
     pprint(resume.to_dictionary(False))
 
