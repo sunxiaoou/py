@@ -17,10 +17,15 @@ from resume import Education
 class HtmlJxw:
     type = 'jxw'
     soup = None
+    timestamp = None
 
     @staticmethod
     def get_type():
         return HtmlJxw.type
+
+    @staticmethod
+    def get_timestamp(file):
+        return datetime.fromtimestamp(os.path.getmtime(file))
 
     @staticmethod
     def get_objective():
@@ -112,7 +117,15 @@ class HtmlJxw:
         except (AttributeError, ValueError):
             education = -1
 
-        return Person(file, name, gender, birth, phone, email, education, year, HtmlJxw.get_objective())
+        return Person(file, HtmlJxw.timestamp, name, gender, birth, phone, email, education, year,
+                      HtmlJxw.get_objective())
+
+    @staticmethod
+    def str2date(s):
+        mo = re.compile(r'(\d{4}).+?(\d{1,2})|至今').search(s)
+        if '至今' != mo.group() and int(mo.group(1)) < HtmlJxw.timestamp.year:
+            return datetime(int(mo.group(1)), int(mo.group(2)), 15)
+        return HtmlJxw.timestamp
 
     @staticmethod
     def get_experiences():
@@ -130,8 +143,8 @@ class HtmlJxw:
             try:
                 date = div.find('div', class_='gztime fl').getText()
                 mo = re.compile(r'(\d{4}\.\d{2})-(\d{4}\.\d{2})').search(date)
-                date1 = mo.group(1)
-                date2 = mo.group(2)
+                date1 = HtmlJxw.str2date(mo.group(1))
+                date2 = HtmlJxw.str2date(mo.group(2))
             except AttributeError:
                 pass
 
@@ -189,8 +202,8 @@ class HtmlJxw:
             try:
                 date = div.find('div', class_='gztime fl').getText()
                 mo = re.compile(r'(\d{4}\.\d{2})\D*-\D*(\d{4}\.\d{2})', re.DOTALL | re.MULTILINE).search(date)
-                date1 = mo.group(1)
-                date2 = mo.group(2)
+                date1 = HtmlJxw.str2date(mo.group(1))
+                date2 = HtmlJxw.str2date(mo.group(2))
             except AttributeError:
                 pass
 
@@ -222,9 +235,10 @@ class HtmlJxw:
         for tr in tag.findAll('tr'):
             tds = tr.findAll('td')
             try:
-                mo = re.compile(r'(\d{4}).*(\d{4})', re.DOTALL | re.MULTILINE).search(tds[1].getText())
-                date1 = int(mo.group(1))
-                date2 = int(mo.group(2))
+                # mo = re.compile(r'(\d{4}).*(\d{4})', re.DOTALL | re.MULTILINE).search(tds[1].getText())
+                mo = re.compile(r'(\d{4}\.\d{2})\D*-\D*(\d{4}\.\d{2})', re.DOTALL).search(tds[1].getText())
+                date1 = HtmlJxw.str2date(mo.group(1))
+                date2 = HtmlJxw.str2date(mo.group(2))
                 school = re.compile(r'\w+').search(tds[2].getText()).group()
                 major = re.compile(r'\w+').search(tds[4].getText()).group()
                 mo = re.compile(r'\w+').search(tds[3].getText())
@@ -255,6 +269,7 @@ class HtmlJxw:
     @staticmethod
     def new_resume(html, no):
         HtmlJxw.soup = BeautifulSoup(open(html), 'lxml')
+        HtmlJxw.timestamp = HtmlJxw.get_timestamp(html)
 
         person = HtmlJxw.get_person(no)
         experiences = HtmlJxw.get_experiences()
@@ -285,9 +300,10 @@ class HtmlJxw:
 
 def main():
     folder = os.path.join('/home/xixisun/suzy/shoulie/resumes', HtmlJxw.type)
-    file = 'jxw_0076028_李兴琨.html'
-    # file = 'jxw_0146878_洪聪贵.html'
     # file = 'jxw_0142316_郑红霞.html'
+    # file = 'jxw_0000225_周书婷.html'
+    # file = 'jxw_0146878_洪聪贵.html'
+    file = 'jxw_0076028_李兴琨.html'
     resume = HtmlJxw.new_resume(os.path.join(folder, file), 2)
     pprint(resume.to_dictionary(False))
 
