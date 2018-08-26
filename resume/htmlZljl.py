@@ -17,19 +17,21 @@ from resume import Education
 class HtmlZljl:
     type = 'zljl'
     soup = None
+    timestamp = None
 
     @staticmethod
     def get_type():
         return HtmlZljl.type
 
     @staticmethod
-    def get_year():
+    def get_timestamp(file):
         try:
-            text = HtmlZljl.soup.find(id='resumeUpdateTime').getText()
-            year = int(re.compile(r'(\d{4})').search(text).group(1))
+            tag = HtmlZljl.soup.find(id='resumeUpdateTime')
+            mo = re.compile(r'(\d{4}).(\d\d).(\d\d)').search(tag.getText())
+            date = datetime(int(mo.group(1)), int(mo.group(2)), int(mo.group(3)))
         except AttributeError:
-            year = 2015
-        return year
+            date = datetime.fromtimestamp(os.path.getmtime(file))
+        return date
 
     @staticmethod
     def get_objective():
@@ -108,7 +110,7 @@ class HtmlZljl:
         try:
             mo = re.compile(r'(\d{1,2})年工作经验').search(a[2])
             delta = int(mo.group(1))
-            year = HtmlZljl.get_year() - delta
+            year = HtmlZljl.timestamp.year - delta
         except AttributeError:
             year = -1
 
@@ -120,7 +122,15 @@ class HtmlZljl:
         except (IndexError, ValueError):
             education = -1
 
-        return Person(file, name, gender, birth, phone, email, education, year, HtmlZljl.get_objective())
+        return Person(file, HtmlZljl.timestamp, name, gender, birth, phone, email, education, year,
+                      HtmlZljl.get_objective())
+
+    @staticmethod
+    def str2date(s):
+        mo = re.compile(r'(\d{4}).+?(\d{1,2})|至今').search(s)
+        if '至今' != mo.group():
+            return datetime(int(mo.group(1)), int(mo.group(2)), 15)
+        return HtmlZljl.timestamp
 
     @staticmethod
     def get_experiences():
@@ -138,8 +148,8 @@ class HtmlZljl:
             text = h2.getText().strip()
             a = re.split(u'\xa0\xa0| - ', text)
             try:
-                date1 = a[0]
-                date2 = a[1]
+                date1 = HtmlZljl.str2date(a[0])
+                date2 = HtmlZljl.str2date(a[1])
                 company = a[2]
             except IndexError:
                 pass
@@ -157,6 +167,7 @@ class HtmlZljl:
                                 job_desc = td.getText().replace('\'', '’')
                 sibling = sibling.find_next_sibling()
             experiences.append(Experience(date1, date2, company, company_desc, job, job_desc))
+
         return experiences
 
     @staticmethod
@@ -175,8 +186,8 @@ class HtmlZljl:
             text = h2.getText().strip()
             a = re.split(u'\xa0\xa0| - ', text)
             try:
-                date1 = a[0]
-                date2 = a[1]
+                date1 = HtmlZljl.str2date(a[0])
+                date2 = HtmlZljl.str2date(a[1])
                 name = a[2]
             except IndexError:
                 pass
@@ -211,11 +222,8 @@ class HtmlZljl:
             text = element.getText().strip()
             a = re.split(u'\xa0\xa0| - ', text)
             try:
-                date1 = int(re.compile(r'(\d{4})').search(a[0]).group(1))
-                if a[1] == '至今':
-                    date2 = HtmlZljl.get_year()
-                else:
-                    date2 = int(re.compile(r'(\d{4})').search(a[1]).group(1))
+                date1 = HtmlZljl.str2date(a[0])
+                date2 = HtmlZljl.str2date(a[1])
                 school = a[2]
                 major = a[3]
                 degree = Education.educationList.index(a[4].upper()) + 1
@@ -250,6 +258,7 @@ class HtmlZljl:
     @staticmethod
     def new_resume(html, no):
         HtmlZljl.soup = BeautifulSoup(open(html), 'lxml')
+        HtmlZljl.timestamp = HtmlZljl.get_timestamp(html)
 
         person = HtmlZljl.get_person(no)
         experiences = HtmlZljl.get_experiences()
@@ -257,31 +266,13 @@ class HtmlZljl:
         educations = HtmlZljl.get_educations()
         skills = HtmlZljl.get_skills()
 
-        if person.year == -1:
-            end_dates = []
-            if educations:
-                for education in educations:
-                    end_dates.append(education.end_date)
-                person.year = max(end_dates)
-            else:
-                person.year = HtmlZljl.get_year()
-
-        if person.education == -1:
-            degrees = []
-            if educations:
-                for education in educations:
-                    degrees.append(education.degree)
-                person.education = max(degrees)
-            else:
-                person.education = 0
-
         return Resume(person, experiences, projects, educations, skills)
 
 
 def main():
     folder = '/home/xixisun/suzy/shoulie/resumes/zljl'
-    file = 'zljl_0000009_史京绮.html'
-    # file = 'zljl_0031286_刘卓.html'
+    # file = 'zljl_0000009_史京绮.html'
+    file = 'zljl_0031286_刘卓.html'
     resume = HtmlZljl.new_resume(os.path.join(folder, file), 2)
     pprint(resume.to_dictionary(False))
 
