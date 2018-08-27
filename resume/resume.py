@@ -226,7 +226,8 @@ class Resume:
             experiences = []
             for experience in self.experiences:
                 companies.append(experience.company)
-                durations.append(experience.end_date.year - experience.start_date.year)
+                if experience.end_date and experience.start_date:
+                    durations.append(experience.end_date.year - experience.start_date.year)
                 experiences.append(experience.to_dictionary())
             if companies:
                 resume[Keys.companies] = companies
