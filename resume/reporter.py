@@ -61,6 +61,12 @@ class Reporter:
         return '{}年<br>'.format(year)
 
     @staticmethod
+    def duration_html(duration):
+        if duration is None:
+            return '<br>'
+        return '{}年<br>'.format(duration)
+
+    @staticmethod
     def educations_html(educations):
         if educations is None:
             return None
@@ -120,7 +126,7 @@ class Reporter:
 
         tr = '''
             <tr>
-                <td>{}{}{}{}{}{}{}</td>
+                <td>{}{}{}{}{}{}{}{}</td>
                 <td>{}</td>
                 <td>{}</td>
                 <td>{}</td>
@@ -145,12 +151,16 @@ class Reporter:
             spots = Reporter.spots_html(document.get(Keys.spots))
             education = Reporter.education_html(document.get(Keys.education))
             year = Reporter.year_html(document.get(Keys.year))
+            duration = Reporter.duration_html(document.get(Keys.duration))
             educations = Reporter.educations_html(document.get(Keys.educations))
             experiences = Reporter.experiences_html(document.get(Keys.experiences))
             projects = Reporter.projects_html(document.get(Keys.projects))
-            html_str += tr.format(no, name, gender, age, education, year, spots, educations, experiences, projects)
+            html_str += tr.format(no, name, gender, age, education, year, duration, spots, educations, experiences,
+                                  projects)
 
         html_str += tail
+
+        print("Report generated")
         return html_str
 
 

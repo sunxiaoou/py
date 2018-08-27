@@ -23,6 +23,8 @@ class Condition:
 
     year1 = 'year1'
     year2 = 'year2'
+    duration1 = 'duration1'
+    duration2 = 'duration2'
     company = 'company'
     experience_keys = 'experience_keys'
     ek_flag = 'ek_flag'
@@ -204,6 +206,10 @@ class Condition:
         c = Condition.range_year(entries.get(Condition.year1), entries.get(Condition.year2))
         if c:
             conditions[Keys.year] = c
+
+        c = Condition.range_int(entries.get(Condition.duration1), entries.get(Condition.duration2))
+        if c:
+            conditions[Keys.duration] = c
 
         company = entries.get(Condition.company)
         if company:
