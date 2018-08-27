@@ -98,6 +98,8 @@ class HtmlJL:
         try:
             text = HtmlJL.soup.body.find(text=re.compile(r'学历:.*'))
             text = re.compile(r'学历:(.*)').search(text).group(1).strip()
+            if text == '研究生':
+                text = '硕士'
             education = Education.educationList.index(text.upper()) + 1
         except ValueError:
             education = -1
@@ -117,14 +119,14 @@ class HtmlJL:
     def str2date(s):
         mo = re.compile(r'(\d{4}).+?(\d{1,2})|至今').search(s)
         if '至今' != mo.group():
-            # print('({}|{})'.format(mo.group(1), mo.group(2)))
-            return datetime(int(mo.group(1)), int(mo.group(2)), 15)
+            mouth = int(mo.group(2))
+            return datetime(int(mo.group(1)), mouth if mouth < 12 else 12, 15)
         return HtmlJL.timestamp
 
     @staticmethod
     def get_experiences():
         text = HtmlJL.soup.body.getText()
-        mo = re.compile(r'工作经历(:|：)(.*?)项目经验', re.DOTALL).search(text)
+        mo = re.compile(r'\n工作经历(:|：)(.*?)项目经验', re.DOTALL).search(text)
         if mo is None:
             return []
         text = mo.group(2)
@@ -132,7 +134,7 @@ class HtmlJL:
         experiences = []
         for text in texts:
             date1 = date2 = company = company_desc = job = job_desc = ''
-            mo = re.compile(r'\d{4}.+\d{1,2}.+(\d{4}.+\d{1,2}|至今).*?\n', re.DOTALL).search(text)
+            mo = re.compile(r'\d{4}\D+\d{1,2}\D+(\d{4}\D+\d{1,2}|至今).*?\n', re.DOTALL).search(text)
             if mo is not None:
                 items = [x.strip() for x in mo.group().split('|') if x != '']
                 try:
@@ -172,7 +174,7 @@ class HtmlJL:
                 date1 = HtmlJL.str2date(flds[0])
                 date2 = HtmlJL.str2date(flds[1])
                 name = flds[2]
-            except IndexError:
+            except (AttributeError, IndexError):
                 pass
             # print('date1({}) date2({}) project_name({})'.format(date1, date2, project_name))
             mo = re.compile(r'项目介绍:\n(.*?)$', re.DOTALL | re.MULTILINE).search(text)
@@ -252,10 +254,11 @@ class HtmlJL:
 
 def main():
     folder = '/home/xixisun/suzy/shoulie/resumes/jl'
-    # file = 'jl_0000123_郝锐强.html'
+    file = 'jl_0109113_马骉.html'
     # file = 'jl_0023037_王倩.html'
     # file = 'jl_0085242_季文清.html'
-    file = 'jl_0124952_安敬辉.html'
+    # file = 'jl_0124952_安敬辉.html'
+    # file = 'jl_0005557_王凡.html'
     resume = HtmlJL.new_resume(os.path.join(folder, file), 1)
     pprint(resume.to_dictionary(False))
     # print(json.dumps(resume.to_dictionary()))
