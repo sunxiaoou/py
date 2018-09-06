@@ -19,6 +19,7 @@ Send a POST request::
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib import parse
+import pprint
 import sys
 
 from condition import Condition
@@ -44,16 +45,22 @@ class WebSvr(BaseHTTPRequestHandler):
                 a = entry.split('=')
                 entries[a[0]] = a[1] if not a[1].isdecimal() else int(a[1])
             conditions = Condition.create_conditions(entries)
+            log = open('{}.txt'.format(datetime.now().strftime('%y%m%d_%H%M%S')), 'w')
+            log.write(pprint.pformat(conditions) + '\n')
+            log.close()
+
             documents = Finder.find(Finder.get_collection('localhost', 27017, 'shoulie', 'resumes'), conditions)
             message = Reporter.to_html(documents, WebSvr.base_folder)
-            """
             html = open('{}.html'.format(datetime.now().strftime('%y%m%d_%H%M%S')), 'w')
             html.write(message)
             html.close()
-            """
+
             self.wfile.write(bytes(message, 'utf8'))
-        elif self.path.endswith('.html'):
-            path = parse.unquote(self.path)
+        elif self.path == '/' or self.path.endswith('.html'):
+            if self.path == '/':
+                path = 'form.html'
+            else:
+                path = parse.unquote(self.path)
             try:
                 f = open(path)
             except FileNotFoundError:
@@ -75,7 +82,7 @@ class WebSvr(BaseHTTPRequestHandler):
         print('Resumes are in {}'.format(folder))
         server_address = ('', port)
         httpd = HTTPServer(server_address, WebSvr)
-        print('Httpd starting at :{:d} ...'.format(port))
+        print('Httpd starting at {}:{:d} ...'.format('localhost', port))
         httpd.serve_forever()
 
 
