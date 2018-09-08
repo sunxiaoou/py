@@ -7,6 +7,7 @@ from resume import Keys
 
 
 class Condition:
+    file = 'file'
     name = 'name'
     spot = 'spot'
     industry = 'industry'
@@ -154,6 +155,10 @@ class Condition:
     @staticmethod
     def create_conditions(entries):
         conditions = {}
+
+        file = entries.get(Condition.file)
+        if file:
+            conditions[Keys.file] = file
 
         # basic information
         name = entries.get(Condition.name)

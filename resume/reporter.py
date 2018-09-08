@@ -21,12 +21,19 @@ class Reporter:
         shelf.close()
         return result
 
+    """
     @staticmethod
     def name_html(name, file, folder):
         html_type = re.compile(r'^(\w+)_\d+').search(file).group(1)
         full_file_name = os.path.join(folder, html_type, file)
         # return '<a href="file://{}"title={}>{}</a><br>'.format(full_file_name, file, name)
         return '<a href="{}"title={}>{}</a><br>'.format(full_file_name, file, name)
+    """
+
+    @staticmethod
+    def name_html(name, file):
+        txt = os.path.splitext(file)[0] + '.txt'
+        return '<a href="{}"title={}>{}</a>(<a href="{}"title={}>to txt</a>)<br>'.format(file, file, name, txt, txt)
 
     @staticmethod
     def gender_html(gender):
@@ -107,7 +114,7 @@ class Reporter:
         return projects if len(projects) <= Reporter.truncation else projects[:Reporter.truncation] + ' ...'
 
     @staticmethod
-    def to_html(documents, folder):
+    def to_html(documents):
         head = '''<!DOCTYPE html>
 <html>
     <head>
@@ -145,7 +152,7 @@ class Reporter:
         for i in range(show_num):
             document = documents[i]
             no = '{:02d}<br>'.format(i)
-            name = Reporter.name_html(document.get(Keys.name), document.get(Keys.file), folder)
+            name = Reporter.name_html(document.get(Keys.name), document.get(Keys.file))
             gender = Reporter.gender_html(document.get(Keys.gender))
             age = Reporter.age_html(document.get(Keys.birth))
             spots = Reporter.spots_html(document.get(Keys.spots))
@@ -163,7 +170,7 @@ class Reporter:
         print("Report generated")
         return html_str
 
-
+"""
 def main():
     documents = Reporter.unshelve('result.dat')
     file = 'result.html'
@@ -175,3 +182,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+"""

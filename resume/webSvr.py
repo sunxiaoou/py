@@ -19,6 +19,7 @@ Send a POST request::
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib import parse
+import os
 import pprint
 import sys
 
@@ -50,23 +51,44 @@ class WebSvr(BaseHTTPRequestHandler):
             log.close()
 
             documents = Finder.find(Finder.get_collection('localhost', 27017, 'shoulie', 'resumes'), conditions)
-            message = Reporter.to_html(documents, WebSvr.base_folder)
+            message = Reporter.to_html(documents)
             html = open('{}.html'.format(datetime.now().strftime('%y%m%d_%H%M%S')), 'w')
             html.write(message)
             html.close()
 
             self.wfile.write(bytes(message, 'utf8'))
         elif self.path == '/' or self.path.endswith('.html'):
-            if self.path == '/':
+            path = parse.unquote(self.path.lstrip('/'))
+            if not path:
                 path = 'form.html'
             else:
-                path = parse.unquote(self.path)
+                path = os.path.join(WebSvr.base_folder, path.split('_')[0], path)
             try:
                 f = open(path)
             except FileNotFoundError:
                 self.send_error(404, 'File Not Found: ' + path)
                 return
             self.wfile.write(bytes(f.read(), 'utf8'))
+        elif self.path.endswith('.txt'):
+            path = parse.unquote(self.path.lstrip('/'))
+            html = os.path.splitext(path)[0] + '.html'
+            conditions = Condition.create_conditions({'file': html})
+            documents = Finder.find(Finder.get_collection('localhost', 27017, 'shoulie', 'resumes'), conditions)
+            txt = open(path, 'w')
+            txt.write(pprint.pformat(documents[0]) + '\n')
+            txt.close()
+            message = '''<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <style type="text/css">td, th {{ border: 1px solid black; }}</style>
+    </head>
+    <body>
+        File "{}" generated
+    </body>
+</html>
+'''
+            self.wfile.write(bytes(message.format(path), "utf8"))
 
     def do_HEAD(self):
         self._set_headers()
