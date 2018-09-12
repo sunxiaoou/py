@@ -18,7 +18,7 @@ class Finder:
 
     @staticmethod
     def find(resumes, conditions):
-        cursor = resumes.find(conditions)
+        cursor = resumes.find(conditions, {'_id': False})
         num = cursor.count()
         print('Found {} documents'.format(num))
         return list(cursor)

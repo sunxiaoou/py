@@ -19,6 +19,7 @@ class Keys:
     year = '参加工作年份'
     companies = '雇主'
     educations = '教育经历'
+    edu2 = '教育经历2'
     school = schools = '学校'
     major = majors = '专业'
     degree = degrees = '学位'
@@ -134,15 +135,15 @@ class Education:
         return self.start_date + ', ' + self.end_date + ', ' + self.school + ', ' + self.major + ', ' + self.degree
 
 
-class Educations:
+class Edu2:
     def __init__(self, educations):
         self.schools = []
         self.majors = []
-        self.degrees = []
+        # self.degrees = []
         for education in educations:
             self.schools.append(education.school)
             self.majors.append(education.major)
-            self.degrees.append(education.degree)
+            # self.degrees.append(education.degree)
         self.school_rank = 0
         for school in self.schools:
             rank = Schools.get_rank(school)
@@ -150,11 +151,10 @@ class Educations:
                 self.school_rank = rank
 
     def __str__(self):
-        return ' '.join(self.schools) + '\n' + ' '.join(self.majors) + '\n' + ' '.join(self.degrees)
+        return ' '.join(self.schools) + '\n' + ' '.join(self.majors) + '\n' + ' '.join(self.school_rank)
 
     def to_dictionary(self):
-        return {Keys.schools: self.schools, Keys.majors: self.majors, Keys.degrees: self.degrees,
-                Keys.school_rank: self.school_rank}
+        return {Keys.schools: self.schools, Keys.majors: self.majors, Keys.school_rank: self.school_rank}
 
 """
 class Skills:
@@ -248,7 +248,14 @@ class Resume:
                 resume[Keys.projects] = str(projects)
 
         if self.educations:
-            resume[Keys.educations] = Educations(self.educations).to_dictionary()
+            educations = []
+            for education in self.educations:
+                educations.append(education.to_dictionary())
+            if not list2str:
+                resume[Keys.educations] = educations
+            else:
+                resume[Keys.educations] = str(educations)
+            resume[Keys.edu2] = Edu2(self.educations).to_dictionary()
 
         if self.skills:
             resume[Keys.skills] = self.skills

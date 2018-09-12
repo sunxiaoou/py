@@ -197,15 +197,15 @@ class Condition:
 
         c = Condition.range_int(entries.get(Condition.school_rank), '')
         if c:
-            conditions[Keys.educations + '.' + Keys.school_rank] = c
+            conditions[Keys.edu2 + '.' + Keys.school_rank] = c
 
         school = entries.get(Condition.school)
         if school:
-            conditions[Keys.educations + '.' + Keys.schools] = {'$regex': school}
+            conditions[Keys.edu2 + '.' + Keys.schools] = {'$regex': school}
 
         major = entries.get(Condition.major)
         if major:
-            conditions[Keys.educations + '.' + Keys.majors] = {'$regex': major}
+            conditions[Keys.edu2 + '.' + Keys.majors] = {'$regex': major}
 
         # career background
         c = Condition.range_year(entries.get(Condition.year1), entries.get(Condition.year2))
