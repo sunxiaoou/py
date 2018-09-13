@@ -47,7 +47,7 @@ class HtmlZljl:
         for spot in re.split('，|、', items[0]):
             spots.append(spot)
 
-        salary = -1
+        salary = ''
         try:
             salaries = re.compile(r'\d+').findall(items[1])
             salary = int(salaries[-1])
@@ -112,17 +112,17 @@ class HtmlZljl:
             delta = int(mo.group(1))
             year = HtmlZljl.timestamp.year - delta
         except AttributeError:
-            year = -1
+            year = ''
 
         try:
-            if year == -1:
+            if not year:
                 education = Education.educationList.index(a[2].upper()) + 1
             else:
                 education = Education.educationList.index(a[3].upper()) + 1
         except (IndexError, ValueError):
-            education = -1
+            education = ''
 
-        return Person(file, HtmlZljl.timestamp, name, gender, birth, phone, email, education, year,
+        return Person(file, HtmlZljl.timestamp, name, gender, birth, phone, email, education, '', year,
                       HtmlZljl.get_objective())
 
     @staticmethod
@@ -233,13 +233,28 @@ class HtmlZljl:
         return educations
 
     @staticmethod
+    def get_languages():
+        tag = HtmlZljl.soup.find('h3', text='语言能力')
+        if tag is None:
+            return ''
+        tag = tag.find_next_sibling()
+        if not tag['class'][0].startswith('resume-preview-dl'):
+            return ''
+        languages = ''
+        for text in tag.getText().split('|'):
+            mo = re.compile(r'[^\s\n]+', re.DOTALL).search(text)
+            if mo is not None:
+                languages += mo.group() + ' '
+        return languages
+
+    @staticmethod
     def get_skills():
         tag = HtmlZljl.soup.find('h3', text='专业技能')
         if tag is None:
-            return []
+            return ''
         tag = tag.find_next_sibling()
         if not tag['class'][0].startswith('resume-preview-dl'):
-            return []
+            return ''
 
         skills = []
         texts = tag.getText().split('\n')
@@ -264,15 +279,16 @@ class HtmlZljl:
         experiences = HtmlZljl.get_experiences()
         projects = HtmlZljl.get_projects()
         educations = HtmlZljl.get_educations()
+        languages = HtmlZljl.get_languages()
         skills = HtmlZljl.get_skills()
 
-        return Resume(person, experiences, projects, educations, skills)
+        return Resume(person, experiences, projects, educations, languages, skills)
 
 
 def main():
     folder = '/home/xixisun/suzy/shoulie/resumes/zljl'
-    # file = 'zljl_0000009_史京绮.html'
-    file = 'zljl_0031286_刘卓.html'
+    file = 'zljl_0000009_史京绮.html'
+    # file = 'zljl_0031286_刘卓.html'
     resume = HtmlZljl.new_resume(os.path.join(folder, file), 2)
     pprint(resume.to_dictionary(False))
 
