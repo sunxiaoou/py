@@ -67,7 +67,7 @@ class HtmlJxw:
         except (IndexError, ValueError):
             pass
 
-        salary = -1
+        salary = ''
         try:
             i = items.index('期望月薪：')
             salaries = re.compile(r'\d+').findall(items[i + 1])
@@ -109,15 +109,17 @@ class HtmlJxw:
         try:
             year = int(re.compile(r'\d{4}').search(tds[16].getText()).group())
         except AttributeError:
-            year = -1
+            year = ''
 
         try:
             mo = re.compile(r'\w+').search(tds[18].getText())
             education = Education.educationList.index(mo.group().upper()) + 1
+            mo = re.compile(r'\w+').search(tds[18].find('span').getText())
+            enrollment = mo.group()
         except (AttributeError, ValueError):
-            education = -1
+            education = enrollment = ''
 
-        return Person(file, HtmlJxw.timestamp, name, gender, birth, phone, email, education, year,
+        return Person(file, HtmlJxw.timestamp, name, gender, birth, phone, email, education, enrollment, year,
                       HtmlJxw.get_objective())
 
     @staticmethod
@@ -259,16 +261,37 @@ class HtmlJxw:
         return educations
 
     @staticmethod
+    def get_languages():
+        tag = HtmlJxw.soup.find('h3', text='语言能力')
+        if tag is None:
+            return ''
+        tag = tag.find_parent()
+        if tag['class'][0] != 'title_h3v6':
+            return ''
+        tag = tag.find_next_sibling()
+        if tag.name != 'table':
+            return ''
+
+        string = ''
+        tds = tag.findAll('td')
+        for td in tds:
+            mo = re.compile(r'[^\s\n]+', re.DOTALL).search(td.getText())
+            if mo is not None:
+                string += mo.group() + '\n'
+
+        return string
+
+    @staticmethod
     def get_skills():
         tag = HtmlJxw.soup.find('h3', text='自我评价')
         if tag is None:
-            return None
+            return ''
         tag = tag.find_parent()
         if tag['class'][0] != 'title_h3v6':
-            return None
+            return ''
         tag = tag.find_next_sibling()
         if tag.name != 'table':
-            return []
+            return ''
 
         skills = []
         for skill in re.compile(r'([a-zA-Z]+)([a-zA-Z\.\d/#]*)').findall(tag.getText()):
@@ -285,17 +308,18 @@ class HtmlJxw:
         experiences = HtmlJxw.get_experiences()
         projects = HtmlJxw.get_projects()
         educations = HtmlJxw.get_educations()
+        languages = HtmlJxw.get_languages()
         skills = HtmlJxw.get_skills()
 
-        return Resume(person, experiences, projects, educations, skills)
+        return Resume(person, experiences, projects, educations, languages, skills)
 
 
 def main():
     folder = os.path.join('/home/xixisun/suzy/shoulie/resumes', HtmlJxw.type)
     # file = 'jxw_0000225_周书婷.html'
-    # file = 'jxw_0146878_洪聪贵.html'
+    # file = 'jxw_0052586_于小玉.html'
     # file = 'jxw_0076028_李兴琨.html'
-    file = 'jxw_0052586_于小玉.html'
+    file = 'jxw_0146878_洪聪贵.html'
     resume = HtmlJxw.new_resume(os.path.join(folder, file), 2)
     pprint(resume.to_dictionary(False))
 

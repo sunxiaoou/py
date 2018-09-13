@@ -16,7 +16,7 @@ class Keys:
     phone = '手机号码'
     email = '电子邮箱'
     education = '学历'
-    unified = '统一招生'
+    enrollment = '招生方式'
     year = '参加工作年份'
     companies = '雇主'
     educations = '教育经历'
@@ -65,7 +65,7 @@ class Objective:
 
 
 class Person:
-    def __init__(self, file, timestamp, name, gender, birth, phone, email, education, unified, year, objective):
+    def __init__(self, file, timestamp, name, gender, birth, phone, email, education, enrollment, year, objective):
         self.file = file
         self.timestamp = timestamp
         self.name = name
@@ -74,7 +74,7 @@ class Person:
         self.phone = phone
         self.email = email
         self.education = education
-        self.unified = unified
+        self.enrollment = enrollment
         self.year = year
         self.objective = objective
 
@@ -85,8 +85,8 @@ class Person:
             person[Keys.email] = self.email
         if self.education:
             person[Keys.education] = self.education
-        if self.unified:
-            person[Keys.unified] = self.unified
+        if self.enrollment:
+            person[Keys.enrollment] = self.enrollment
         if self.year:
             person[Keys.year] = self.year
         return {**person, **self.objective.to_dictionary()}     # merge 2 dictionaries
