@@ -16,6 +16,7 @@ class Keys:
     phone = '手机号码'
     email = '电子邮箱'
     education = '学历'
+    unified = '统一招生'
     year = '参加工作年份'
     companies = '雇主'
     educations = '教育经历'
@@ -24,6 +25,7 @@ class Keys:
     major = majors = '专业'
     degree = degrees = '学位'
     school_rank = '学校类别'
+    languages = '语言能力'
     skills = '技能'
     skill_level1 = '一般'
     skill_level2 = '熟练'
@@ -49,16 +51,21 @@ class Objective:
         self.fields = fields
         self.industries = industries
 
-    def __str__(self):
-        return self.spots + ', ' + self.salary + ', ' + self.fields + ', ' + self.industries
-
     def to_dictionary(self):
-        return {Keys.spots: self.spots, Keys.salary: self.salary, Keys.fields: self.fields,
-                Keys.industries: self.industries}
+        objective = {}
+        if self.spots:
+            objective[Keys.spots] = self.spots
+        if self.salary:
+            objective[Keys.salary] = self.salary
+        if self.fields:
+            objective[Keys.fields] = self.fields
+        if self.industries:
+            objective[Keys.industries] = self.industries
+        return objective
 
 
 class Person:
-    def __init__(self, file, timestamp, name, gender, birth, phone, email, education, year, objective):
+    def __init__(self, file, timestamp, name, gender, birth, phone, email, education, unified, year, objective):
         self.file = file
         self.timestamp = timestamp
         self.name = name
@@ -67,18 +74,21 @@ class Person:
         self.phone = phone
         self.email = email
         self.education = education
+        self.unified = unified
         self.year = year
         self.objective = objective
 
-    def __str__(self):
-        return self.file + '\n' +\
-               self.name + ', ' + self.gender + ', ' + self.birth + ', ' + self.phone + ', ' + self.email + '\n' +\
-               self.education + self.year + str(self.objective)
-
     def to_dictionary(self):
         person = {Keys.file: self.file, Keys.timestamp: self.timestamp, Keys.name: self.name, Keys.gender: self.gender,
-                  Keys.birth: self.birth, Keys.phone: self.phone, Keys.email: self.email,
-                  Keys.education: self.education, Keys.year: self.year}
+                  Keys.birth: self.birth, Keys.phone: self.phone}
+        if self.email:
+            person[Keys.email] = self.email
+        if self.education:
+            person[Keys.education] = self.education
+        if self.unified:
+            person[Keys.unified] = self.unified
+        if self.year:
+            person[Keys.year] = self.year
         return {**person, **self.objective.to_dictionary()}     # merge 2 dictionaries
 
 
@@ -90,10 +100,6 @@ class Experience:
         self.company_desc = company_desc
         self.job = job
         self.job_desc = job_desc
-
-    def __str__(self):
-        return self.start_date + ', ' + self.end_date + ', ' + self.company + ', ' + self.company_desc + '\n' +\
-               self.job + ', ' + self.job_desc
 
     def to_dictionary(self):
         return {Keys.start_date: self.start_date, Keys.end_date: self.end_date, Keys.company: self.company,
@@ -112,10 +118,6 @@ class Project:
         return {Keys.start_date: self.start_date, Keys.end_date: self.end_date, Keys.project: self.name,
                 Keys.project_desc: self.description, Keys.duty: self.duty}
 
-    def __str__(self):
-        return self.start_date + ', ' + self.end_date + ', ' + self.name + ', ' + self.description + '\n' + \
-               self.duty
-
 
 class Education:
     educationList = ['大专', '本科', '硕士', 'MBA', 'EMBA', '博士',  '博士后']
@@ -130,9 +132,6 @@ class Education:
     def to_dictionary(self):
         return {Keys.start_date: self.start_date, Keys.end_date: self.end_date, Keys.school: self.school,
                 Keys.major: self.major, Keys.degree: self.degree}
-
-    def __str__(self):
-        return self.start_date + ', ' + self.end_date + ', ' + self.school + ', ' + self.major + ', ' + self.degree
 
 
 class Edu2:
@@ -149,9 +148,6 @@ class Edu2:
             rank = Schools.get_rank(school)
             if rank > self.school_rank:
                 self.school_rank = rank
-
-    def __str__(self):
-        return ' '.join(self.schools) + '\n' + ' '.join(self.majors) + '\n' + ' '.join(self.school_rank)
 
     def to_dictionary(self):
         return {Keys.schools: self.schools, Keys.majors: self.majors, Keys.school_rank: self.school_rank}
@@ -179,28 +175,16 @@ class Skills:
 
 
 class Resume:
-    def __init__(self, person, experiences, projects, educations, skills):
+    def __init__(self, person, experiences, projects, educations, languages, skills):
         self.person = person
         self.experiences = experiences
         self.projects = projects
         self.educations = educations
+        self.languages = languages
         self.skills = skills
 
-    def __str__(self):
-        msg = 'Person:\n' + str(self.person) + '\n'
-        msg += 'Experiences:\n'
-        for experience in self.experiences:
-            msg = msg + str(experience) + '\n'
-        msg += 'Projects:\n'
-        for project in self.projects:
-            msg = msg + str(project) + '\n'
-        msg += 'Skills:\n'
-        for skill in self.skills:
-            msg = msg + str(skill) + '\n'
-        return msg
-
     def to_dictionary(self, list2str):
-        if self.person.year == -1:
+        if not self.person.year:
             end_years = []
             if self.educations:
                 for education in self.educations:
@@ -209,7 +193,7 @@ class Resume:
             else:
                 self.person.year = self.person.timestamp.year
 
-        if self.person.education == -1:
+        if not self.person.education:
             degrees = []
             if self.educations:
                 for education in self.educations:
@@ -256,6 +240,9 @@ class Resume:
             else:
                 resume[Keys.educations] = str(educations)
             resume[Keys.edu2] = Edu2(self.educations).to_dictionary()
+
+        if self.languages:
+            resume[Keys.languages] = self.languages
 
         if self.skills:
             resume[Keys.skills] = self.skills

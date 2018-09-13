@@ -35,8 +35,9 @@ class HtmlJL:
 
     @staticmethod
     def get_objective():
-        fields = industries = None
-        salary = -1
+        # fields = industries = None
+        # salary = -1
+        salary = fields = industries = ''
 
         spots = []
         text = HtmlJL.soup.body.find(text=re.compile(r'期望工作地点:.*'))
@@ -89,7 +90,7 @@ class HtmlJL:
         text = HtmlJL.soup.body.find(text=re.compile(r'手机号码:.*'))
         phone = re.compile(r'手机号码:(.*)').search(text).group(1).strip()
 
-        email = None
+        email = ''
         text = HtmlJL.soup.body.find(text=re.compile(r'Email:.*'))
         mo = re.compile(r'Email:(.*)').search(text)
         if mo is not None:
@@ -102,7 +103,7 @@ class HtmlJL:
                 text = '硕士'
             education = Education.educationList.index(text.upper()) + 1
         except ValueError:
-            education = -1
+            education = ''
 
         try:
             text = HtmlJL.soup.body.find(text=re.compile(r'工作经验:.*'))
@@ -110,9 +111,9 @@ class HtmlJL:
             delta = int(a[-1])          # -1 is last one
             year = HtmlJL.timestamp.year - delta
         except (AttributeError, IndexError):
-            year = -1
+            year = ''
 
-        return Person(file, HtmlJL.timestamp, name, gender, birth, phone, email, education, year,
+        return Person(file, HtmlJL.timestamp, name, gender, birth, phone, email, education, '', year,
                       HtmlJL.get_objective())
 
     @staticmethod
@@ -217,6 +218,14 @@ class HtmlJL:
         return educations
 
     @staticmethod
+    def get_languages():
+        text = HtmlJL.soup.body.getText()
+        mo = re.compile(r'语言水平：[\s\n]*(.*?)[\s\n]*技能', re.DOTALL).search(text)
+        if mo is None:
+            return ''
+        return re.sub(r'&nbsp', ' ', mo.group(1))
+
+    @staticmethod
     def get_skills():
         text = HtmlJL.soup.body.getText()
         mo = re.compile(r'技能:(.*)', re.DOTALL).search(text)
@@ -247,18 +256,20 @@ class HtmlJL:
         experiences = HtmlJL.get_experiences()
         projects = HtmlJL.get_projects()
         educations = HtmlJL.get_educations()
+        languages = HtmlJL.get_languages()
+        # print(":".join("{:02x}".format(ord(c)) for c in languages))
         skills = HtmlJL.get_skills()
 
-        return Resume(person, experiences, projects, educations, skills)
+        return Resume(person, experiences, projects, educations, languages, skills)
 
 
 def main():
     folder = '/home/xixisun/suzy/shoulie/resumes/jl'
-    file = 'jl_0109113_马骉.html'
+    # file = 'jl_0109113_马骉.html'
     # file = 'jl_0023037_王倩.html'
     # file = 'jl_0085242_季文清.html'
     # file = 'jl_0124952_安敬辉.html'
-    # file = 'jl_0005557_王凡.html'
+    file = 'jl_0005557_王凡.html'
     resume = HtmlJL.new_resume(os.path.join(folder, file), 1)
     pprint(resume.to_dictionary(False))
     # print(json.dumps(resume.to_dictionary()))
