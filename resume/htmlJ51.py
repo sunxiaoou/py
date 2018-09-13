@@ -63,7 +63,7 @@ class HtmlJ51:
         except (IndexError, ValueError):
             pass
 
-        salary = -1
+        salary = ''
         try:
             salaries = re.compile(r'\d+').findall(tds[4].find('span').getText())
             salary = int(salaries[-1])
@@ -92,7 +92,7 @@ class HtmlJ51:
         try:
             year = HtmlJ51.timestamp.year - int(mo.group(1))
         except AttributeError:
-            year = -1
+            year = ''
         gender = mo.group(2)
         birth = datetime(int(mo.group(3)), int(mo.group(4)), 15)
         if tds[7].getText() == '电　话：':
@@ -110,9 +110,9 @@ class HtmlJ51:
             tag = HtmlJ51.soup.find(text='最高学历').find_next('td').find_next('td')
             education = Education.educationList.index(tag.getText().upper()) + 1
         except (AttributeError, ValueError):
-            education = -1
+            education = ''
 
-        return Person(file, HtmlJ51.timestamp, name, gender, birth, phone, email, education, year,
+        return Person(file, HtmlJ51.timestamp, name, gender, birth, phone, email, education, '', year,
                       HtmlJ51.get_objective())
 
     @staticmethod
@@ -232,6 +232,24 @@ class HtmlJ51:
         return educations
 
     @staticmethod
+    def get_languages():
+        try:
+            tag = HtmlJ51.soup.find('td', text='语言能力').find_next('table')
+        except AttributeError:
+            return []
+
+        string = ''
+        tds = tag.findAll('td')
+        for i in range(len(tds)):
+            if i == 0:
+                continue
+            mo = re.compile(r'[^\s\n]+', re.DOTALL).search(tds[i].getText())
+            if mo is not None:
+                string += mo.group() + '\n'
+
+        return string
+
+    @staticmethod
     def get_skills():
         skills = []
         for skill in HtmlJ51.skills:
@@ -249,15 +267,16 @@ class HtmlJ51:
         experiences = HtmlJ51.get_experiences()
         projects = HtmlJ51.get_projects()
         educations = HtmlJ51.get_educations()
+        languages = HtmlJ51.get_languages()
         skills = HtmlJ51.get_skills()
 
-        return Resume(person, experiences, projects, educations, skills)
+        return Resume(person, experiences, projects, educations, languages, skills)
 
 
 def main():
     folder = os.path.join('/home/xixisun/suzy/shoulie/resumes', HtmlJ51.type)
-    # file = 'j51_0024167_王强.html'
-    file = 'j51_0014624_李智惠.html'
+    file = 'j51_0024167_王强.html'
+    # file = 'j51_0014624_李智惠.html'
     resume = HtmlJ51.new_resume(os.path.join(folder, file), 4)
     pprint(resume.to_dictionary(False))
 

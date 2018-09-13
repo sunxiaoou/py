@@ -199,8 +199,8 @@ class Resume:
                 for education in self.educations:
                     degrees.append(education.degree)
                 self.person.education = max(degrees)
-            else:
-                self.person.education = 0
+            # else:
+            #    self.person.education = 0
 
         resume = self.person.to_dictionary()
 
