@@ -56,7 +56,7 @@ class Saver:
 
     @staticmethod
     def add_experiences(doc, resume):
-        head = doc.add_heading('工作经历', 1)
+        head = doc.add_heading(Keys.experiences, 1)
         head.runs[0].bold = True
 
         s = resume.get(Keys.experiences)
@@ -78,7 +78,7 @@ class Saver:
 
     @staticmethod
     def add_projects(doc, resume):
-        head = doc.add_heading('项目经历', 1)
+        head = doc.add_heading(Keys.projects, 1)
         head.runs[0].bold = True
 
         s = resume.get(Keys.projects)
@@ -99,6 +99,35 @@ class Saver:
             Saver.add_one_item(para, Keys.duty, duty)
 
     @staticmethod
+    def add_educations(doc, resume):
+        head = doc.add_heading(Keys.educations, 1)
+        head.runs[0].bold = True
+
+        s = resume.get(Keys.educations)
+        if s is None:
+            return
+        educations = eval(s)
+        for education in educations:
+            date1 = education.get(Keys.start_date).strftime('%Y/%m')
+            date2 = education.get(Keys.end_date).strftime('%Y/%m')
+            school = education.get(Keys.school)
+            major = education.get(Keys.major)
+            degree = education.get(Keys.degree)
+            degree = ['大专', '本科', '硕士', 'MBA', 'EMBA', '博士',  '博士后'][degree - 1]
+            para = doc.add_paragraph('{}-{}: {}  {}  {}'.format(date1, date2, school, major, degree))
+            # para.runs[0].bold = True
+
+    @staticmethod
+    def add_languages(doc, resume):
+        head = doc.add_heading(Keys.languages, 1)
+        head.runs[0].bold = True
+
+        s = resume.get(Keys.languages)
+        if s is None:
+            return
+        doc.add_paragraph(s)
+
+    @staticmethod
     def to_docx(resume):
         doc = docx.Document()
         doc.add_paragraph('推荐简历', 'Title')
@@ -109,6 +138,8 @@ class Saver:
         Saver.add_person(doc, resume)
         Saver.add_experiences(doc, resume)
         Saver.add_projects(doc, resume)
+        Saver.add_educations(doc, resume)
+        Saver.add_languages(doc, resume)
 
         name = resume.get(Keys.file)
         name = os.path.splitext(name)[0] + '.docx'
@@ -116,7 +147,8 @@ class Saver:
 
 
 def main():
-    file = open('jl_0035207_钟大为.txt')
+    # file = open('jl_0035207_钟大为.txt')
+    file = open('jl_0043079_陈磊.txt')
     s = file.read()
     resume = eval(s)
     Saver.to_docx(resume)

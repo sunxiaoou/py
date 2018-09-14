@@ -83,9 +83,8 @@ class Reporter:
             text = '<p>{}</p>'.format(rank)
         schools = educations.get(Keys.schools)
         majors = educations.get(Keys.majors)
-        degrees = educations.get(Keys.degrees)
         for i in range(len(schools)):
-            text += '{}|{}|{}<br>'.format(schools[i], majors[i], degrees[i])
+            text += '{}|{}|<br>'.format(schools[i], majors[i])
         return text
 
     @staticmethod
@@ -159,7 +158,7 @@ class Reporter:
             education = Reporter.education_html(document.get(Keys.education))
             year = Reporter.year_html(document.get(Keys.year))
             duration = Reporter.duration_html(document.get(Keys.duration))
-            educations = Reporter.educations_html(document.get(Keys.educations))
+            educations = Reporter.educations_html(document.get(Keys.edu2))
             experiences = Reporter.experiences_html(document.get(Keys.experiences))
             projects = Reporter.projects_html(document.get(Keys.projects))
             html_str += tr.format(no, name, gender, age, education, year, duration, spots, educations, experiences,
