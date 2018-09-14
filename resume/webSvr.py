@@ -26,6 +26,7 @@ import sys
 from condition import Condition
 from finder import Finder
 from reporter import Reporter
+from saver import Saver
 
 
 class WebSvr(BaseHTTPRequestHandler):
@@ -69,14 +70,18 @@ class WebSvr(BaseHTTPRequestHandler):
                 self.send_error(404, 'File Not Found: ' + path)
                 return
             self.wfile.write(bytes(f.read(), 'utf8'))
-        elif self.path.endswith('.txt'):
+        elif self.path.endswith('.docx'):
             path = parse.unquote(self.path.lstrip('/'))
             html = os.path.splitext(path)[0] + '.html'
             conditions = Condition.create_conditions({'file': html})
             documents = Finder.find(Finder.get_collection('localhost', 27017, 'shoulie', 'resumes'), conditions)
+            """
             txt = open(path, 'w')
             txt.write(pprint.pformat(documents[0]) + '\n')
+            # txt.write(str(documents[0]))
             txt.close()
+            """
+            Saver.to_doc(documents[0])
             message = '''<!DOCTYPE html>
 <html>
     <head>

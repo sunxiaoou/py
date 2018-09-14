@@ -32,8 +32,8 @@ class Reporter:
 
     @staticmethod
     def name_html(name, file):
-        txt = os.path.splitext(file)[0] + '.txt'
-        return '<a href="{}"title={}>{}</a>(<a href="{}"title={}>to txt</a>)<br>'.format(file, file, name, txt, txt)
+        doc = os.path.splitext(file)[0] + '.docx'
+        return '<a href="{}"title={}>{}</a>(<a href="{}"title={}>to doc</a>)<br>'.format(file, file, name, doc, doc)
 
     @staticmethod
     def gender_html(gender):

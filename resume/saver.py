@@ -128,7 +128,7 @@ class Saver:
         doc.add_paragraph(s)
 
     @staticmethod
-    def to_docx(resume):
+    def to_doc(resume):
         doc = docx.Document()
         doc.add_paragraph('推荐简历', 'Title')
 
@@ -151,7 +151,7 @@ def main():
     file = open('jl_0043079_陈磊.txt')
     s = file.read()
     resume = eval(s)
-    Saver.to_docx(resume)
+    Saver.to_doc(resume)
 
 if __name__ == "__main__":
     main()
