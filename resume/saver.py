@@ -22,7 +22,7 @@ class Saver:
         head = doc.add_heading('候选人基本信息', 1)
         head.runs[0].bold = True
 
-        para = doc.add_paragraph('姓名：{}       性别： {}'.format(resume.get(Keys.name), resume.get(Keys.gender)))
+        para = doc.add_paragraph('姓名：{:<40} 性别： {}'.format(resume.get(Keys.name), resume.get(Keys.gender)))
         para.runs[0].add_break()
 
         years = age = -1
@@ -33,17 +33,20 @@ class Saver:
         birth = resume.get(Keys.birth)
         if birth is not None:
             age = today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
-        para.add_run('工作年限：{:d}       年龄：{:d}'.format(years, age))
+        para.add_run('工作年限：{:<37d} 年龄：{:2d}'.format(years, age))
         para.runs[1].add_break()
 
         degree = spot = None
         education = resume.get(Keys.education)
         if education is not None:
             degree = ['大专', '本科', '硕士', 'MBA', 'EMBA', '博士',  '博士后'][education - 1]
+            enrollment = resume.get(Keys.enrollment)
+            if enrollment is not None:
+                degree += ' ({})'.format(enrollment)
         spots = resume.get(Keys.spots)
         if spots and spots is not None:
             spot = spots[0]
-        para.add_run('学历：{}         目前工作地：{}'.format(degree, spot))
+        para.add_run('学历：{:<40} 目前工作地：{}'.format(degree, spot))
 
     @staticmethod
     def add_one_item(para, name, value):
@@ -114,8 +117,13 @@ class Saver:
             major = education.get(Keys.major)
             degree = education.get(Keys.degree)
             degree = ['大专', '本科', '硕士', 'MBA', 'EMBA', '博士',  '博士后'][degree - 1]
-            para = doc.add_paragraph('{}-{}: {}  {}  {}'.format(date1, date2, school, major, degree))
-            # para.runs[0].bold = True
+            # para = doc.add_paragraph('{}-{}: {}  {}  {}'.format(date1, date2, school, major, degree))
+            para = doc.add_paragraph('{}-{}: {}'.format(date1, date2, school))
+            para.runs[0].bold = True
+            para.runs[0].add_break()
+            run = para.add_run('{}:  {}'.format(Keys.major, major))
+            run.add_break()
+            para.add_run('{}:  {}'.format(Keys.degree, degree))
 
     @staticmethod
     def add_languages(doc, resume):
@@ -128,7 +136,7 @@ class Saver:
         doc.add_paragraph(s)
 
     @staticmethod
-    def to_doc(resume):
+    def to_doc(resume, file):
         doc = docx.Document()
         doc.add_paragraph('推荐简历', 'Title')
 
@@ -141,17 +149,16 @@ class Saver:
         Saver.add_educations(doc, resume)
         Saver.add_languages(doc, resume)
 
-        name = resume.get(Keys.file)
-        name = os.path.splitext(name)[0] + '.docx'
-        doc.save(name)
+        doc.save(file)
 
 
 def main():
-    # file = open('jl_0035207_钟大为.txt')
     file = open('jl_0043079_陈磊.txt')
+    # file = open('jxw_0051701_龙浩.txt')
     s = file.read()
     resume = eval(s)
-    Saver.to_doc(resume)
+    html = resume.get(Keys.file)
+    Saver.to_doc(resume, os.path.splitext(html)[0] + '.docx')
 
 if __name__ == "__main__":
     main()

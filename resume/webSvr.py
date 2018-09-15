@@ -72,16 +72,15 @@ class WebSvr(BaseHTTPRequestHandler):
             self.wfile.write(bytes(f.read(), 'utf8'))
         elif self.path.endswith('.docx'):
             path = parse.unquote(self.path.lstrip('/'))
-            html = os.path.splitext(path)[0] + '.html'
-            conditions = Condition.create_conditions({'file': html})
+            basic = os.path.splitext(path)[0]
+            conditions = Condition.create_conditions({'file': basic + '.html'})
             documents = Finder.find(Finder.get_collection('localhost', 27017, 'shoulie', 'resumes'), conditions)
             """
-            txt = open(path, 'w')
+            txt = open(basic + '.txt', 'w')
             txt.write(pprint.pformat(documents[0]) + '\n')
-            # txt.write(str(documents[0]))
             txt.close()
             """
-            Saver.to_doc(documents[0])
+            Saver.to_doc(documents[0], path)
             message = '''<!DOCTYPE html>
 <html>
     <head>
