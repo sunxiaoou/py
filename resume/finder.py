@@ -2,12 +2,15 @@
 
 import datetime
 import os
+import re
 import shelve
 import sys
 import webbrowser
+import zipfile
 from pymongo import MongoClient
 
 from reporter import Reporter
+from resume import Keys
 
 
 class Finder:
@@ -38,6 +41,19 @@ class Finder:
         html.close()
         webbrowser.open('file://{}/{}'.format(os.getcwd(), file))
 
+    @staticmethod
+    def package(documents, base_folder, file):
+        archive = zipfile.ZipFile(file, 'w')
+        os.chdir(base_folder)
+        num = min(100, len(documents))
+        for i in range(num):
+            html = documents[i].get(Keys.file)
+            html_type = re.compile(r'^(\w+)_\d+').search(html).group(1)
+            full_file_name = os.path.join(html_type, html)
+            archive.write(full_file_name)
+        archive.close()
+        print('{:d} htmls added to archive {}'.format(num, file))
+
 
 def main():
     if len(sys.argv) < 3:
@@ -50,6 +66,7 @@ def main():
     if documents:
         # Finder.shelve(documents, 'finder_result.dat')
         Finder.to_html(documents, sys.argv[2], 'finder_result.html')
+        Finder.package(documents, sys.argv[2], 'finder_result.zip')
 
 
 if __name__ == "__main__":
