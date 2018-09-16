@@ -3,7 +3,6 @@
 import os
 import re
 import shelve
-import webbrowser
 from datetime import datetime
 
 from resume import Keys
@@ -21,17 +20,13 @@ class Reporter:
         shelf.close()
         return result
 
-    """
     @staticmethod
     def name_html(name, file, folder):
-        html_type = re.compile(r'^(\w+)_\d+').search(file).group(1)
-        full_file_name = os.path.join(folder, html_type, file)
-        # return '<a href="file://{}"title={}>{}</a><br>'.format(full_file_name, file, name)
-        return '<a href="{}"title={}>{}</a><br>'.format(full_file_name, file, name)
-    """
-
-    @staticmethod
-    def name_html(name, file):
+        if folder:      # local file
+            html_type = re.compile(r'^(\w+)_\d+').search(file).group(1)
+            full_file_name = os.path.join(folder, html_type, file)
+            return '<a href="file://{}"title={}>{}</a><br>'.format(full_file_name, file, name)
+        # remote
         doc = os.path.splitext(file)[0] + '.docx'
         return '<a href="{}"title={}>{}</a>(<a href="{}"title={}>to doc</a>)<br>'.format(file, file, name, doc, doc)
 
@@ -113,7 +108,7 @@ class Reporter:
         return projects if len(projects) <= Reporter.truncation else projects[:Reporter.truncation] + ' ...'
 
     @staticmethod
-    def to_html(documents):
+    def to_html(documents, base_folder):
         head = '''<!DOCTYPE html>
 <html>
     <head>
@@ -151,7 +146,7 @@ class Reporter:
         for i in range(show_num):
             document = documents[i]
             no = '{:02d}<br>'.format(i)
-            name = Reporter.name_html(document.get(Keys.name), document.get(Keys.file))
+            name = Reporter.name_html(document.get(Keys.name), document.get(Keys.file), base_folder)
             gender = Reporter.gender_html(document.get(Keys.gender))
             age = Reporter.age_html(document.get(Keys.birth))
             spots = Reporter.spots_html(document.get(Keys.spots))

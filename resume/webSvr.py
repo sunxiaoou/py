@@ -52,7 +52,7 @@ class WebSvr(BaseHTTPRequestHandler):
             log.close()
 
             documents = Finder.find(Finder.get_collection('localhost', 27017, 'shoulie', 'resumes'), conditions)
-            message = Reporter.to_html(documents)
+            message = Reporter.to_html(documents, '')
             html = open('{}.html'.format(datetime.now().strftime('%y%m%d_%H%M%S')), 'w')
             html.write(message)
             html.close()
