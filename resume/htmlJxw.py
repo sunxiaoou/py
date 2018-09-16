@@ -319,7 +319,8 @@ def main():
     # file = 'jxw_0000225_周书婷.html'
     # file = 'jxw_0052586_于小玉.html'
     # file = 'jxw_0076028_李兴琨.html'
-    file = 'jxw_0146878_洪聪贵.html'
+    # file = 'jxw_0146878_洪聪贵.html'
+    file = 'jxw_0139121_李永超.html'
     resume = HtmlJxw.new_resume(os.path.join(folder, file), 2)
     pprint(resume.to_dictionary(False))
 

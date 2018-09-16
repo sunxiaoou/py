@@ -1,11 +1,12 @@
 #! /usr/bin/python3
 
+import datetime
 import os
 import shelve
+import sys
 import webbrowser
 from pymongo import MongoClient
 
-from condition import Condition
 from reporter import Reporter
 
 
@@ -31,22 +32,24 @@ class Finder:
         shelf.close()
 
     @staticmethod
-    def to_html(documents, file):
+    def to_html(documents, base_folder, file):
         html = open(file, 'w')
-        html.write(Reporter.to_html(documents))
+        html.write(Reporter.to_html(documents, base_folder))
         html.close()
         webbrowser.open('file://{}/{}'.format(os.getcwd(), file))
 
 
 def main():
-    entries = Condition.input()
-    conditions = Condition.create_conditions(entries)
-    print('\nInput any key to continue ...')
-    input()
-    result = Finder.find(Finder.get_collection('localhost', 27017, 'shoulie', 'resumes'), conditions)
-    if result:
-        Finder.shelve(result, 'result.dat')
-        Finder.to_html(result, 'result.html')
+    if len(sys.argv) < 3:
+        print('Usage: {} condition_file base_folder'.format(sys.argv[0]))
+        sys.exit(1)
+
+    file = open(sys.argv[1])
+    conditions = eval(file.read())
+    documents = Finder.find(Finder.get_collection('localhost', 27017, 'shoulie', 'resumes'), conditions)
+    if documents:
+        # Finder.shelve(documents, 'finder_result.dat')
+        Finder.to_html(documents, sys.argv[2], 'finder_result.html')
 
 
 if __name__ == "__main__":
