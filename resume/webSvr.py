@@ -43,20 +43,29 @@ class WebSvr(BaseHTTPRequestHandler):
             path = parse.urlparse(self.path[2:]).path
             path = parse.unquote_plus(path)
             entries = {}
+            package = False
             for entry in path.split('&'):
                 a = entry.split('=')
+                if a[0] == 'extras[]':
+                    if 'package' in a[1]:
+                        package = True
+                    continue
                 entries[a[0]] = a[1] if not a[1].isdecimal() else int(a[1])
             conditions = Condition.create_conditions(entries)
-            log = open('{}.txt'.format(datetime.now().strftime('%y%m%d_%H%M%S')), 'w')
+
+            timestamp = datetime.now().strftime('%y%m%d_%H%M%S')
+            log = open(timestamp + '.txt', 'w')
             log.write(pprint.pformat(conditions) + '\n')
             log.close()
-
             documents = Finder.find(Finder.get_collection('localhost', 27017, 'shoulie', 'resumes'), conditions)
+            if package:
+                Finder.package(documents, WebSvr.base_folder, timestamp + '.zip')
             message = Reporter.to_html(documents, '')
-            html = open('{}.html'.format(datetime.now().strftime('%y%m%d_%H%M%S')), 'w')
+            """
+            html = open(timestamp + '.html', 'w')
             html.write(message)
             html.close()
-
+            """
             self.wfile.write(bytes(message, 'utf8'))
         elif self.path == '/' or self.path.endswith('.html'):
             path = parse.unquote(self.path.lstrip('/'))
