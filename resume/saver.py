@@ -67,8 +67,12 @@ class Saver:
             return
         experiences = eval(s)
         for experience in experiences:
-            date1 = experience.get(Keys.start_date).strftime('%Y/%m')
-            date2 = experience.get(Keys.end_date).strftime('%Y/%m')
+            date1 = experience.get(Keys.start_date)
+            if date1:
+                date1 = date1.strftime('%Y/%m')
+            date2 = experience.get(Keys.end_date)
+            if date2:
+                date2 = date2.strftime('%Y/%m')
             company = experience.get(Keys.company)
             job = experience.get(Keys.job)
             job_desc = experience.get(Keys.job_desc)
@@ -89,8 +93,12 @@ class Saver:
             return
         projects = eval(s)
         for project in projects:
-            date1 = project.get(Keys.start_date).strftime('%Y/%m')
-            date2 = project.get(Keys.end_date).strftime('%Y/%m')
+            date1 = project.get(Keys.start_date)
+            if date1:
+                date1 = date1.strftime('%Y/%m')
+            date2 = project.get(Keys.end_date)
+            if date2:
+                date2 = date2.strftime('%Y/%m')
             name = project.get(Keys.project)
             description = project.get(Keys.project_desc)
             duty = project.get(Keys.duty)
@@ -111,13 +119,17 @@ class Saver:
             return
         educations = eval(s)
         for education in educations:
-            date1 = education.get(Keys.start_date).strftime('%Y/%m')
-            date2 = education.get(Keys.end_date).strftime('%Y/%m')
+            date1 = education.get(Keys.start_date)
+            if date1:
+                date1 = date1.strftime('%Y/%m')
+            date2 = education.get(Keys.end_date)
+            if date2:
+                date2 = date2.strftime('%Y/%m')
             school = education.get(Keys.school)
             major = education.get(Keys.major)
             degree = education.get(Keys.degree)
-            degree = ['大专', '本科', '硕士', 'MBA', 'EMBA', '博士',  '博士后'][degree - 1]
-            # para = doc.add_paragraph('{}-{}: {}  {}  {}'.format(date1, date2, school, major, degree))
+            if degree:
+                degree = ['大专', '本科', '硕士', 'MBA', 'EMBA', '博士',  '博士后'][degree - 1]
             para = doc.add_paragraph('{}-{}: {}'.format(date1, date2, school))
             para.runs[0].bold = True
             para.runs[0].add_break()
