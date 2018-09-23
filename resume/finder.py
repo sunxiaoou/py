@@ -44,6 +44,7 @@ class Finder:
     @staticmethod
     def package(documents, base_folder, file):
         archive = zipfile.ZipFile(file, 'w')
+        current_dir = os.getcwd()
         os.chdir(base_folder)
         num = min(100, len(documents))
         for i in range(num):
@@ -51,6 +52,7 @@ class Finder:
             html_type = re.compile(r'^(\w+)_\d+').search(html).group(1)
             full_file_name = os.path.join(html_type, html)
             archive.write(full_file_name)
+        os.chdir(current_dir)
         archive.close()
         print('{:d} htmls added to archive {}'.format(num, file))
 
