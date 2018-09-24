@@ -3,35 +3,68 @@
     <head>
         <meta charset="utf-8">
         <title>Shoulie</title>
+        <style>
+            body {
+                /* background: #93dbaa url(background.gif) top left; */
+                background: #efe5d0;
+                margin: 20px;
+            }
+            h1 {
+                font-size: 120%;
+                /* color: #4305bf; */
+                color: #954b4b;
+            }
+            h3 { font-size: 110%; }
+            form {
+                display: table;
+                padding: 10px;
+                border: thin dotted #7e7e7e;
+                /* background-color: #8fe1ce; */
+                background-color: #e1ceb8;
+                width: 50%;
+            }
+            form p input.input1 {       /* for input text */
+                width: 40%;
+            }
+            form p input.input2 {       /* for input number */
+                width: 30%;
+            }
+            form p select.select1 {
+                width: 30%;
+            }
+            form p select.select2 {
+                width: 40%;
+            }
+        </style>
     </head>
 
     <body>
-        <h1>Shoulie resume query</h1>
+        <h1>Shoulie Resume Query</h1>
         <h3>Fill out the form below and click "Submit" to query</h3>
 
         <form action="http://localhost:7412" method="GET">
             <p>
                 基本信息:<br>
                 姓名:　　
-                <input type="text" name="name"><br>
+                <input class="input1" type="text" name="name"><br>
                 期望地点:
-                <input type="text" name="spot" value=""><br>
+                <input class="input1" type="text" name="spot" value=""><br>
                 期望行业:
-                <input type="text" name="industry" value="" placeholder="关键字"><br>
+                <input class="input1" type="text" name="industry" value="" placeholder="关键字"><br>
                 期望职业:
-                <input type="text" name="field" value="" placeholder="关键字"><br>
+                <input class="input1" type="text" name="field" value="" placeholder="关键字"><br>
                 年龄:　　
-                <input type="number" name="age1" min="15" max="60" placeholder="_岁及以上">
+                <input class="input2" type="number" name="age1" min="15" max="60" placeholder="_岁及以上">
                 至
-                <input type="number" name="age2" min="15" max="60" placeholder="_岁以下"><br>
+                <input class="input2" type="number" name="age2" min="15" max="60" placeholder="_岁以下"><br>
                 技能:　　
-                <input type="text" name="skills" value="" placeholder="1-3项, 逗号分割"><br>
+                <input class="input1" type="text" name="skills" value="" placeholder="1-3项, 逗号分割"><br>
             </p>
 
             <p>
                 教育背景:<br>
                 学历:　　
-                <select name="education1">
+                <select class="select1" name="education1">
                       <option value=1>大专</option>
                       <option value=2>本科</option>
                       <option value=3>硕士</option>
@@ -41,7 +74,7 @@
                       <option value=7>博士后</option>
                 </select>
                 至
-                <select name="education2">
+                <select class="select1" name="education2">
                     <option value=0 disabled selected>及以上</option>
                     <option value=1>大专</option>
                     <option value=2>本科</option>
@@ -52,36 +85,36 @@
                     <option value=7>博士后</option>
                 </select><br>
                 学校类别:
-                <select name="school_rank">
+                <select class="select2" name="school_rank">
                     <option value=1>一般 (及以上)</option>
                     <option value=2>211 (及以上)</option>
                     <option value=3>985</option>
                 </select><br>
                 学校:　　
-                <input type="text" name="school" value="" placeholder="关键字"><br>
+                <input class="input1" type="text" name="school" value="" placeholder="关键字"><br>
                 专业:　　
-                <input type="text" name="major" value="" placeholder="关键字"><br>
+                <input class="input1" type="text" name="major" value="" placeholder="关键字"><br>
             </p>
 
             <p>
                 职业背景:<br>
                 工作年限:
-                <input type="number" name="year1" min="1" max="30" placeholder="_年及以上">
+                <input class="input2" type="number" name="year1" min="1" max="30" placeholder="_年及以上">
                 至
-                <input type="number" name="year2" min="1" max="30" placeholder="_年以下"><br>
+                <input class="input2" type="number" name="year2" min="1" max="30" placeholder="_年以下"><br>
                 单一年限:
-                <input type="number" name="duration1" min="1" max="30" placeholder="_年及以上">
+                <input class="input2" type="number" name="duration1" min="1" max="30" placeholder="_年及以上">
                 至
-                <input type="number" name="duration2" min="1" max="30" placeholder="_年以下"><br>
+                <input class="input2" type="number" name="duration2" min="1" max="30" placeholder="_年以下"><br>
                 (前)雇主:
-                <input type="text" name="company" value="" placeholder="关键字"><br>
+                <input class="input1" type="text" name="company" value="" placeholder="关键字"><br>
                 工作经历:
-                <input type="text" name="experience_keys" value="" placeholder="关键字1-3项, 逗号分割">
+                <input class="input1" type="text" name="experience_keys" value="" placeholder="关键字1-3项, 逗号分割">
                 <input type="radio" name="ek_flag" value="and"> and
                 <input type="radio" name="ek_flag" value="or" checked> or
                 <br>
                 项目经历:
-                <input type="text" name="project_keys" value="" placeholder="关键字1-3项, 逗号分割">
+                <input class="input1" type="text" name="project_keys" value="" placeholder="关键字1-3项, 逗号分割">
                 <input type="radio" name="pk_flag" value="and"> and
                 <input type="radio" name="pk_flag" value="or" checked> or
                 <br>
