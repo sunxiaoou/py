@@ -1,36 +1,55 @@
 #! /usr/bin/python3
 
+import re
+import sys
 from bs4 import BeautifulSoup
 from pprint import pprint
+from selenium import common
 from selenium import webdriver
 
 
 def main():
-    # url = 'https://book.douban.com/subject_search?search_text=python&cat=1001'
-    url = 'https://book.douban.com/'
+    if len(sys.argv) < 3:
+        print('Usage: ' + sys.argv[0] + ' book|movie subject')
+        sys.exit(1)
 
+    url = 'https://' + sys.argv[1] + '.douban.com/'
+    print(url + ' ' + sys.argv[2])
     driver = webdriver.Chrome()     # needs chromedriver in $PATH
     driver.get(url)
     element = driver.find_element_by_id('inp-query')
-    element.send_keys('python')
+    # element.send_keys('perfect blue')
+    element.send_keys(sys.argv[2])
     element.submit()
 
     items = []
-    for i in range(2):
+    for i in range(10):
         soup = BeautifulSoup(driver.page_source, 'lxml')
         divs = soup.findAll('div', class_='detail')
+
         for div in divs:
-            title = div.find('div', class_='title').getText()
-            rating_nums = div.find('span', class_='rating_nums').getText()
-            pl = div.find('span', class_='pl').getText()
-            item = (title, rating_nums, pl)
-            items.append(item)
+            try:
+                # title = div.find('div', class_=re.compile(r'^title')).getText()
+                title = div.find('div', class_='title').getText()
+                txt = div.find('span', class_='rating_nums').getText()
+                rating_nums = float(txt)
+                txt = div.find('span', class_='pl').getText()
+                mo = re.compile(r'(\d+)人评价').search(txt)
+                pl = int(mo.group(1))
+                item = (title, rating_nums, pl)
+                items.append(item)
+            except AttributeError:
+                continue
 
-        element = driver.find_element_by_link_text('后页>')
-        element.click()
+        try:
+            element = driver.find_element_by_link_text('后页>')
+            element.click()
+        except common.exceptions.NoSuchElementException:
+            break
 
+    items.sort(key=lambda e: [-e[1], -e[2]])
     pprint(items)
-    # driver.quit()
+    driver.quit()
 
 if __name__ == "__main__":
     main()
