@@ -30,8 +30,8 @@ def search_rating(animes):
     driver = webdriver.Chrome()     # needs chromedriver in $PATH
     driver.get(url)
     items = []
-    # for i in range(len(animes)):
-    for i in range(1019, len(animes)):
+    # for i in range(1019, len(animes)):
+    for i in range(len(animes)):
         try:
             element = driver.find_element_by_id('inp-query')
             # element.send_keys('perfect blue')
@@ -72,9 +72,9 @@ def search_rating(animes):
 def main():
     # animes = get_animes()
     animes = get_animes_from_file()
-    pprint(animes)
+    # pprint(animes)
     # search_rating(['Amnesia'])
-    # search_rating(animes)
+    search_rating(animes)
 
 
 if __name__ == "__main__":
