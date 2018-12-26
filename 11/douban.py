@@ -8,6 +8,19 @@ from selenium import common
 from selenium import webdriver
 
 
+def open_browser():
+    return webdriver.Chrome()     # needs chromedriver in $PATH
+
+
+def attach_browser():
+    # A browser has opened as, for example:
+    #   $ google-chrome-stable --remote-debugging-port=9014 --user-data-dir=/tmp/chrome
+    options = webdriver.ChromeOptions()
+    options.debugger_address = 'localhost:9014'
+    driver = webdriver.Chrome(chrome_options=options)
+    return driver
+
+
 def main():
     if len(sys.argv) < 3:
         print('Usage: ' + sys.argv[0] + ' book|movie subject')
@@ -15,7 +28,10 @@ def main():
 
     url = 'https://' + sys.argv[1] + '.douban.com/'
     print(url + ' ' + sys.argv[2])
-    driver = webdriver.Chrome()     # needs chromedriver in $PATH
+
+    # driver = attach_browser()
+    driver = open_browser()
+
     driver.get(url)
     element = driver.find_element_by_id('inp-query')
     # element.send_keys('perfect blue')
