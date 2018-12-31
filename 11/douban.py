@@ -10,7 +10,7 @@ from selenium import webdriver
 
 
 def usage():
-    print('Usage: ' + sys.argv[0] + ' -b|m [-t] subject')
+    print('Usage: ' + sys.argv[0] + ' -b|m [-p num] [-t] subject')
 
 
 def open_browser():
