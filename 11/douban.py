@@ -43,7 +43,7 @@ def drive_by_name(subject, tag, driver):
 
 def get_sorted_items(tag, driver):
     items = []
-    for i in range(2):
+    for i in range(10):
         soup = BeautifulSoup(driver.page_source, 'lxml')
 
         if not tag:
@@ -77,7 +77,7 @@ def get_sorted_items(tag, driver):
                     pl = int(mo.group(1))
                     item = (title, rating_nums, pl)
                     items.append(item)
-                except AttributeError:
+                except (AttributeError, ValueError):
                     continue
 
         try:
