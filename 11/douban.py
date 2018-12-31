@@ -27,7 +27,7 @@ def attach_browser():
     return driver
 
 
-def drive_by_name(subject, tag, driver):
+def query_subject(subject, tag, driver):
     if not tag:
         # element.send_keys('perfect blue')
         element = driver.find_element_by_id('inp-query')
@@ -41,9 +41,9 @@ def drive_by_name(subject, tag, driver):
         elements[1].submit()
 
 
-def get_sorted_items(tag, driver):
+def get_sorted_items(num, tag, driver):
     items = []
-    for i in range(10):
+    for i in range(num):
         soup = BeautifulSoup(driver.page_source, 'lxml')
 
         if not tag:
@@ -61,7 +61,6 @@ def get_sorted_items(tag, driver):
                     items.append(item)
                 except AttributeError:
                     continue
-
         else:
             elements = soup.findAll('li', class_='subject-item')
             for element in elements:
@@ -92,7 +91,7 @@ def get_sorted_items(tag, driver):
 
 def main():
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "bmt")
+        opts, args = getopt.getopt(sys.argv[1:], "bmp:t")
     except getopt.GetoptError as err:
         # print help information and exit:
         print(err)  # will print something like "option -a not recognized"
@@ -100,12 +99,15 @@ def main():
         sys.exit(1)
 
     type_name = None
+    page_num = 2
     is_tag = False
     for o, a in opts:
         if o == '-b':
             type_name = 'book'
         elif o == '-m':
             type_name = 'movie'
+        elif o == '-p':
+            page_num = int(a)
         elif o == '-t':
             is_tag = True
         else:
@@ -122,8 +124,8 @@ def main():
     driver = open_browser()
     driver.get(url)
 
-    drive_by_name(args[0], is_tag, driver)
-    items = get_sorted_items(is_tag, driver)
+    query_subject(args[0], is_tag, driver)
+    items = get_sorted_items(page_num, is_tag, driver)
     pprint(items)
     driver.quit()
 
