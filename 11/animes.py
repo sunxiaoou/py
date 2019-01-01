@@ -20,6 +20,21 @@ def get_animes():
     return animes
 
 
+def get_animes2():
+    file = '/home/xixisun/Videos/Anime/animetranscripts/animetranscripts.wikispaces.com/Transcripts in English.html'
+    soup = BeautifulSoup(open(file).read(), 'lxml')
+    table = soup.find('table', class_='wiki_table')
+    animes = []
+    for tr in table.find_all('tr'):
+        try:
+            td = tr.find('td')
+            if td.find_next_sibling().find_next_sibling().getText().startswith('None'):
+                animes.append(td.find('a').getText())
+        except AttributeError:
+            continue
+    return animes
+
+
 def get_animes_from_file():
     file = open('animes.txt')
     return file.read().splitlines()
@@ -71,7 +86,8 @@ def search_rating(animes):
 
 def main():
     # animes = get_animes()
-    animes = get_animes_from_file()
+    animes = get_animes2()
+    # animes = get_animes_from_file()
     # pprint(animes)
     # search_rating(['Amnesia'])
     search_rating(animes)
