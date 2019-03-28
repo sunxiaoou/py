@@ -1,4 +1,4 @@
-#! /usr/bin/python3
+#! /usr/local/bin/python3
 
 # You can learn about the requests module’s other features from
 # http://requests.readthedocs.org/

@@ -1,4 +1,4 @@
-#! /usr/bin/python3
+#! /usr/local/bin/python3
 
 # lucky.py - Opens several Google search results.
 # maybe need proxy as:

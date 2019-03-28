@@ -2,9 +2,9 @@
 
 for i in `echo *.py`
 do
-	if [ "`head -1 $i`" != "#! /usr/bin/python3" ]
+	if [ "`head -1 $i`" != "#! /usr/local/bin/python3" ]
 	then
-		sed -i '1 i\#! /usr/bin/python3\n' $i
+		gsed -i '1 i\#! /usr/local/bin/python3\n' $i
 		chmod 755 $i
 	fi
 done

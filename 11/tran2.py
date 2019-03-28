@@ -1,4 +1,4 @@
-#! /usr/bin/python3
+#! /usr/local/bin/python3
 
 # Get transcripts from http://animetranscripts.wikispaces.com
 # It needs a url as:
