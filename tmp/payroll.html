@@ -3,87 +3,22 @@
     <head>
         <meta charset="utf-8">
         <title>Payroll Calculator</title>
-        <!-- script type="text/javascript">
-            var btn = document.getElementById("calculate");
-            btn.onclick = function(event) {
-                alert(event.target);
-                var value = parseFloat(document.getElementById("earningsBeforeTax01").value);
-                document.getElementById("grand01").value = value + 10;
-            };
-        </script -->
-    </head>
-    <body>
-        <p id="p1"><b>Hello</b> world!</p>
-        <input type="button" value="Use Ranges" onclick="useRanges()" />
-        <table border="0">
-            <tr>
-                <td>
-                    <fieldset>
-                        <legend>January</legend>
-                            Earnings Before Tax: <input type="text" value="30000" />
-                            <button name="duplicate">Duplicate</button><br />
-                            Deductions Before Tax: <input type="text" value="5000" /><br />
-                            Additional Special Deduction: <input type="text" value="2000" /><br />
-                            Deductions After Tax: <input type="text" value="1490" />
-                            <button name="calculate">Calculate</button>
-                    </fieldset>
-                <td/>
-                <td>
-                    <fieldset>
-                        <legend>Result</legend>
-                            Grand: <input type="text" /><br />
-                            IIT: <input type="text" /><br />
-                            Year To Date Grand: <input type="text" /><br />
-                            Year To Date IIT: <input type="text" />
-                    </fieldset>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <fieldset>
-                        <legend>February</legend>
-                        Earnings Before Tax: <input type="text" value="0" /><br />
-                        Deductions Before Tax: <input type="text" value="0" /><br />
-                        Additional Special Deduction: <input type="text" value="0" /><br />
-                        Deductions After Tax: <input type="text" value="0" />
-                        <button name="calculate">Calculate</button>
-                    </fieldset>
-                <td/>
-                <td>
-                    <fieldset>
-                        <legend>Result</legend>
-                        Grand: <input type="text" /><br />
-                        IIT: <input type="text" /><br />
-                        Year To Date Grand: <input type="text" /><br />
-                        Year To Date IIT: <input type="text" />
-                    </fieldset>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <fieldset>
-                        <legend>March</legend>
-                        Earnings Before Tax: <input type="text" value="30000" /><br />
-                        Deductions Before Tax: <input type="text" value="5000" /><br />
-                        Additional Special Deduction: <input type="text" value="2000" /><br />
-                        Deductions After Tax: <input type="text" value="1490" />
-                        <button name="calculate">Calculate</button>
-                    </fieldset>
-                <td/>
-                <td>
-                    <fieldset>
-                        <legend>Result</legend>
-                        Grand: <input type="text" /><br />
-                        IIT: <input type="text" /><br />
-                        Year To Date Grand: <input type="text" /><br />
-                        Year To Date IIT: <input type="text" />
-                    </fieldset>
-                </td>
-            </tr>
-        </table>
-        <p><strong>Note:</strong> This example uses DOM ranges and will only work in browsers that support DOM ranges. This example will fail in Internet Explorer &lt; 9.</p>
-
         <script type="text/javascript">
+            var handleDuplicate = function (event) {
+                var tr = event.target.parentElement.parentElement.parentElement;
+                var inputs = tr.getElementsByTagName("input");
+                try {
+                    var prevInputs = tr.previousElementSibling.getElementsByTagName("input");
+                    for (var i = 0; i < 4; i ++) {
+                        inputs[i].value = prevInputs[i].value;
+                    }
+                } catch (e) {
+                    if (!(e instanceof TypeError)) {
+                        throw e;
+                    }
+                }
+            };
+
             function calculateTax(amount) {
                 var ranks = [[0, 3, 0]
                     , [36000, 10, 2520]
@@ -146,12 +81,92 @@
                 inputs[InputNOs.Grand].value = earnings - deductions - inputs[InputNOs.IIT].value - deductions2;
             };
 
-            var buttons = document.getElementsByTagName("button");
-            for (var i = 0; i < buttons.length; i ++) {
-                if (buttons[i].name === "calculate") {
-                    buttons[i].onclick = handleCalculate;
+            addHandler = function() {
+                var buttons = document.getElementById("table").getElementsByTagName("button");
+                for (var i = 0; i < buttons.length; i ++) {
+                    if (buttons[i].name === "duplicate") {
+                        buttons[i].addEventListener("click", handleDuplicate, false);
+                    } else if (buttons[i].name === "calculate") {
+                        buttons[i].addEventListener("click", handleCalculate, false);
+                    }
                 }
-            }
+            };
+
+            // window.onload = addHandler;
+            window.addEventListener("load", addHandler, false);
         </script>
+    </head>
+    <body>
+        <p id="p1"><b>Hello</b> world!</p>
+        <input type="button" value="Use Ranges" onclick="useRanges()" />
+        <table id="table" border="0">
+            <tr>
+                <td>
+                    <fieldset>
+                        <legend>January</legend>
+                            Earnings Before Tax: <input type="text" title="" value="30000" />
+                            <button name="duplicate">Duplicate</button><br />
+                            Deductions Before Tax: <input type="text" title="" value="5000" /><br />
+                            Additional Special Deduction: <input type="text" title="" value="2000" /><br />
+                            Deductions After Tax: <input type="text" title="" value="1490" />
+                            <button name="calculate">Calculate</button>
+                    </fieldset>
+                </td>
+                <td>
+                    <fieldset>
+                        <legend>Result</legend>
+                            Grand: <input type="text" title="" /><br />
+                            IIT: <input type="text" title="" /><br />
+                            Year To Date Grand: <input type="text" title="" /><br />
+                            Year To Date IIT: <input type="text" title="" />
+                    </fieldset>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <fieldset>
+                        <legend>February</legend>
+                        Earnings Before Tax: <input type="text" title="" value="0" />
+                        <button name="duplicate">Duplicate</button><br />
+                        Deductions Before Tax: <input type="text" title="" value="0" /><br />
+                        Additional Special Deduction: <input type="text" title="" value="0" /><br />
+                        Deductions After Tax: <input type="text" title="" value="0" />
+                        <button name="calculate">Calculate</button>
+                    </fieldset>
+                </td>
+                <td>
+                    <fieldset>
+                        <legend>Result</legend>
+                        Grand: <input type="text" title="" /><br />
+                        IIT: <input type="text" title="" /><br />
+                        Year To Date Grand: <input type="text" title="" /><br />
+                        Year To Date IIT: <input type="text" title="" />
+                    </fieldset>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <fieldset>
+                        <legend>March</legend>
+                        Earnings Before Tax: <input type="text" title="" value="0" />
+                        <button name="duplicate">Duplicate</button><br />
+                        Deductions Before Tax: <input type="text" title="" value="0" /><br />
+                        Additional Special Deduction: <input type="text" title="" value="0" /><br />
+                        Deductions After Tax: <input type="text" title="" value="0" />
+                        <button name="calculate">Calculate</button>
+                    </fieldset>
+                </td>
+                <td>
+                    <fieldset>
+                        <legend>Result</legend>
+                        Grand: <input type="text" title="" /><br />
+                        IIT: <input type="text" title="" /><br />
+                        Year To Date Grand: <input type="text" title="" /><br />
+                        Year To Date IIT: <input type="text" title="" />
+                    </fieldset>
+                </td>
+            </tr>
+        </table>
+        <p><strong>Note:</strong> This example uses DOM ranges and will only work in browsers that support DOM ranges. This example will fail in Internet Explorer &lt; 9.</p>
     </body>
 </html>
