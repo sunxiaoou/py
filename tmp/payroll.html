@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Payroll Calculator</title>
+        <!-- script type="text/javascript">
+            var btn = document.getElementById("calculate");
+            btn.onclick = function(event) {
+                alert(event.target);
+                var value = parseFloat(document.getElementById("earningsBeforeTax01").value);
+                document.getElementById("grand01").value = value + 10;
+            };
+        </script -->
+    </head>
+    <body>
+        <p id="p1"><b>Hello</b> world!</p>
+        <input type="button" value="Use Ranges" onclick="useRanges()" />
+        <table border="0">
+        <tr>
+            <td>
+                <fieldset>
+                    <legend>January</legend>
+                        Earnings Before Tax: <input type="text" value="30000" /><br />
+                        Deductions Before Tax: <input type="text" value="5000" /><br />
+                        Additional Special Deduction: <input type="text" value="2000" /><br />
+                        Deductions After Tax: <input type="text" value="1490" />
+                        <!-- input type="button" id="calculate" value="Calculate" /-->
+                        <button>Calculate</button>
+                </fieldset>
+            <td/>
+            <td>
+                <fieldset>
+                    <legend>Result</legend>
+                        Grand: <input type="text" id="grand01" /><br />
+                        IIT: <input type="text" id="iit01" /><br />
+                        Year To Date Grand: <input type="text" id="y2dGrand01" /><br />
+                        Year To Date IIT: <input type="text" id="y2dIit01" />
+                </fieldset>
+            </td>
+        </tr>
+        <tr>
+             <td>
+                 <fieldset>
+                     <legend>February</legend>
+                     Earnings Before Tax: <input type="text" id="earningsBeforeTax02" /><br />
+                     Deductions Before Tax: <input type="text" id="deductionsBeforeTax02" /><br />
+                     Additional Special Deduction: <input type="text" id="additionalSpecialDeduction02" /><br />
+                     Deductions After Tax: <input type="text" id="deductionsAfterTax02" />
+                     <!-- input type="button" value="Calculate" onclick="calculateTax()" /-->
+                     <button>Calculate</button>
+                 </fieldset>
+             <td/>
+             <td>
+                 <fieldset>
+                     <legend>Result</legend>
+                     Grand: <input type="text" id="grand02" /><br />
+                     IIT: <input type="text" id="iit02" /><br />
+                     Year To Date Grand: <input type="text" id="y2dGrand02" /><br />
+                     Year To Date IIT: <input type="text" id="y2dIit02" />
+                 </fieldset>
+             </td>
+        </tr>
+        </table>
+        <p><strong>Note:</strong> This example uses DOM ranges and will only work in browsers that support DOM ranges. This example will fail in Internet Explorer &lt; 9.</p>
+
+        <script type="text/javascript">
+            function calculateTax(amount) {
+                var ranks = [[0, 3, 0]
+                    , [36000, 10, 2520]
+                    , [144000, 20, 16920]
+                    , [300000, 25, 31920]
+                    , [420000, 30, 52920]
+                    , [660000, 35, 85920]
+                    , [960000, 45, 181920]
+                ];
+                var rate = 0,
+                    delta = 0;
+                for (var i = 0; i < ranks.length; i ++){
+                    if (amount < ranks[i][0])
+                        break;
+                    rate = ranks[i][1];
+                    delta = ranks[i][2];
+                }
+                return (amount * rate / 100.0 - delta).toFixed(2);
+            }
+
+            var handleButton = function(event) {
+                var fs = event.target.parentElement;
+                var element = fs.firstElementChild.nextElementSibling;
+                var earnings = parseFloat(element.value);
+                // alert(earnings);
+                element = element.nextElementSibling.nextElementSibling;
+                var deductions = parseFloat(element.value);
+                // alert(deductions);
+                element = element.nextElementSibling.nextElementSibling;
+                var asd = parseFloat(element.value);
+                // alert(asd);
+                element = element.nextElementSibling.nextElementSibling;
+                var deductions2 = parseFloat(element.value);
+                // alert(deductions2);
+
+                var y2dIit = -1,
+                    y2dGrand = -1;
+                try {
+                    element = fs.parentElement.parentElement.previousElementSibling.lastElementChild.lastElementChild
+                        .lastElementChild;
+                    y2dGrand = parseFloat(element.previousElementSibling.previousElementSibling.value);
+                    y2dGrand = isNaN(y2dGrand) ? 0 : y2dGrand;
+                    y2dIit = parseFloat(element.value);
+                    y2dIit = isNaN(y2dIit) ? 0 : y2dIit;
+                } catch (e) {
+                    if (e instanceof TypeError) {
+                        y2dIit = 0;
+                        y2dGrand = 0;
+                    } else {
+                        throw e;
+                    }
+                }
+                // alert(y2dGrand);
+                // alert(y2dIit);
+
+                var taxExemption = 5000;
+                y2dGrand = earnings - taxExemption - deductions - asd + y2dGrand;
+                var y2dIit2 = calculateTax(y2dGrand);
+                var iit = (y2dIit2 - y2dIit).toFixed(2);
+                earnings = earnings - deductions - iit - deductions2;
+
+                element = fs.parentElement.nextElementSibling.nextElementSibling.firstElementChild.firstElementChild
+                    .nextElementSibling;
+                element.value = earnings;
+                element = element.nextElementSibling.nextElementSibling;
+                element.value = iit;
+                element = element.nextElementSibling.nextElementSibling;
+                element.value = y2dGrand;
+                element = element.nextElementSibling.nextElementSibling;
+                element.value = y2dIit2;
+            };
+
+            var buttons = document.getElementsByTagName("button");
+            for (var i = 0; i < buttons.length; i ++) {
+                buttons[i].onclick = handleButton;
+            }
+        </script>
+    </body>
+</html>
