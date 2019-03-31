@@ -126,6 +126,27 @@
                 }
             }
 
+            function clear(tr) {
+                var inputs = tr.getElementsByTagName("input");
+                for (var i = 0; i < 4; i ++) {
+                    inputs[i].value = "0";
+                }
+                for (; i < 8; i ++) {
+                    inputs[i].value = "";
+                }
+            }
+
+            function handleClear(event) {
+                clear(event.target.parentElement.parentElement.parentElement);
+            }
+
+            function handleClearAll() {
+                var trs = document.getElementsByTagName("tr");
+                for (var i = 0; i < trs.length; i ++) {
+                    clear(trs[i]);
+                }
+            }
+
             function addRows() {
                 var months = [
                     "January", "February", "March", "April", "May", "June", "July", "August", "September", "October"
@@ -141,6 +162,7 @@
                         tds[0].innerHTML.replace(/<legend>\w+<\/legend>/, "<legend>" + months[i] + "</legend>");
                     td = newTr.insertCell(1);
                     td.innerHTML = tds[1].innerHTML;
+                    clear(newTr);
                 }
             }
 
@@ -151,10 +173,13 @@
                         buttons[i].addEventListener("click", handleDuplicate, false);
                     } else if (buttons[i].name === "calculate") {
                         buttons[i].addEventListener("click", handleCalculate, false);
+                    } else if (buttons[i].name === "clear") {
+                        buttons[i].addEventListener("click", handleClear, false);
                     }
                 }
                 document.getElementById("duplicateAll").addEventListener("click", handleDuplicateAll, false);
                 document.getElementById("calculateAll").addEventListener("click", handleCalculateAll, false);
+                document.getElementById("clearAll").addEventListener("click", handleClearAll, false);
             }
 
             function initialize() {
@@ -170,6 +195,7 @@
         <p><b>Payroll Calculator</b></p>
         <input id="duplicateAll" type="button" value="DuplicateAll" />
         <input id="calculateAll" type="button" value="CalculateAll" />
+        <input id="clearAll" type="button" value="ClearAll" />
         <table id="table" border="0">
             <tr>
                 <td>
@@ -177,10 +203,11 @@
                         <legend>January</legend>
                             税前收入合计:　　 <input type="text" title="" value="30000" />
                             <button name="duplicate">Duplicate</button><br />
-                            税前扣减合计: 　　<input type="text" title="" value="5000" /><br />
+                            税前扣减合计: 　　<input type="text" title="" value="5000" />
+                            <button name="calculate">Calculate</button><br />
                             专项附加扣除合计: <input type="text" title="" value="2000" /><br />
                             税后扣减合计: 　　<input type="text" title="" value="1490" />
-                            <button name="calculate">Calculate</button>
+                            <button name="clear">Clear</button>
                     </fieldset>
                 </td>
                 <td>
@@ -190,28 +217,6 @@
                             当月缴税: 　　　　<input type="text" title="" /><br />
                             年度应税收入累计: <input type="text" title="" /><br />
                             年度缴税金额: 　　<input type="text" title="" />
-                    </fieldset>
-                </td>
-            </tr>
-            <tr>
-                <td>
-                    <fieldset>
-                        <legend>February</legend>
-                            税前收入合计:　　 <input type="text" title="" value="0" />
-                            <button name="duplicate">Duplicate</button><br />
-                            税前扣减合计: 　　<input type="text" title="" value="0" /><br />
-                            专项附加扣除合计: <input type="text" title="" value="0" /><br />
-                            税后扣减合计: 　　<input type="text" title="" value="0" />
-                            <button name="calculate">Calculate</button>
-                    </fieldset>
-                </td>
-                <td>
-                    <fieldset>
-                        <legend>Result</legend>
-                            当月实际收入:　　 <input type="text" title="" /><br />
-                            当月缴税:　　　　 <input type="text" title="" /><br />
-                            年度应税收入累计: <input type="text" title="" /><br />
-                            年度缴税累计:　　 <input type="text" title="" />
                     </fieldset>
                 </td>
             </tr>
