@@ -3,6 +3,24 @@
     <head>
         <meta charset="utf-8">
         <title>Payroll Calculator</title>
+        <style>
+            body {
+                background: #efe5d0;
+                margin: 20px;
+            }
+            table {
+                font-size: 75%;
+                display: table;
+                padding: 10px;
+                border: thin dotted #7e7e7e;
+                /* background-color: #8fe1ce; */
+                background-color: #e1ceb8;
+                width: 60%;
+            }
+            table input {       /* for input number */
+                width: 30%;
+            }
+        </style>
         <script type="text/javascript">
             function duplicate(tr) {
                 var inputs = tr.getElementsByTagName("input");
@@ -157,21 +175,21 @@
                 <td>
                     <fieldset>
                         <legend>January</legend>
-                            Earnings Before Tax: <input type="text" title="" value="30000" />
+                            税前收入合计: <input type="text" title="" value="30000" />
                             <button name="duplicate">Duplicate</button><br />
-                            Deductions Before Tax: <input type="text" title="" value="5000" /><br />
-                            Additional Special Deduction: <input type="text" title="" value="2000" /><br />
-                            Deductions After Tax: <input type="text" title="" value="1490" />
+                            税前扣减合计: <input type="text" title="" value="5000" /><br />
+                            专项附加扣除: <input type="text" title="" value="2000" /><br />
+                            税后扣减合计: <input type="text" title="" value="1490" />
                             <button name="calculate">Calculate</button>
                     </fieldset>
                 </td>
                 <td>
                     <fieldset>
                         <legend>Result</legend>
-                            Grand: <input type="text" title="" /><br />
-                            IIT: <input type="text" title="" /><br />
-                            Year To Date Grand: <input type="text" title="" /><br />
-                            Year To Date IIT: <input type="text" title="" />
+                            当月实际收入: <input type="text" title="" /><br />
+                            当月缴税金额: <input type="text" title="" /><br />
+                            年度收入累计: <input type="text" title="" /><br />
+                            年度缴税累计: <input type="text" title="" />
                     </fieldset>
                 </td>
             </tr>
@@ -179,21 +197,21 @@
                 <td>
                     <fieldset>
                         <legend>February</legend>
-                        Earnings Before Tax: <input type="text" title="" value="0" />
-                        <button name="duplicate">Duplicate</button><br />
-                        Deductions Before Tax: <input type="text" title="" value="0" /><br />
-                        Additional Special Deduction: <input type="text" title="" value="0" /><br />
-                        Deductions After Tax: <input type="text" title="" value="0" />
-                        <button name="calculate">Calculate</button>
+                            税前收入合计: <input type="text" title="" value="0" />
+                            <button name="duplicate">Duplicate</button><br />
+                            税前扣减合计: <input type="text" title="" value="0" /><br />
+                            专项附加扣除: <input type="text" title="" value="0" /><br />
+                            税后扣减合计: <input type="text" title="" value="0" />
+                            <button name="calculate">Calculate</button>
                     </fieldset>
                 </td>
                 <td>
                     <fieldset>
                         <legend>Result</legend>
-                        Grand: <input type="text" title="" /><br />
-                        IIT: <input type="text" title="" /><br />
-                        Year To Date Grand: <input type="text" title="" /><br />
-                        Year To Date IIT: <input type="text" title="" />
+                            当月实际收入: <input type="text" title="" /><br />
+                            当月缴税金额: <input type="text" title="" /><br />
+                            年度收入累计: <input type="text" title="" /><br />
+                            年度缴税累计: <input type="text" title="" />
                     </fieldset>
                 </td>
             </tr>
