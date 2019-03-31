@@ -82,7 +82,7 @@
                     DeductionsAfterTax: 3,
                     Grand: 4,
                     IIT : 5,
-                    YearToDateGrand : 6,
+                    YearToDateTaxable : 6,
                     YearToDateIIT : 7
                 };
 
@@ -92,25 +92,25 @@
                 var asd = parseFloat(inputs[InputNOs.AdditionalSpecialDeduction].value);
                 var deductions2 = parseFloat(inputs[InputNOs.DeductionsAfterTax].value);
                 var y2dIit = -1,
-                    y2dGrand = -1;
+                    y2dTaxable = -1;
                 try {
                     var prevInputs = tr.previousElementSibling.getElementsByTagName("input");
-                    y2dGrand = parseFloat(prevInputs[InputNOs.YearToDateGrand].value);
-                    y2dGrand = isNaN(y2dGrand) ? 0 : y2dGrand;
+                    y2dTaxable = parseFloat(prevInputs[InputNOs.YearToDateTaxable].value);
+                    y2dTaxable = isNaN(y2dTaxable) ? 0 : y2dTaxable;
                     y2dIit = parseFloat(prevInputs[InputNOs.YearToDateIIT].value);
                     y2dIit = isNaN(y2dIit) ? 0 : y2dIit;
                 } catch (e) {
                     if (e instanceof TypeError) {
                         y2dIit = 0;
-                        y2dGrand = 0;
+                        y2dTaxable = 0;
                     } else {
                         throw e;
                     }
                 }
 
                 var taxExemption = 5000;
-                inputs[InputNOs.YearToDateGrand].value = earnings - taxExemption - deductions - asd + y2dGrand;
-                inputs[InputNOs.YearToDateIIT].value = calculateTax(inputs[InputNOs.YearToDateGrand].value);
+                inputs[InputNOs.YearToDateTaxable].value = earnings - taxExemption - deductions - asd + y2dTaxable;
+                inputs[InputNOs.YearToDateIIT].value = calculateTax(inputs[InputNOs.YearToDateTaxable].value);
                 inputs[InputNOs.IIT].value = (inputs[InputNOs.YearToDateIIT].value - y2dIit).toFixed(2);
                 inputs[InputNOs.Grand].value = earnings - deductions - inputs[InputNOs.IIT].value - deductions2;
             }
@@ -175,21 +175,21 @@
                 <td>
                     <fieldset>
                         <legend>January</legend>
-                            税前收入合计: <input type="text" title="" value="30000" />
+                            税前收入合计:　　 <input type="text" title="" value="30000" />
                             <button name="duplicate">Duplicate</button><br />
-                            税前扣减合计: <input type="text" title="" value="5000" /><br />
-                            专项附加扣除: <input type="text" title="" value="2000" /><br />
-                            税后扣减合计: <input type="text" title="" value="1490" />
+                            税前扣减合计: 　　<input type="text" title="" value="5000" /><br />
+                            专项附加扣除合计: <input type="text" title="" value="2000" /><br />
+                            税后扣减合计: 　　<input type="text" title="" value="1490" />
                             <button name="calculate">Calculate</button>
                     </fieldset>
                 </td>
                 <td>
                     <fieldset>
                         <legend>Result</legend>
-                            当月实际收入: <input type="text" title="" /><br />
-                            当月缴税金额: <input type="text" title="" /><br />
-                            年度收入累计: <input type="text" title="" /><br />
-                            年度缴税累计: <input type="text" title="" />
+                            当月实际收入: 　　<input type="text" title="" /><br />
+                            当月缴税: 　　　　<input type="text" title="" /><br />
+                            年度应税收入累计: <input type="text" title="" /><br />
+                            年度缴税金额: 　　<input type="text" title="" />
                     </fieldset>
                 </td>
             </tr>
@@ -197,21 +197,21 @@
                 <td>
                     <fieldset>
                         <legend>February</legend>
-                            税前收入合计: <input type="text" title="" value="0" />
+                            税前收入合计:　　 <input type="text" title="" value="0" />
                             <button name="duplicate">Duplicate</button><br />
-                            税前扣减合计: <input type="text" title="" value="0" /><br />
-                            专项附加扣除: <input type="text" title="" value="0" /><br />
-                            税后扣减合计: <input type="text" title="" value="0" />
+                            税前扣减合计: 　　<input type="text" title="" value="0" /><br />
+                            专项附加扣除合计: <input type="text" title="" value="0" /><br />
+                            税后扣减合计: 　　<input type="text" title="" value="0" />
                             <button name="calculate">Calculate</button>
                     </fieldset>
                 </td>
                 <td>
                     <fieldset>
                         <legend>Result</legend>
-                            当月实际收入: <input type="text" title="" /><br />
-                            当月缴税金额: <input type="text" title="" /><br />
-                            年度收入累计: <input type="text" title="" /><br />
-                            年度缴税累计: <input type="text" title="" />
+                            当月实际收入:　　 <input type="text" title="" /><br />
+                            当月缴税:　　　　 <input type="text" title="" /><br />
+                            年度应税收入累计: <input type="text" title="" /><br />
+                            年度缴税累计:　　 <input type="text" title="" />
                     </fieldset>
                 </td>
             </tr>
