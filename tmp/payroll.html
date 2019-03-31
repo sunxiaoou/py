@@ -108,6 +108,24 @@
                 }
             }
 
+            function addRows() {
+                var months = [
+                    "January", "February", "March", "April", "May", "June", "July", "August", "September", "October"
+                    , "November", "December"
+                ];
+                var table = document.getElementById("table");
+                var trs = table.getElementsByTagName("tr");
+                var tds = trs[trs.length - 1].getElementsByTagName("td");
+                for (var i = trs.length; i < months.length; i ++) {
+                    var newTr = table.insertRow(i);
+                    var td = newTr.insertCell(0);
+                    td.innerHTML =
+                        tds[0].innerHTML.replace(/<legend>\w+<\/legend>/, "<legend>" + months[i] + "</legend>");
+                    td = newTr.insertCell(1);
+                    td.innerHTML = tds[1].innerHTML;
+                }
+            }
+
             function addHandler() {
                 var buttons = document.getElementById("table").getElementsByTagName("button");
                 for (var i = 0; i < buttons.length; i ++) {
@@ -121,12 +139,17 @@
                 document.getElementById("calculateAll").addEventListener("click", handleCalculateAll, false);
             }
 
+            function initialize() {
+                addRows();
+                addHandler();
+            }
+
             // window.onload = addHandler;
-            window.addEventListener("load", addHandler, false);
+            window.addEventListener("load", initialize, false);
         </script>
     </head>
     <body>
-        <p id="p1"><b>Hello</b> world!</p>
+        <p><b>Payroll Calculator</b></p>
         <input id="duplicateAll" type="button" value="DuplicateAll" />
         <input id="calculateAll" type="button" value="CalculateAll" />
         <table id="table" border="0">
@@ -174,29 +197,7 @@
                     </fieldset>
                 </td>
             </tr>
-            <tr>
-                <td>
-                    <fieldset>
-                        <legend>March</legend>
-                        Earnings Before Tax: <input type="text" title="" value="0" />
-                        <button name="duplicate">Duplicate</button><br />
-                        Deductions Before Tax: <input type="text" title="" value="0" /><br />
-                        Additional Special Deduction: <input type="text" title="" value="0" /><br />
-                        Deductions After Tax: <input type="text" title="" value="0" />
-                        <button name="calculate">Calculate</button>
-                    </fieldset>
-                </td>
-                <td>
-                    <fieldset>
-                        <legend>Result</legend>
-                        Grand: <input type="text" title="" /><br />
-                        IIT: <input type="text" title="" /><br />
-                        Year To Date Grand: <input type="text" title="" /><br />
-                        Year To Date IIT: <input type="text" title="" />
-                    </fieldset>
-                </td>
-            </tr>
         </table>
-        <p><strong>Note:</strong> This example uses DOM ranges and will only work in browsers that support DOM ranges. This example will fail in Internet Explorer &lt; 9.</p>
+        <p><b>"Only two certainties in life are death and taxes."</b> - Benjamin Franklin</p>
     </body>
 </html>
