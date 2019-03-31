@@ -4,8 +4,7 @@
         <meta charset="utf-8">
         <title>Payroll Calculator</title>
         <script type="text/javascript">
-            var handleDuplicate = function (event) {
-                var tr = event.target.parentElement.parentElement.parentElement;
+            function duplicate(tr) {
                 var inputs = tr.getElementsByTagName("input");
                 try {
                     var prevInputs = tr.previousElementSibling.getElementsByTagName("input");
@@ -17,7 +16,25 @@
                         throw e;
                     }
                 }
-            };
+            }
+
+            function handleDuplicate(event) {
+                duplicate(event.target.parentElement.parentElement.parentElement);
+            }
+
+            function handleDuplicateAll() {
+                var trs = document.getElementsByTagName("tr");
+                for (var i = 1; i < trs.length; i ++) {
+                    var inputs = trs[i].getElementsByTagName("input");
+                    if (inputs[0].value === "0" && inputs[1].value === "0" && inputs[2].value === "0"
+                                && inputs[3].value === "0") {
+                        break;
+                    }
+                }
+                for (var j = i; j < trs.length; j ++) {
+                    duplicate(trs[j]);
+                }
+            }
 
             function calculateTax(amount) {
                 var ranks = [[0, 3, 0]
@@ -39,7 +56,7 @@
                 return (amount * rate / 100.0 - delta).toFixed(2);
             }
 
-            var handleCalculate = function(event) {
+             function calculate(tr) {
                 var InputNOs = {
                     EarningsBeforeTax : 0,
                     DeductionsBeforeTax : 1,
@@ -51,7 +68,6 @@
                     YearToDateIIT : 7
                 };
 
-                var tr = event.target.parentElement.parentElement.parentElement;
                 var inputs = tr.getElementsByTagName("input");
                 var earnings = parseFloat(inputs[InputNOs.EarningsBeforeTax].value);
                 var deductions = parseFloat(inputs[InputNOs.DeductionsBeforeTax].value);
@@ -79,9 +95,20 @@
                 inputs[InputNOs.YearToDateIIT].value = calculateTax(inputs[InputNOs.YearToDateGrand].value);
                 inputs[InputNOs.IIT].value = (inputs[InputNOs.YearToDateIIT].value - y2dIit).toFixed(2);
                 inputs[InputNOs.Grand].value = earnings - deductions - inputs[InputNOs.IIT].value - deductions2;
-            };
+            }
 
-            addHandler = function() {
+            function handleCalculate(event) {
+                calculate(event.target.parentElement.parentElement.parentElement);
+            }
+
+            function handleCalculateAll() {
+                var trs = document.getElementsByTagName("tr");
+                for (var i = 0; i < trs.length; i ++) {
+                    calculate(trs[i]);
+                }
+            }
+
+            function addHandler() {
                 var buttons = document.getElementById("table").getElementsByTagName("button");
                 for (var i = 0; i < buttons.length; i ++) {
                     if (buttons[i].name === "duplicate") {
@@ -90,7 +117,9 @@
                         buttons[i].addEventListener("click", handleCalculate, false);
                     }
                 }
-            };
+                document.getElementById("duplicateAll").addEventListener("click", handleDuplicateAll, false);
+                document.getElementById("calculateAll").addEventListener("click", handleCalculateAll, false);
+            }
 
             // window.onload = addHandler;
             window.addEventListener("load", addHandler, false);
@@ -98,7 +127,8 @@
     </head>
     <body>
         <p id="p1"><b>Hello</b> world!</p>
-        <input type="button" value="Use Ranges" onclick="useRanges()" />
+        <input id="duplicateAll" type="button" value="DuplicateAll" />
+        <input id="calculateAll" type="button" value="CalculateAll" />
         <table id="table" border="0">
             <tr>
                 <td>
