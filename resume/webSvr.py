@@ -1,4 +1,4 @@
-#! /usr/bin/python3
+#! /usr/local/bin/python3
 
 """
 Very simple HTTP server in python.
@@ -112,7 +112,7 @@ class WebSvr(BaseHTTPRequestHandler):
         self.wfile.write(bytes(message, 'utf8'))
 
     @staticmethod
-    def run(port=7412, folder='/home/xixisun/suzy/shoulie/resumes'):
+    def run(port=7412, folder='/Users/xixisun/suzy/shoulie/resumes'):
         WebSvr.base_folder = folder
         print('Resumes are in {}'.format(folder))
         server_address = ('', port)
