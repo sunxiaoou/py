@@ -66,7 +66,9 @@ def get_sorted_items(num, tag, driver):
             for element in elements:
                 try:
                     element = element.find('div', class_='info')
-                    txt = element.find('h2').getText()
+                    h2 = element.find('h2')
+                    href = h2.find('a').get('href')
+                    txt = h2.getText()
                     mo = re.compile(r'(\w.*\w)').search(txt)
                     title = mo.group(1)
                     txt = element.find('span', class_='rating_nums').getText()
@@ -74,7 +76,7 @@ def get_sorted_items(num, tag, driver):
                     txt = element.find('span', class_='pl').getText()
                     mo = re.compile(r'(\d+)人评价').search(txt)
                     pl = int(mo.group(1))
-                    item = (title, rating_nums, pl)
+                    item = (title, rating_nums, pl, href)
                     items.append(item)
                 except (AttributeError, ValueError):
                     continue
@@ -128,6 +130,7 @@ def main():
     items = get_sorted_items(page_num, is_tag, driver)
     pprint(items)
     driver.quit()
+
 
 if __name__ == "__main__":
     main()
