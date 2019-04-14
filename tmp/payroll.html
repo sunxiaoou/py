@@ -83,7 +83,8 @@
                     Grand: 4,
                     IIT : 5,
                     YearToDateTaxable : 6,
-                    YearToDateIIT : 7
+                    YearToDateIIT : 7,
+                    YearToDateGrand : 8
                 };
 
                 var inputs = tr.getElementsByTagName("input");
@@ -92,17 +93,21 @@
                 var asd = parseFloat(inputs[InputNOs.AdditionalSpecialDeduction].value);
                 var deductions2 = parseFloat(inputs[InputNOs.DeductionsAfterTax].value);
                 var y2dIit = -1,
-                    y2dTaxable = -1;
+                    y2dTaxable = -1,
+                    y2dGrand = -1;
                 try {
                     var prevInputs = tr.previousElementSibling.getElementsByTagName("input");
                     y2dTaxable = parseFloat(prevInputs[InputNOs.YearToDateTaxable].value);
                     y2dTaxable = isNaN(y2dTaxable) ? 0 : y2dTaxable;
                     y2dIit = parseFloat(prevInputs[InputNOs.YearToDateIIT].value);
                     y2dIit = isNaN(y2dIit) ? 0 : y2dIit;
+                    y2dGrand = parseFloat(prevInputs[InputNOs.YearToDateGrand].value);
+                    y2dGrand = isNaN(y2dGrand) ? 0 : y2dGrand;
                 } catch (e) {
                     if (e instanceof TypeError) {
                         y2dIit = 0;
                         y2dTaxable = 0;
+                        y2dGrand = 0;
                     } else {
                         throw e;
                     }
@@ -112,7 +117,9 @@
                 inputs[InputNOs.YearToDateTaxable].value = earnings - taxExemption - deductions - asd + y2dTaxable;
                 inputs[InputNOs.YearToDateIIT].value = calculateTax(inputs[InputNOs.YearToDateTaxable].value);
                 inputs[InputNOs.IIT].value = (inputs[InputNOs.YearToDateIIT].value - y2dIit).toFixed(2);
-                inputs[InputNOs.Grand].value = earnings - deductions - inputs[InputNOs.IIT].value - deductions2;
+                var grand = earnings - deductions - inputs[InputNOs.IIT].value - deductions2;
+                inputs[InputNOs.Grand].value = grand;
+                inputs[InputNOs.YearToDateGrand].value = grand + y2dGrand;
             }
 
             function handleCalculate(event) {
@@ -131,7 +138,7 @@
                 for (var i = 0; i < 4; i ++) {
                     inputs[i].value = "0";
                 }
-                for (; i < 8; i ++) {
+                for (; i < 9; i ++) {
                     inputs[i].value = "";
                 }
             }
@@ -169,12 +176,18 @@
             function addHandler() {
                 var buttons = document.getElementById("table").getElementsByTagName("button");
                 for (var i = 0; i < buttons.length; i ++) {
-                    if (buttons[i].name === "duplicate") {
-                        buttons[i].addEventListener("click", handleDuplicate, false);
-                    } else if (buttons[i].name === "calculate") {
-                        buttons[i].addEventListener("click", handleCalculate, false);
-                    } else if (buttons[i].name === "clear") {
-                        buttons[i].addEventListener("click", handleClear, false);
+                    switch (buttons[i].name) {
+                        case "duplicate":
+                            buttons[i].addEventListener("click", handleDuplicate, false);
+                            break;
+                        case "calculate":
+                            buttons[i].addEventListener("click", handleCalculate, false);
+                            break;
+                        case "clear":
+                            buttons[i].addEventListener("click", handleClear, false);
+                            break;
+                        default:
+                            alert("Unexpected.");
                     }
                 }
                 document.getElementById("duplicateAll").addEventListener("click", handleDuplicateAll, false);
@@ -192,7 +205,9 @@
         </script>
     </head>
     <body>
-        <p><b>Payroll Calculator</b></p>
+        <p><b>"Only two certainties in life are death and taxes."</b> said by Benjamin Franklin.</p>
+        <p>That is why you need a Payroll Calculator.</p>
+        <p>Default value in January is a sample, click DuplicateAll and then CalculateAll ...</p>
         <input id="duplicateAll" type="button" value="DuplicateAll" />
         <input id="calculateAll" type="button" value="CalculateAll" />
         <input id="clearAll" type="button" value="ClearAll" />
@@ -216,11 +231,11 @@
                             当月实际收入: 　　<input type="text" title="" /><br />
                             当月缴税: 　　　　<input type="text" title="" /><br />
                             年度应税收入累计: <input type="text" title="" /><br />
-                            年度缴税金额: 　　<input type="text" title="" />
+                            年度缴税金额: 　　<input type="text" title="" /><br />
+                            年度实际收入累计: <input type="text" title="" />
                     </fieldset>
                 </td>
             </tr>
         </table>
-        <p><b>"Only two certainties in life are death and taxes."</b> - Benjamin Franklin</p>
     </body>
 </html>
