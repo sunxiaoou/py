@@ -1,13 +1,8 @@
 #! /usr/local/bin/python3
 
 import re
-import sys
 from bs4 import BeautifulSoup
 from selenium import webdriver
-
-
-def usage():
-    print('Usage: ' + sys.argv[0] + ' -b|m [-p num] [-t] subject')
 
 
 def open_browser():
@@ -18,7 +13,7 @@ def open_browser():
 # A browser has opened in debug mode as, for example:
 #   $ "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
 #       --remote-debugging-port=9014 --user-data-dir=/tmp/chrome
-# then login bugdb from SSO, that is why we need attach mode
+# then login bugDB from SSO, that is why we need attach mode
 
 
 def attach_browser():
@@ -58,7 +53,6 @@ def main():
         regex = re.compile(r'/pls/bug/webbug_print.showbug\?c_rptno=(\d+)')
         tmp = regex.sub(r'\1.html', tmp)
         f.write(tmp)
-
     driver.quit()
 
 
