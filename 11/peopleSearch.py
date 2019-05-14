@@ -21,7 +21,7 @@ def open_browser():
 # A browser has opened in debug mode as, for example:
 #   $ "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
 #       --remote-debugging-port=9014 --user-data-dir=/tmp/chrome
-# then login bugDB from SSO, that is why we need attach mode
+# then login People Search from SSO, that is why we need attach mode
 
 
 def attach_browser():
@@ -39,20 +39,18 @@ def people_search(name, driver):
         WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.ID, 'profile_main')))
         # print("Page is ready!")
     except TimeoutException:
-        print("Loading took too much time!")
+        print("Search {} timeout".format(name))
         return
 
     soup = BeautifulSoup(driver.page_source, 'lxml')
     try:
         ul = soup.find('ul', class_='p-UserBlocks p-UserBlocks--horizontal p-UserBlocks--managers')
         manager = ul.find('span', class_='p-UserBlock-name').getText()
-        dt = soup.find('dt')
-        cost_center = ''
-        if dt.getText().strip() == 'Cost Center':
-            sibling = dt.find_next_sibling()
-            while sibling is not None and sibling.name != 'dd':
-                sibling = sibling.find_next_sibling()
-            cost_center = sibling.getText().strip()
+        dt = soup.find('dt', text=re.compile('Cost Center'))
+        sibling = dt.find_next_sibling()
+        while sibling is not None and sibling.name != 'dd':
+            sibling = sibling.find_next_sibling()
+        cost_center = sibling.getText().strip()
         ul = soup.find('ul', class_='p-DetailList p-DetailList--stacked')
         city = ul.find('a').getText()
     except NoSuchElementException:
@@ -69,7 +67,7 @@ def main():
     # people_search("junger.he", driver)
 
     if len(sys.argv) < 2:
-        print('Usage: %s file'.format(sys.argv[0]))
+        print('Usage: {} file'.format(sys.argv[0]))
         sys.exit(1)
 
     driver = attach_browser()
