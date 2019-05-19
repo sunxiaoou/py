@@ -35,7 +35,7 @@ def people_search(name, driver):
     regex = re.compile(r'([a-zA-Z]+\.)?[a-zA-Z]+\.[a-zA-Z]+')
     mo = regex.search(name)
     if mo is None:
-        print('{}, Not a mail'.format(name))
+        print('{}, Not a mail, ,'.format(name))
         return ()
     name = mo.group()
 
@@ -46,7 +46,7 @@ def people_search(name, driver):
         WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.ID, 'profile_main')))
         # print("Page is ready!")
     except TimeoutException:
-        print("{}, Timeout".format(name))
+        print("{}, Timeout, ,".format(name))
         return ()
 
     soup = BeautifulSoup(driver.page_source, 'lxml')
@@ -61,7 +61,7 @@ def people_search(name, driver):
         ul = soup.find('ul', class_='p-DetailList p-DetailList--stacked')
         city = ul.find('a').getText()
     except NoSuchElementException:
-        print("{}, No Element".format(name))
+        print("{}, No Element, ,".format(name))
         return ()
     people = (name, manager, cost_center, city)
     return people
@@ -83,6 +83,8 @@ def main():
     file = open(sys.argv[1])
     for name in file.readlines():
         name = name.strip()
+        if not name:
+            continue
         people = people_search(name, driver)
         if people:
             peoples.append(people)
