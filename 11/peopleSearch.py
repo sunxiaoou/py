@@ -32,12 +32,34 @@ def attach_browser():
 
 
 def people_search(name, driver):
-    regex = re.compile(r'([a-zA-Z]+\.)?[a-zA-Z]+\.[a-zA-Z]+')
-    mo = regex.search(name)
-    if mo is None:
-        print('{}, Not a mail, ,'.format(name))
-        return ()
-    name = mo.group()
+    known = {
+        "zhi-hong.li安妮@IPS-BJ": "zhi-hong.li",
+        "张黎钦-粥客": "liqin.zhang",
+        "陈慧": "hui.x.chen",
+        "申旭刚": "xugang.shen",
+        "李向东": "xiangdong.li",
+        "时培植": "pierce.shi",
+        "张广权": "guang.quan.zhang",
+        "张黎明": "liming.z.zhang",
+        "李若霖": "ruolin.li",
+        "张亮": "liang.z.zhang",
+        "张雁飞": "yan.fei.zhang",
+        "史玉龙": "yu.long.shi",
+        "金永顺": "jim.jin",
+        "曹长征": "charles.cao",
+        "何冠群": "junger.he",
+        "刘翔德": "steven.liu"
+    }
+
+    if name in known:
+        name = known[name]
+    else:
+        regex = re.compile(r'([a-zA-Z]+\.)?[a-zA-Z]+\.[a-zA-Z]+')
+        mo = regex.search(name)
+        if mo is None:
+            print('{}, Not a mail, ,'.format(name))
+            return ()
+        name = mo.group()
 
     url = "https://people.oracle.com/apex/f?p=8000:1:101705649184588::::P1_SEARCH:"
     driver.get(url + name + "@oracle.com")
