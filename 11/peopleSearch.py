@@ -68,8 +68,19 @@ def people_search(name, driver):
         WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.ID, 'profile_main')))
         # print("Page is ready!")
     except TimeoutException:
-        print("{}, Timeout, ,".format(name))
-        return ()
+        # print("{}, Retry, ,".format(name))
+        links = driver.find_elements_by_tag_name('a')
+        for link in links:
+            href = link.get_attribute('href')
+            if href.endswith(name.lower()):
+                # print(href)
+                driver.get(href)
+                try:
+                    WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.ID, 'profile_main')))
+                except TimeoutException:
+                    print("{}, Timeout, ,".format(name))
+                    return ()
+                break
 
     soup = BeautifulSoup(driver.page_source, 'lxml')
     try:
