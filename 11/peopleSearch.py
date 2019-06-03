@@ -93,8 +93,8 @@ def people_search(name, driver):
         cost_center = sibling.getText().strip()
         ul = soup.find('ul', class_='p-DetailList p-DetailList--stacked')
         city = ul.find('a').getText()
-    except NoSuchElementException:
-        print("{}, No Element, ,".format(name))
+    except (AttributeError, NoSuchElementException) as err:
+        print("{}, {}, ,".format(name, err))
         return ()
     people = (name, manager, cost_center, city)
     return people
