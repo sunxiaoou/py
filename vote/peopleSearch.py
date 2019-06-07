@@ -33,7 +33,6 @@ def attach_browser():
 
 def people_search(name, driver):
     known = {
-        "zhi-hong.li安妮@IPS-BJ": "zhi-hong.li",
         "张黎钦-粥客": "liqin.zhang",
         "陈慧": "hui.x.chen",
         "申旭刚": "xugang.shen",
@@ -54,12 +53,13 @@ def people_search(name, driver):
     if name in known:
         name = known[name]
     else:
-        regex = re.compile(r'([a-zA-Z]+\.)?[a-zA-Z]+\.[a-zA-Z]+')
+        # regex = re.compile(r'([a-zA-Z]+\.)?[a-zA-Z]+\.[a-zA-Z]+')
+        regex = re.compile(r'([a-zA-Z]+(\.|-))?[a-zA-Z]+\.[a-zA-Z]{2,}')
         mo = regex.search(name)
         if mo is None:
             print('{}, Not a mail, ,'.format(name))
             return ()
-        name = mo.group()
+        name = mo.group().lower()
 
     url = "https://people.oracle.com/apex/f?p=8000:1:101705649184588::::P1_SEARCH:"
     driver.get(url + name + "@oracle.com")
@@ -84,6 +84,18 @@ def people_search(name, driver):
 
     soup = BeautifulSoup(driver.page_source, 'lxml')
     try:
+        phone = ''
+        l = -11
+        li = soup.find('li', class_=re.compile('p-DetailList-item--mobilephone'))
+        # if li is None:
+        #    li = soup.find('li', class_=re.compile('p-DetailList-item--workphone'))
+        #    l = -8
+
+        if li is not None:
+            phone = re.sub('\D', '', li.find('a').getText())[l:]
+        # else:
+            # phone = str(abs(hash(name)) % (10 ** 9))    # use name hash code instead of
+
         ul = soup.find('ul', class_='p-UserBlocks p-UserBlocks--horizontal p-UserBlocks--managers')
         manager = ul.find('span', class_='p-UserBlock-name').getText()
         dt = soup.find('dt', text=re.compile('Cost Center'))
@@ -96,7 +108,7 @@ def people_search(name, driver):
     except (AttributeError, NoSuchElementException) as err:
         print("{}, {}, ,".format(name, err))
         return ()
-    people = (name, manager, cost_center, city)
+    people = (name, phone, manager, cost_center, city)
     return people
 
     # with open(name + '.html', "w") as f:
@@ -114,18 +126,21 @@ def main():
     driver = attach_browser()
     peoples = []
     file = open(sys.argv[1])
-    for name in file.readlines():
-        name = name.strip()
-        if not name:
-            continue
-        people = people_search(name, driver)
-        if people:
-            peoples.append(people)
-        # time.sleep(1)
+    try:
+        for name in file.readlines():
+            name = name.strip()
+            if not name:
+                continue
+            people = people_search(name, driver)
+            if people:
+                peoples.append(people)
+            # time.sleep(1)
+    except KeyboardInterrupt:
+        print('KeyboardInterrupt')
 
-    peoples.sort(key=lambda e: [e[2], e[3]])
+    peoples.sort(key=lambda e: [e[3], e[2], e[4]])
     for people in peoples:
-        print('{}, {}, {}, {}'.format(people[0], people[2], people[3], people[1]))
+        print('{}, {}, {}, {}, {}'.format(people[0], people[1], people[3], people[4], people[2]))
     driver.quit()
 
 
