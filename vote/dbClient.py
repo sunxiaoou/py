@@ -12,6 +12,9 @@ class DBClient:
     def find_one(self, filter):
         return self.collection.find_one(filter)
 
+    def find(self, filter, projection):
+        return self.collection.find(filter, projection)
+
     def insert_one(self, document):
         return self.collection.insert_one(document)
 
