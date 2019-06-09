@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>The Starbuzz Bean Machine</title>
+	<link rel="stylesheet" href="starbuzz.css">
+	<link rel="stylesheet" href="styledform.css">
+  </head>
+
+  <body>
+    <h1>The Starbuzz Bean Machine</h1>
+    <h2>Fill out the form below and click submit to order</h2>
+
+    <form action="http://localhost:38253" method="GET">
+      <div class="tableRow">
+        <p> Extras: </p>
+        <p>
+          <input type="checkbox" name="extras[]" value="1">
+          Red<br>
+          <input type="checkbox" name="extras[]" value="2">
+          Orange<br>
+          <input type="checkbox" name="extras[]" value="3">
+          Yellow<br>
+          <input type="checkbox" name="extras[]" value="4">
+          Green<br>
+          <input type="checkbox" name="extras[]" value="5">
+          Blue
+        </p>
+      </div>
+
+      <div class="tableRow">
+        <p class="heading"> Ship to: </p>
+        <p> </p>
+      </div>
+
+      <div class="tableRow">
+        <p> Name: </p>
+        <p> <input type="text" name="name"> </p>
+      </div>
+
+      <div class="tableRow">
+        <p> Customer Comments: </p>
+		<p> <textarea name="comments"></textarea> </p>
+      </div>
+
+      <div class="tableRow">
+        <p> </p>
+        <p> <input type="submit" value="Order Now"> </p>
+      </div>
+    </form>
+
+  </body>
+</html>
