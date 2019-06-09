@@ -16,9 +16,8 @@ Send a POST request::
     curl -d "foo=bar&bin=baz" http://localhost
 
 """
-import os
-import re
 import sys
+
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib import parse
 
@@ -64,7 +63,13 @@ class VoteSvr(BaseHTTPRequestHandler):
             except FileNotFoundError:
                 self.send_error(404, 'File Not Found: ' + html)
                 return
-            self.wfile.write(bytes(f.read(), 'utf8'))
+            buf = f.read()
+            counter = {
+                1: 40, 2: 34, 3: 101, 4: 7, 5: 0
+            }
+            for v in counter.values():
+                buf = buf.replace('(votes: )', '(votes: ' + str(v) + ')', 1)
+            self.wfile.write(bytes(buf, 'utf8'))
 
     def do_HEAD(self):
         self._set_headers()
