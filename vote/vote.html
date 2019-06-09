@@ -2,50 +2,94 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>The Starbuzz Bean Machine</title>
-	<link rel="stylesheet" href="starbuzz.css">
-	<link rel="stylesheet" href="styledform.css">
+    <title>Favorite colors</title>
+    <style>
+      body {
+        background-color: #efe5d0;
+        font-family:      Georgia, "Times New Roman", Times, serif;
+        font-size:        small;
+        margin:           20px;
+      }
+
+      h1 {
+        font-size:        120%;
+        color:            #954b4b;
+      }
+
+      h2 { font-size: 110%; }
+
+      form {
+        display: table;
+        padding: 10px;
+        border: thin dotted #7e7e7e;
+        background-color: #e1ceb8;
+      }
+
+      form textarea {
+        width: 500px;
+        height: 200px;
+      }
+
+      div.tableRow {
+        display: table-row;
+      }
+
+      div.tableRow p {
+        display: table-cell;
+        vertical-align: top;
+        padding: 3px;
+      }
+      div.tableRow p:first-child {
+        text-align: right;
+      }
+      /*
+      p.heading {
+        font-weight: bold;
+      }
+      */
+    </style>
+
   </head>
 
   <body>
-    <h1>The Starbuzz Bean Machine</h1>
-    <h2>Fill out the form below and click submit to order</h2>
+    <h1>Questionnaire of your favorite colors</h1>
+    <h2>Fill out the form below and click submit to vote</h2>
 
     <form action="http://localhost:38253" method="GET">
       <div class="tableRow">
-        <p> Extras: </p>
+        <p> Your selection(s): </p>
         <p>
-          <input type="checkbox" name="extras[]" value="1">
-          Red<br>
-          <input type="checkbox" name="extras[]" value="2">
-          Orange<br>
-          <input type="checkbox" name="extras[]" value="3">
-          Yellow<br>
-          <input type="checkbox" name="extras[]" value="4">
-          Green<br>
-          <input type="checkbox" name="extras[]" value="5">
-          Blue
+          <input type="checkbox" title="" name="extras[]" value="1">
+          Red (votes: )<br>
+          <input type="checkbox" title="" name="extras[]" value="2">
+          Orange (votes: )<br>
+          <input type="checkbox" title="" name="extras[]" value="3">
+          Yellow (votes: )<br>
+          <input type="checkbox" title="" name="extras[]" value="4">
+          Green (votes: )<br>
+          <input type="checkbox" title="" name="extras[]" value="5">
+          Blue (votes: )
         </p>
       </div>
 
-      <div class="tableRow">
-        <p class="heading"> Ship to: </p>
+      <!-- div class="tableRow">
+        <p class="heading"> This is from: </p>
         <p> </p>
+      </div -->
+
+      <div class="tableRow">
+        <p> Your name: </p>
+        <p> <input type="text" title="" name="name"> </p>
       </div>
 
       <div class="tableRow">
-        <p> Name: </p>
-        <p> <input type="text" name="name"> </p>
-      </div>
-
-      <div class="tableRow">
-        <p> Customer Comments: </p>
-		<p> <textarea name="comments"></textarea> </p>
+        <p> Your nomination: </p>
+		<p> <textarea name="comments" title=""></textarea> </p>
       </div>
 
       <div class="tableRow">
         <p> </p>
-        <p> <input type="submit" value="Order Now"> </p>
+        <p> <input type="submit" value="Vote Now"> </p>
       </div>
     </form>
 

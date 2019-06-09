@@ -55,12 +55,14 @@ class VoteSvr(BaseHTTPRequestHandler):
 </html>'''
             message = tmp.format(str(entries), 'example_中文.html', 'example.html', 'example')
             self.wfile.write(bytes(message, 'utf8'))
-        elif self.path.endswith('.html'):
-            path = parse.unquote(self.path)
+        elif self.path == '/' or self.path.endswith('.html'):
+            html = parse.unquote(self.path)[1:]
+            if not html:
+                html = 'vote.html'
             try:
-                f = open(os.getcwd() + path)
+                f = open(html)
             except FileNotFoundError:
-                self.send_error(404, 'File Not Found: ' + path)
+                self.send_error(404, 'File Not Found: ' + html)
                 return
             self.wfile.write(bytes(f.read(), 'utf8'))
 
