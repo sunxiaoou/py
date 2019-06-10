@@ -1,4 +1,4 @@
-#! /usr/bin/python3
+#! /usr/local/bin/python3
 
 """
 Very simple HTTP server in python.
@@ -17,6 +17,7 @@ Send a POST request::
 
 """
 import sys
+import socket
 
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -110,6 +111,7 @@ class VoteSvr(BaseHTTPRequestHandler):
                 return
             buf = f.read()
             f.close()
+            buf = buf.replace('localhost', socket.gethostname(), 1)
             for i in VoteSvr.get_counter():
                 buf = buf.replace('(votes: )', '(votes: ' + str(i) + ')', 1)
             self.wfile.write(bytes(buf, 'utf8'))
@@ -123,16 +125,16 @@ class VoteSvr(BaseHTTPRequestHandler):
         self.wfile.write(bytes(message, 'utf8'))
 
     @staticmethod
-    def run(port=38253):
+    def run(host='localhost', port=38253):
         VoteSvr.client = DBClient('votes', 'example')
         server_address = ('', port)
         httpd = HTTPServer(server_address, VoteSvr)
-        print('Httpd starting at {}:{:d} ...'.format('localhost', port))
+        print('Httpd starting at {}:{:d} ...'.format(host, port))
         httpd.serve_forever()
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 2:
-        VoteSvr.run(int(sys.argv[1]))
+    if len(sys.argv) == 3:
+        VoteSvr.run(sys.argv[1], int(sys.argv[2]))
     else:
         VoteSvr.run()
