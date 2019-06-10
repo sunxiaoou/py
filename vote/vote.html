@@ -26,8 +26,8 @@
       }
 
       form textarea {
-        width: 500px;
-        height: 200px;
+        width: 400px;
+        height: 60px;
       }
 
       div.tableRow {
@@ -57,17 +57,17 @@
 
     <form action="http://localhost:38253" method="GET">
       <div class="tableRow">
-        <p> Your selection(s): </p>
+        <p> * Your selection(s): </p>
         <p>
-          <input type="checkbox" title="" name="extras[]" value="1">
+          <input type="checkbox" title="" name="options[]" value="1">
           Red (votes: )<br>
-          <input type="checkbox" title="" name="extras[]" value="2">
+          <input type="checkbox" title="" name="options[]" value="2">
           Orange (votes: )<br>
-          <input type="checkbox" title="" name="extras[]" value="3">
+          <input type="checkbox" title="" name="options[]" value="3">
           Yellow (votes: )<br>
-          <input type="checkbox" title="" name="extras[]" value="4">
+          <input type="checkbox" title="" name="options[]" value="4">
           Green (votes: )<br>
-          <input type="checkbox" title="" name="extras[]" value="5">
+          <input type="checkbox" title="" name="options[]" value="5">
           Blue (votes: )
         </p>
       </div>
@@ -78,8 +78,8 @@
       </div -->
 
       <div class="tableRow">
-        <p> Your name: </p>
-        <p> <input type="text" title="" name="name"> </p>
+        <p> * Your name: </p>
+        <p> <input type="text" title="" name="name" required> </p>
       </div>
 
       <div class="tableRow">

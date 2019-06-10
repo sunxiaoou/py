@@ -66,7 +66,9 @@ class VoteSvr(BaseHTTPRequestHandler):
                 a = entry.split('=')
                 if a[0] == Keys.name:
                     name = a[1]
-                elif a[0] == 'extras[]':
+                    if name.endswith('@oracle.com'):
+                        name = name[: -11]
+                elif a[0] == 'options[]':
                     options.append(int(a[1]))
                 elif a[0] == 'comments':
                     comments = a[1]
