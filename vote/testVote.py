@@ -19,16 +19,24 @@ def main():
     new = client.find_one({Keys.name: name})
     print('new: ' + str(new))
 
-    count = {}
+    counter = {}
     for r in client.find({}, {Keys._id: False, Keys.options: True}):
         if r:
             print(r[Keys.options])
             for i in r[Keys.options]:
-                if i not in count.keys():
-                    count[i] = 1
+                if i not in counter.keys():
+                    counter[i] = 1
                 else:
-                    count[i] += 1
-    print(count)
+                    counter[i] += 1
+    print(counter)
+    lst = []
+
+    for i in range(int(max(counter, key=int))):
+        if i + 1 in counter.keys():
+            lst.append(counter[i + 1])
+        else:
+            lst.append(0)
+    print(lst)
 
 
 if __name__ == "__main__":

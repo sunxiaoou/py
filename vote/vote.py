@@ -11,6 +11,7 @@ class Keys:
     location = 'location'
     manager = 'manager'
     options = 'options'
+    comments = 'comments'
     timestamp = 'timestamp'
 
 
