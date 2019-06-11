@@ -102,7 +102,7 @@ def people_search(name, driver):
         sibling = dt.find_next_sibling()
         while sibling is not None and sibling.name != 'dd':
             sibling = sibling.find_next_sibling()
-        cost_center = sibling.getText().strip()
+        cost_center = sibling.getText().strip().replace(',', '/')
         ul = soup.find('ul', class_='p-DetailList p-DetailList--stacked')
         city = ul.find('a').getText()
     except (AttributeError, NoSuchElementException) as err:
