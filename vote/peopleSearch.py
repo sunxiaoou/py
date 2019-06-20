@@ -99,10 +99,12 @@ def people_search(name, driver):
         ul = soup.find('ul', class_='p-UserBlocks p-UserBlocks--horizontal p-UserBlocks--managers')
         manager = ul.find('span', class_='p-UserBlock-name').getText()
         dt = soup.find('dt', text=re.compile('Cost Center'))
-        sibling = dt.find_next_sibling()
-        while sibling is not None and sibling.name != 'dd':
-            sibling = sibling.find_next_sibling()
-        cost_center = sibling.getText().strip().replace(',', '/')
+        cost_center = ''
+        if dt is not None:
+            sibling = dt.find_next_sibling()
+            while sibling is not None and sibling.name != 'dd':
+                sibling = sibling.find_next_sibling()
+            cost_center = sibling.getText().strip().replace(',', '/')
         ul = soup.find('ul', class_='p-DetailList p-DetailList--stacked')
         city = ul.find('a').getText()
     except (AttributeError, NoSuchElementException) as err:
