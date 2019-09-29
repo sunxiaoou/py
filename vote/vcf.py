@@ -32,7 +32,7 @@ def attach_browser():
     return driver
 
 
-def download_vcf(name, driver)
+def download_vcf(name, driver):
     # regex = re.compile(r'([a-zA-Z]+\.)?[a-zA-Z]+\.[a-zA-Z]+')
     regex = re.compile(r'([a-zA-Z]+(\.|-))?[a-zA-Z]+\.[a-zA-Z]{2,}')
     mo = regex.search(name)
