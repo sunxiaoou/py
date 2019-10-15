@@ -13,13 +13,16 @@ def main():
     
     log = open(sys.argv[1])
     regex = re.compile(r'\w{2}')
-    r2 = re.compile(r'[\[\]]')
+    r2 = re.compile(r'[\'\[\]]')
     for line in log.readlines():
         line = line.split('|')[1].strip()
         nums = []
         for num in regex.findall(line):
             nums.append('0X' + num)
-        print(r2.sub('', str(nums)))
+        line = r2.sub('', str(nums))
+        if len(nums) == 16:
+            line += ','
+        print('    ' + line)
 
 
 if __name__ == "__main__":
