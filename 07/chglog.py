@@ -12,8 +12,8 @@ def main():
         sys.exit(1)
 
     log = open(sys.argv[1])
-    regex = re.compile(r'^(\s+)fprintf\(stderr, "%\*c{ (\w+)')
-    r2 = re.compile(r'^(\s+)fprintf\(stderr, "%\*c} (\w+)')
+    regex = re.compile(r'^(\s+)fprintf\(stderr, "%\*c{ (~?\w+)')
+    r2 = re.compile(r'^(\s+)fprintf\(stderr, "%\*c} (~?\w+)')
     r3 = re.compile(r'^(\s+)fprintf\(stderr, "%\*c (\w+)')
     for line in log.readlines():
         line = line.rstrip()
