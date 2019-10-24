@@ -14,24 +14,27 @@ def main():
         sys.exit(1)
 
     log = open(sys.argv[1])
-    regex = re.compile(r'^(\S+ )?(\S+)\(.*\) (\S+ )?{$')
-    r2 = re.compile(r'^(\S+ )?(\S+)\(.*,$')
-    # r3 = re.compile(r'^(\s+)(return;|return \d;|return -\d;)')
-    r3 = re.compile(r'^(\s+)return ')
-    r4 = re.compile(r'^}$')
+    rin = re.compile(r'^(\S+ )?(\S+)\(.*\) (\S+ )?{$')
+    rin2 = re.compile(r'^(\S+ )?(\S+)\(.*,$')
+    rout = re.compile(r'^(\s+)return ')
+    rout2 = re.compile(r'^}$')
+
     lines = log.readlines()
     i = 0
     func = ''
     out = 0
     while i < len(lines):
         line = lines[i].rstrip()
-        if regex.search(line) is not None:
-            mo = regex.search(line)
+        if line == 'using namespace nghttp2;':
+            print('#include "log.h"\n')
+            print(line)
+        elif rin.search(line) is not None:
+            mo = rin.search(line)
             func = mo.group(2).lstrip('*')
             print(line)
             print('  PRINT(log_in, "{}")'.format(func))
-        elif r2.search(line) is not None:
-            mo = r2.search(line)
+        elif rin2.search(line) is not None:
+            mo = rin2.search(line)
             func = mo.group(2).lstrip('*')
             while True:
                 print(line)
@@ -40,8 +43,8 @@ def main():
                 i += 1
                 line = lines[i].rstrip()
             print('  PRINT(log_in, "{}")'.format(func))
-        elif r3.search(line) is not None:
-            mo = r3.search(line)
+        elif rout.search(line) is not None:
+            mo = rout.search(line)
             s = mo.group(1)
             if out == 0:
                 print('{}PRINT(log_out, "{}")'.format(s, func))
@@ -50,9 +53,9 @@ def main():
                 print('{}PRINT(log_out, "{}{}")'.format(s, func, out))
             out += 1
             print(line)
-        elif r4.search(line) is not None:
+        elif rout2.search(line) is not None:
             prev_line = lines[i - 1].rstrip()
-            if r3.search(prev_line) is None:
+            if rout.search(prev_line) is None:
                 if out == 0:
                     print('  PRINT(log_out, "{}")'.format(func))
                 else:
