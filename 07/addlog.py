@@ -1,6 +1,8 @@
 #! /usr/local/bin/python3
 
 # ! /opt/python/bin/python3
+# After running, please check with
+# $ grep -n return shrpx.cc | grep -v "return.*;"
 
 import re
 import sys
@@ -12,9 +14,10 @@ def main():
         sys.exit(1)
 
     log = open(sys.argv[1])
-    regex = re.compile(r'^(\w+ )?(\w+)\(.*\) {$')
-    r2 = re.compile(r'^(\w+ )?(\w+)\(.*,$')
-    r3 = re.compile(r'^(\s+)(return;|return \d;|return -\d;)')
+    regex = re.compile(r'^(\S+ )?(\S+)\(.*\) (\S+ )?{$')
+    r2 = re.compile(r'^(\S+ )?(\S+)\(.*,$')
+    # r3 = re.compile(r'^(\s+)(return;|return \d;|return -\d;)')
+    r3 = re.compile(r'^(\s+)return ')
     r4 = re.compile(r'^}$')
     lines = log.readlines()
     i = 0
@@ -24,18 +27,18 @@ def main():
         line = lines[i].rstrip()
         if regex.search(line) is not None:
             mo = regex.search(line)
-            func = mo.group(2)
+            func = mo.group(2).lstrip('*')
             print(line)
             print('  PRINT(log_in, "{}")'.format(func))
         elif r2.search(line) is not None:
             mo = r2.search(line)
-            func = mo.group(2)
+            func = mo.group(2).lstrip('*')
             while True:
                 print(line)
-                line = lines[i + 1].rstrip()
-                if not line.endswith(' {'):
+                if line.endswith(' {'):
                     break
                 i += 1
+                line = lines[i].rstrip()
             print('  PRINT(log_in, "{}")'.format(func))
         elif r3.search(line) is not None:
             mo = r3.search(line)
@@ -54,7 +57,7 @@ def main():
                     print('  PRINT(log_out, "{}")'.format(func))
                 else:
                     print('  PRINT(log_out, "{}{}")'.format(func, out))
-                    out = 0
+            out = 0
             print(line)
         else:
             print(line)
