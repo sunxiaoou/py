@@ -14,8 +14,9 @@ def main():
         sys.exit(1)
 
     log = open(sys.argv[1])
-    rin = re.compile(r'^(\S+ )?(\S+)\(.*\) (\S+ )?{$')
-    rin2 = re.compile(r'^(\S+ )?(\S+)\(.*,$')
+    rin = re.compile(r'^(\S+ ){,2}(\S+)\(.*\) (\S+ )?{$')
+    # rin2 = re.compile(r'^(\S+ )?(\S+)\(.*,$')
+    rin2 = re.compile(r'^(\S+ ){,2}(\S+)\(((?!}).)*$')     # not end with '}'
     rout = re.compile(r'^(\s+)return ')
     rout2 = re.compile(r'^}$')
 
