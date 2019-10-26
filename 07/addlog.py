@@ -16,8 +16,9 @@ def main():
     log = open(sys.argv[1])
     rin = re.compile(r'^(\S+ ){,2}(\S+)\(.*\) (\S+ )?{$')
     # rin2 = re.compile(r'^(\S+ )?(\S+)\(.*,$')
-    rin2 = re.compile(r'^(\S+ ){,2}(\S+)\(((?!}).)*$')     # not end with '}'
-    rout = re.compile(r'^(\s+)return ')
+    # rin2 = re.compile(r'^(\S+ ){,2}(\S+)\(((?!;|}).)*$')     # not end with ';' or '}'
+    rin2 = re.compile(r'^([^#]\S+ ){,2}(\S+)\(((?!;|}).)*$')     # not end with ';' or '}'
+    rout = re.compile(r'^(\s+)return[; ]')
     rout2 = re.compile(r'^}$')
 
     lines = log.readlines()
@@ -37,12 +38,17 @@ def main():
         elif rin2.search(line) is not None:
             mo = rin2.search(line)
             func = mo.group(2).lstrip('*')
+            # j = i
             while True:
                 print(line)
                 if line.endswith(' {'):
                     break
                 i += 1
-                line = lines[i].rstrip()
+                try:
+                    line = lines[i].rstrip()
+                except IndexError:      # end of lines
+                    # raise Exception('Line error at {}'.format(j))
+                    return
             print('  PRINT(log_in, "{}")'.format(func))
         elif rout.search(line) is not None:
             mo = rout.search(line)
