@@ -47,7 +47,18 @@ def main():
         ["GlobeTheater", None, None, None, None],
         ["NationalGallery", None, None, None, None],
         ["BritishMuseum", None, None, None, None],
-        ["StPaulCathedral", None, None, None, None],
+        ["StPaulCathedral", None, None, None, None]
+    ]
+
+    items = {"Water": (3, 10), "Book": (1, 3), "Food": (2, 9), "Jacket": (2, 5), "Camera": (1, 6)}
+
+    grid = [
+        ["\\", 1, 2, 3, 4, 5, 6],
+        ["Water", None, None, None, None, None, None],
+        ["Book", None, None, None, None, None, None],
+        ["Food", None, None, None, None, None, None],
+        ["Jacket", None, None, None, None, None, None],
+        ["Camera", None, None, None, None, None, None]
     ]
 
     knapsack(items, grid)
