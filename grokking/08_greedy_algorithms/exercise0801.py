@@ -8,7 +8,7 @@ def greed(states_needed, stations):
     while len(uncovered) > 0:
         print(uncovered)
         best_station = None
-        covered = {}
+        covered = {}            # actually an empty set instead of a dictionary
         for station, states in stations.items():
             if station not in selected and len(covered) < len(states & states_needed):
                 covered = states & states_needed

@@ -3,12 +3,9 @@
 from collections import deque
 
 
-def search(name):
-    graph = {"you": ["alice", "bob", "claire"], "bob": ["anuj", "peggy"], "alice": ["peggy"],
-             "claire": ["thom", "jonny"], "anuj": [], "peggy": [], "thom": [], "jonny": []}
-
-    q = deque()
-    q += graph["you"]       # not append here
+def search(graph, name):
+    q = deque()             # use FIFO te guarantee "breadth" first
+    q += graph["you"]       # do not use append here
     done = []
 
     while q:
@@ -23,8 +20,11 @@ def search(name):
 
 
 def main():
-    print(search("test"))
-    print(search("thom"))
+    graph = {"you": ["alice", "bob", "claire"], "bob": ["anuj", "peggy"], "alice": ["peggy"],
+             "claire": ["thom", "jonny"], "anuj": [], "peggy": [], "thom": [], "jonny": []}
+
+    print(search(graph, "test"))
+    print(search(graph, "thom"))
 
 
 if __name__ == "__main__":

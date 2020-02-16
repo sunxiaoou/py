@@ -1,42 +1,48 @@
 #! /usr/local/bin/python3
 
 
+KEYS = 0
+RATTING = 1
+
+
 def knapsack(items, grid):
-    for i in range(len(grid)):
+    for i in range(1, len(grid)):
         key = grid[i][0]
-        time = items[key][0]
+        cost = items[key][0]
         rating = items[key][1]
         for j in range(1, len(grid[i])):
-            if i == 0:
-                if j < time:
+            space = grid[0][j]
+            if i == 1:
+                if space < cost:
                     grid[i][j] = ([], 0)
                 else:
                     grid[i][j] = ([key], rating)
             else:
                 last_cell = grid[i - 1][j]
-                if j < time:
+                if space < cost:
                     grid[i][j] = last_cell
-                elif j == time:
-                    if rating < last_cell[1]:
+                elif space == cost:
+                    if rating < last_cell[RATTING]:
                         grid[i][j] = last_cell
                     else:
                         grid[i][j] = ([key], rating)
                 else:
-                    remaining_space = grid[i - 1][j - time]
-                    if rating + remaining_space[1] < last_cell[1]:
+                    remaining_space_cell = grid[i - 1][space - cost]
+                    if rating + remaining_space_cell[RATTING] < last_cell[RATTING]:
                         grid[i][j] = last_cell
                     else:
-                        grid[i][j] = ([key] + remaining_space[0], rating + remaining_space[1])
+                        grid[i][j] = ([key] + remaining_space_cell[KEYS], rating + remaining_space_cell[RATTING])
     return
 
 
 def main():
-    # "Attraction": (time, rating)
+    # "Attraction": (time cost, rating)
     items = {"WestminsterAbbey": (1, 7), "GlobeTheater": (1, 6), "NationalGallery": (2, 9), "BritishMuseum": (4, 9),
              "StPaulCathedral": (1, 8)
              }
 
     grid = [    # time       1     2     3     4
+        ["\\", 1, 2, 3, 4],
         ["WestminsterAbbey", None, None, None, None],
         ["GlobeTheater", None, None, None, None],
         ["NationalGallery", None, None, None, None],
