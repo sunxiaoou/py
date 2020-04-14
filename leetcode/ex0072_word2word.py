@@ -1,75 +1,43 @@
 #! /usr/local/bin/python3
+# https://leetcode-cn.com/problems/edit-distance/solution/edit-distance-by-ikaruga/
 from typing import List
 
 
 def print_grid(word1: str, word2: str, grid: List[List[int]]):
-    print([' '] + [ch for ch in word1])
-    for i in range(len(word2)):
-        print([word2[i]] + grid[i])
+    print(['', ''] + [ch for ch in word1])
+    w2 = [''] + list(word2)
+    for i in range(len(w2)):
+        print([w2[i]] + grid[i])
 
 
 def minDistance(word1: str, word2: str) -> int:
+    n1, n2 = len(word1), len(word2)
+
     if not word1 or not word2:
-        return max(len(word1), len(word2))
+        return n1 + n2
 
-    grid = [[0] * len(word1)] * len(word2)      # word1 is first row, word2 is first column
-    print_grid(word1, word2, grid)
+    grid = [[0] * (n1 + 1) for _ in range(n2 + 1)]
+    for j in range(n1 + 1):
+        grid[0][j] = j
+    for i in range(n2 + 1):
+        grid[i][0] = i
 
-    """
-    for i in range(len(grid)):
-        for j in range(len(grid[0])):
-            if word2[i] != word1[j]:
-                grid[i][j] = max(grid[i - 1][j] if i > 0 else 0, grid[i][j - 1] if j > 0 else 0)
+    for i in range(1, n2 + 1):
+        for j in range(1, n1 + 1):
+            if word2[i - 1] != word1[j - 1]:
+                grid[i][j] = min(grid[i - 1][j] + 1, grid[i][j - 1] + 1, grid[i - 1][j - 1] + 1)
             else:
-                grid[i][j] = grid[i - 1][j - 1] + 1 if i > 0 and j > 0 else 1
+                grid[i][j] = grid[i - 1][j - 1]
     print_grid(word1, word2, grid)
-    """
-    grid = [[0] * len(word1) for _ in word2]
-    print_grid(word1, word2, grid)
-
-    for i in range(len(grid)):
-        for j in range(len(grid[0])):
-            if word2[i] != word1[j]:
-                grid[i][j] = max(grid[i - 1][j] if i > 0 else 0, grid[i][j - 1] if j > 0 else 0)
-            else:
-                grid[i][j] = grid[i - 1][j - 1] + 1 if i > 0 and j > 0 else 1
-    print_grid(word1, word2, grid)
-
-
-    lcs = []
-    while True:
-        if word2[i] == word1[j]:
-            lcs.append((i, j, word2[i]))
-            if i > 0 and j > 0:
-                i, j = i - 1, j - 1
-            else:
-                break
-        else:
-            if j > 0 and grid[i][j] == grid[i][j - 1]:
-                j = j - 1
-            elif i > 0 and grid[i][j] == grid[i - 1][j]:
-                i = i - 1
-            else:
-                break
-    lcs = lcs[:: -1]
-    print(lcs)
-    count, i0, j0 = 0, 0, 0
-    for i, j, _ in lcs:
-        count += max(len(word2[i0: i]), len(word1[j0: j]))
-        print('{}, {}, {}'.format(word2[i0: i], word1[j0: j], count))
-        i0, j0 = i + 1, j + 1
-    count += max(len(word2[i0:]), len(word1[j0:]))
-    print('{}, {}, {}'.format(word2[i0:], word1[j0:], count))
-
-    return count
+    return grid[i][j]
 
 
 def main():
+    print(minDistance("a", "aba"))              # 2
     print(minDistance("horse", "ros"))              # 3
     print(minDistance("intention", "execution"))    # 5
-    # print(minDistance("", ""))    # 5
+    print(minDistance("", ""))    # 0
     print(minDistance("mart", "karma"))    # 3
-
 
 
 if __name__ == "__main__":
