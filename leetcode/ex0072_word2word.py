@@ -3,11 +3,39 @@
 from typing import List
 
 
+"""
+delete:     grid[i][j - 1] + 1 to grid[i][j]
+add:        grid[i - 1][j] + 1 to grid[i][j]
+change:     grid[i - 1][j - 1] + 1 to grid[i][j]
+
+mart -> karma
+1)
+\, '', m, a, r, t
+'',  0, 1, 2, 3, 4          # first row: 'mart' -> '', delete m, a, r, t continually, ops = 1, 2, 3, 4  
+k,  1, 1, 2, 3, 4           #  m -> k, ma -> k, mar -> k, mart ->, ops = 1, 2, 3, 4 
+a,  2, 0, 0, 0, 0
+r,  3, 0, 0, 0, 0
+m,  4, 0, 0, 0, 0
+a,  5, 0, 0, 0, 0           # first column: '' -> 'karma, add k, a , r , m, a continually,  ops = 1, 2, 3, 4, 5
+
+2)
+\, '', m, a, r, t
+'',  0, 1, 2, 3, 4
+k,  1, 1, 2, 3, 4           
+a,  2, 2, 1, 2, 3           # m -> ka, ma -> ka, mar -> ka, mart -> ka, ops = 2, 1, 2, 3
+r,  3, 0, 0, 0, 0
+m,  4, 0, 0, 0, 0
+a,  5, 0, 0, 0, 0
+
+"""
+
+
 def print_grid(word1: str, word2: str, grid: List[List[int]]):
-    print(['', ''] + [ch for ch in word1])
-    w2 = [''] + list(word2)
+    row0 = ['\\', '\'\''] + [ch for ch in word1]
+    print(', '.join(row0))
+    w2 = ['\'\''] + list(word2)
     for i in range(len(w2)):
-        print([w2[i]] + grid[i])
+        print("{},  {}".format(w2[i], ', '.join([str(j) for j in grid[i]])))
 
 
 def minDistance(word1: str, word2: str) -> int:
