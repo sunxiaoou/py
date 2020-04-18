@@ -62,10 +62,10 @@ def numPermsDISequence(S: str) -> int:
             if dp[i - 1][j] > 0:
                 if S[i - 1] == 'D':
                     for k in range(j + 1):
-        dp[i][k] += dp[i - 1][j]
-    else:
-        for k in range(j + 1, i + 1):
-            dp[i][k] += dp[i - 1][j]
+                        dp[i][k] += dp[i - 1][j]
+                else:
+                    for k in range(j + 1, i + 1):
+                        dp[i][k] += dp[i - 1][j]
     print_dp(S, dp)
     return sum(i for i in dp[-1]) % 1000000007
 
