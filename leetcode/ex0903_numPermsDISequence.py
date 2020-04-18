@@ -20,22 +20,22 @@ if S[i - 1] == 'D'    dp[i][k] += dp[i - 1][k]    (0 <= k <= j)
 else                  dp[i][k] += dp[i - 1][k]    (j < k <= i)
 
 1. "D"
-\\, 0, 1        # Decrease, range is (0, i=1), only permutation is (1, j=0) 
-0,  0, 0        # last number (j) is 0
-1,  1, 0        # dp[i][j] = 1
+\\, 0, 1            # Decrease, range is (0, i=1), only permutation is (1, j=0)
+0,  0, 0            # last number (j) is 0
+1,  1, 0            # dp[i][j] = 1
 
 2. "DI"
-\\, 0, 1, 2     # Increase, range is (0, 1, i=2), follows [1, j=0]
-0,  0, 0, 0     # previous last number (j) is 0, k should be [1, 2],  
-1,  1, 0, 0     # dp[2][1] = 1, dp[2][2] = 1
+\\, 0, 1, 2         # Increase, range is (0, 1, i=2), follows [1, j=0]
+0,  0, 0, 0         # previous last number (j) is 0, k should be [1, 2],
+1,  1, 0, 0         # dp[2][1] = 1, dp[2][2] = 1
 2,  0, 1, 1
 
 3. "DID"
-\\, 0, 1, 2, 3  # Decrease, range is (0, 1, 2, i=3)
-0,  0, 0, 0, 0  # follows (2, 0, j=1) and (1, 0, j=2)
-1,  1, 0, 0, 0  # j == 1, k = [0, 1]: dp[3][0] = 1, dp[3][1] = 1
-2,  0, 1, 1, 0  # j == 2, k = [0, 1, 2]: 
-3,  2, 2, 1, 0  # dp[3][0] = 2, dp[3][1] = 2, dp[3][2] = 1
+\\, 0, 1, 2, 3      # Decrease, range is (0, 1, 2, i=3)
+0,  0, 0, 0, 0      # follows (2, 0, j=1) and (1, 0, j=2)
+1,  1, 0, 0, 0      # j == 1, k = [0, 1]: dp[3][0] = 1, dp[3][1] = 1
+2,  0, 1, 1, 0      # j == 2, k = [0, 1, 2]:
+3,  2, 2, 1, 0      # dp[3][0] = 2, dp[3][1] = 2, dp[3][2] = 1
 
 4. "DIDD"
 \\, 0, 1, 2, 3, 4   # Decrease, range is (0, 1, 2, 3, i=4)
@@ -71,11 +71,11 @@ def numPermsDISequence(S: str) -> int:
 
 
 def main():
-    print(numPermsDISequence("D"))              # 1
-    print(numPermsDISequence("DI"))             # 2
-    print(numPermsDISequence("DID"))            # 5
-    print(numPermsDISequence("DIDD"))           # 9
-    print(numPermsDISequence("IDDDIIDIIIIIIIIDIDID"))          # 9
+    print(numPermsDISequence("D"))                          # 1
+    print(numPermsDISequence("DI"))                         # 2
+    print(numPermsDISequence("DID"))                        # 5
+    print(numPermsDISequence("DIDD"))                       # 9
+    print(numPermsDISequence("IDDDIIDIIIIIIIIDIDID"))       # 853197538
 
 
 if __name__ == "__main__":
