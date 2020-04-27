@@ -1,6 +1,6 @@
 #! /usr/local/bin/python3
 # In bound Knapsack Problem, for each item, you can put as many times as given quantity
-# But this is brute force algorithm, which is O(n ** 3)
+# But this is a brute force algorithm, which is O(n ** 3)
 from typing import List
 
 
@@ -39,10 +39,10 @@ def main():
     print(knapsack2([1, 2, 3, 4], [2, 4, 4, 5], [3, 1, 3, 2], 5))           # 10
     """
     \\, 0, 1, 2, 3, 4, 5
-    1,  0, 2, 2, 2, 2, 2
-    2,  0, 0, 4, 6, 6, 6
-    3,  0, 0, 0, 6, 6, 8
-    4,  0, 0, 0, 0, 6, 8
+    1,  0, 2, 4, 6, 6, 6
+    2,  0, 0, 4, 6, 8, 10
+    3,  0, 0, 0, 6, 8, 10
+    4,  0, 0, 0, 0, 8, 10
     [3, 1, 0, 0]
     """
     print(knapsack2([4, 3, 1, 1], [30, 20, 15, 20], [1, 2, 2, 3], 4))       # 75
