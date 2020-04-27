@@ -21,7 +21,17 @@ def knapsack2(cost: List[int], value: List[int], capacity: int) -> int:
             dp[i][j] = max(dp[i - 1][j], value[i] + dp[i - 1][j - cost[i]])
     print_dp(cost, [j for j in range(capacity + 1)], dp)
 
-    return dp[i][j]
+    res = [0] * n
+    j = capacity
+    for i in range(n - 1, -1, -1):
+        if j > 0:
+            if i > 0 and dp[i][j] == dp[i - 1][j]:
+                continue
+            res[i] += 1
+            j -= cost[i]
+    print(res)
+
+    return dp[-1][-1]
 
 
 # 1 dimension dp
@@ -45,11 +55,20 @@ def main():
     2,  0, 0, 4, 6, 6, 6
     3,  0, 0, 0, 6, 6, 8
     4,  0, 0, 0, 0, 6, 8
+    [0, 1, 1, 0]
     """
-    print(knapsack([1, 2, 3, 4], [2, 4, 4, 5], 5))              # 8
+    # print(knapsack([1, 2, 3, 4], [2, 4, 4, 5], 5))              # 8
     # [0, 2, 4, 6, 6, 8]
     print(knapsack2([4, 3, 1, 1], [30, 20, 15, 20], 4))         # 40
-    print(knapsack([4, 3, 1, 1], [30, 20, 15, 20], 4))          # 40
+    """
+    \\, 0, 1, 2, 3, 4
+    4,  0, 0, 0, 0, 30
+    3,  0, 0, 0, 20, 30
+    1,  0, 15, 15, 20, 35
+    1,  0, 20, 35, 35, 40
+    [0, 1, 0, 1]
+    """
+    # print(knapsack([4, 3, 1, 1], [30, 20, 15, 20], 4))          # 40
 
 
 if __name__ == "__main__":
