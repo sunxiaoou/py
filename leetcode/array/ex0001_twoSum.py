@@ -31,11 +31,20 @@ def twoSum_slow(nums: List[int], target: int) -> List[int]:
 
 
 def twoSum(nums: List[int], target: int) -> List[int]:
+    """
     dictionary = {}
     for i, n in enumerate(nums):
         if target - n in dictionary:
             return [dictionary[target - n], i]
         dictionary[n] = i
+    """
+
+    n, dictionary = len(nums), {}
+    for i in range(n):
+        if target - nums[i] not in dictionary:
+            dictionary[nums[i]] = i
+        else:
+            return [dictionary[target - nums[i]], i]
 
 
 def main():
