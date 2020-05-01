@@ -5,16 +5,16 @@ import re
 def myAtoi(str: str) -> int:
     regex = re.compile(r' *([+-]?\d+)')
     try:
-        s2 = regex.match(str).group(1)
+        s = regex.match(str).group(1)
     except AttributeError:
         return 0
     flag = '+'
-    if s2[0] == '+' or s2[0] == '-':
-        flag = s2[0]
-        s2 = s2[1:]
-    res = ord(s2[0]) - ord('0')
-    for i in range(1, len(s2)):
-        res = res * 10 + ord(s2[i]) - ord('0')
+    if s[0] == '+' or s[0] == '-':
+        flag = s[0]
+        s = s[1:]
+    res = 0
+    for i in range(len(s)):
+        res = res * 10 + int(s[i])
     if flag == '-':
         res = -res
     if res < -2147483648:
