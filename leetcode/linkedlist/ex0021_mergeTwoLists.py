@@ -19,7 +19,7 @@ def mergeTwoLists(l1: ListNode, l2: ListNode) -> ListNode:
     if j is None:
         return i
 
-    if i.val > j.val:
+    if i.val > j.val:                   # ensure l1.val < l2.val
         return mergeTwoLists(l2, l1)
 
     while j is not None:
@@ -39,7 +39,7 @@ def mergeTwoLists(l1: ListNode, l2: ListNode) -> ListNode:
 def main():
     print(mergeTwoLists(ListNode.make([1, 2, 4]), ListNode.make([1, 3, 4])))        # 1->1->2->3->4->4
     print(mergeTwoLists(ListNode.make([]), ListNode.make([])))                      # None
-    print(mergeTwoLists(ListNode.make([2]), ListNode.make([1])))                    # None
+    print(mergeTwoLists(ListNode.make([2]), ListNode.make([1])))                    # 1->2
 
 
 if __name__ == "__main__":
