@@ -8,25 +8,22 @@ class ListNode:
         self.next = None
 
     def __str__(self):
-        res, head = '', self
-        while head is not None:
-            res += str(head.val)
-            head = head.next
-            if head is not None:
+        res, curr = '', self
+        while curr is not None:
+            res += str(curr.val)
+            curr = curr.next
+            if curr is not None:
                 res += '->'
         return res
 
     @classmethod
     def make(cls, nums: List):
-        n = len(nums)
-        if n == 0:
-            return None
-        head = cls(nums[0])
-        curr = head
-        for i in range(1, n):
+        n, dummy = len(nums), cls(-42)
+        curr = dummy
+        for i in range(n):
             curr.next = cls(nums[i])
             curr = curr.next
-        return head
+        return dummy.next
 
 
 def main():
