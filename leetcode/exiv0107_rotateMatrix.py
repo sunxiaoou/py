@@ -2,7 +2,7 @@
 from typing import List
 
 
-def rotate(matrix: List[List[int]]) -> None:
+def rotate2(matrix: List[List[int]]) -> None:
     n = len(matrix)
     for k in range(n // 2):     # k represents circle, 0 is the outermost
         # for each circle, length = n - k, only needs to traversal m(k, k) ... m(k, n - k - 1)
@@ -15,6 +15,18 @@ def rotate(matrix: List[List[int]]) -> None:
             matrix[k][j] = x                                                    # left -> up
         # for i in matrix:
         #     print(i)
+
+
+def rotate(matrix: List[List[int]]) -> None:
+    n = len(matrix)
+    for i in range(n):                  # firstly swap up_right and down_left
+        for j in range(i + 1, n):
+            matrix[i][j], matrix[j][i] = matrix[j][i], matrix[i][j]
+    for i in range(n // 2):             # secondly swap left and right
+        for j in range(n):
+            matrix[j][i], matrix[j][n - 1 - i] = matrix[j][n - 1 - i], matrix[j][i]
+    # for i in matrix:
+    #    print(i)
 
 
 def main():
