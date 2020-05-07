@@ -7,7 +7,7 @@ def gesture(start: int, num: int) -> int:
     # result = []                   # 3 4 5
     count = 0                       # 6 7 8
 
-    def backtrace(ans: List[int], curr: int):
+    def backtrack(ans: List[int], curr: int):
         if len(ans) == num:
             # result.append([i for i in ans])
             nonlocal count
@@ -32,14 +32,14 @@ def gesture(start: int, num: int) -> int:
         for i in subsequents:
             panel[i] = 1                # set the cell used
             ans.append(i)               # add the cell to answer
-            backtrace(ans, i)           # enter next level
+            backtrack(ans, i)           # enter next level
             ans.pop()                   # pop the cell
             panel[i] = 0                # unset the cell, so it can be used in other answer
         # else:
         #   print('Not found')
 
     panel[start] = 1                    # set first cell used
-    backtrace([start], start)           # add it to answer
+    backtrack([start], start)           # add it to answer
     # return result
     return count
 
