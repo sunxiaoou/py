@@ -3,15 +3,14 @@ from typing import List
 
 
 def maxSubArray(nums: List[int]) -> int:
-    n = len(nums)
-    res = r2 = -float('inf')        # res, r2 represent current, history max value
-    for i in range(n):
-        if res < 0:                 # res is negative, only one number needs to be considered
-            res = max(res, nums[i])
+    res = curr_max = -float('inf')  # res, curr_max represent total, current max value
+    for i in nums:
+        if curr_max < 0:            # curr_max is negative, only one number needs to be considered
+            curr_max = max(curr_max, i)
         else:
-            res += nums[i]          # if res turns to negative, next it will enter res < 0 branch
-        r2 = max(r2, res)
-    return r2
+            curr_max += i           # if curr_max turns to negative, next it will enter res < 0 branch
+        res = max(res, curr_max)    # summary at last
+    return res
 
 
 def main():
