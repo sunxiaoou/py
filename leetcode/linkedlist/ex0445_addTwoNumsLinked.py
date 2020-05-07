@@ -1,12 +1,6 @@
 #! /usr/local/bin/python3
 from typing import List
-
-
-# Definition for singly-linked list.
-class ListNode:
-    def __init__(self, x):
-        self.val = x
-        self.next = None
+from listNode import ListNode
 
 
 def list2linked(nums: List[int]) -> ListNode:
@@ -59,9 +53,9 @@ def test(n1: List[int], n2: List[int]):
 
 
 def main():
-    test([7, 2, 4, 3], [5, 6, 4])
-    test([5, 6, 4], [0])
-    test([0], [0])
+    test([7, 2, 4, 3], [5, 6, 4])       # [7, 8, 0, 7]
+    test([5, 6, 4], [0])                # [5, 6, 4]
+    test([0], [0])                      # [0]
 
 
 if __name__ == "__main__":
