@@ -28,7 +28,7 @@ def mySqrt(x: int) -> int:
 def main():
     print(mySqrt(6))        # 2
     print(mySqrt(4))        # 2
-    print(mySqrt(10))        # 2
+    print(mySqrt(10))       # 3
 
 
 if __name__ == "__main__":
