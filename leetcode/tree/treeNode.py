@@ -12,6 +12,20 @@ class TreeNode:
     def __str__(self):
         return str(self.val) if self is not None else 'None'
 
+    def find(self, val: int):
+
+        def traversal(root: TreeNode, val: int):
+            if root.val == val:
+                return root
+            node = None
+            if root.left is not None:
+                node = traversal(root.left, val)
+            if node is None and root.right is not None:
+                node = traversal(root.right, val)
+            return node
+
+        return traversal(self, val)
+
     def pre_order(self):
         res = []
 
@@ -127,6 +141,8 @@ def main():
     print(root.pre_order())
     print(root.in_order())
     print(root.post_order())
+    print(root.find(20).show())
+    # print(root.find())
     # print(root.minimum())
 
 
