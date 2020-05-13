@@ -11,7 +11,7 @@ from typing import List
     A.C B.D C.A D.B
 
 3. 以下选项中哪一题的签案与其他三项不同；
-    A.第3题 B.第6姬 C.第2题 D.第4题
+    A.第3题 B.第6题 C.第2题 D.第4题
 
 4. 以下选项中哪两题的答案相同：
     A.第1,5题 B.第2,7题 C.第1,9题 D.第6,10题
@@ -123,9 +123,8 @@ def main():
     ans = [-1]                  # -1 is a placeholder, as answer begins with index 1
     backtrack()
     ans = [chr(ans[i] + ord('A')) for i in range(1, n + 1)]
-    print(ans)
+    print(ans)                  # ['B', 'C', 'A', 'C', 'A', 'C', 'D', 'A', 'B', 'A']
 
 
 if __name__ == "__main__":
     main()
-
