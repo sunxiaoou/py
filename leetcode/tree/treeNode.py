@@ -75,7 +75,7 @@ class TreeNode:
         traversal(self)
         return res
 
-    def show(self):
+    def print(self):
         string = ''
 
         def traversal(node: TreeNode, lev: int):
@@ -91,6 +91,35 @@ class TreeNode:
                     traversal(node.right, lev + 1)
 
         traversal(self, 0)
+        return string
+
+    def show(self):
+        col = 0
+        arrs = []
+
+        def traversal(root: TreeNode, depth: int):
+            nonlocal col
+            if root is None:
+                return
+            if len(arrs) < depth + 1:
+                arrs.append([])
+            if root.left is not None:
+                traversal(root.left, depth + 1)
+            arrs[depth].append((col, root.val))
+            col += 2
+            if root.right is not None:
+                traversal(root.right, depth + 1)
+
+        traversal(self, 0)
+        string = ''
+        for arr in arrs:
+            off = 0
+            for col, val in arr:
+                # print('{}{}'.format(' ' * (col - off), val), end='')
+                string += '{}{}'.format(' ' * (col - off), val)
+                off = col + 2
+            # print()
+            string += '\n'
         return string
 
     def minimum(self) -> int:
@@ -136,12 +165,13 @@ def main():
     # root = TreeNode.make([10, 5, 15, None, None, 6, 20])
     # root = TreeNode.make([0, None, 2, 5, 6])
     root = TreeNode.make([5, 4, 1, None, 1, None, 4, 2, None, 2, None])
-    root = TreeNode.make([3, 9, 20, None, None, 15, 7])
+    # root = TreeNode.make([3, 9, 20, None, None, 15, 7])
+    print(root.print())
     print(root.show())
     print(root.pre_order())
     print(root.in_order())
     print(root.post_order())
-    print(root.find(20).show())
+    print(root.find(1).show())
     # print(root.find())
     # print(root.minimum())
 
