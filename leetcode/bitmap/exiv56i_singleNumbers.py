@@ -23,13 +23,13 @@ def singleNumbers(nums: List[int]) -> List[int]:
     while xor & a == 0:
         a <<= 1
 
-    xor, x2 = 0, 0          # split to 2 groups, xor respectively
+    x, y = 0, 0          # split to 2 groups, xor respectively
     for i in nums:
         if i & a == 0:
-            xor ^= i
+            x ^= i
         else:
-            x2 ^= i
-    return [xor, x2]        # result is the single numbers
+            y ^= i
+    return [x, y]        # result is the single numbers
 
 
 def main():

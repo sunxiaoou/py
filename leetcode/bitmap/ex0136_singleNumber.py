@@ -2,7 +2,7 @@
 from typing import List
 
 
-def singleNumber(nums: List[int]) -> int:
+def singleNumber_slow(nums: List[int]) -> int:
     nums.sort()
     i, j = 0, 0
     for j in range(1, len(nums)):
@@ -12,6 +12,13 @@ def singleNumber(nums: List[int]) -> int:
             i = j
     if i == j:
         return nums[i]
+
+
+def singleNumber(nums: List[int]) -> int:
+    x = 0
+    for i in nums:
+        x ^= i
+    return x
 
 
 def main():
