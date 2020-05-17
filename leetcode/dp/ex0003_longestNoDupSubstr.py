@@ -3,21 +3,6 @@
 
 def lengthOfLongestSubstring2(s: str) -> int:
     n, dictionary = len(s), {}
-    i = j = res = 0
-    while i < n:
-        if s[i] not in dictionary or dictionary[s[i]] < j:
-            dictionary[s[i]] = i
-        else:
-            res = max(res, i - j)
-            j = dictionary[s[i]] + 1
-            dictionary[s[i]] = i
-        i += 1
-        print(dictionary, (i, j), res)
-    return max(res, i - j)
-
-
-def lengthOfLongestSubstring(s: str) -> int:
-    n, dictionary = len(s), {}
     i = j = res = 0                 # j points to substring beginning
     for i in range(n):
         if s[i] in dictionary and j <= dictionary[s[i]]:
@@ -26,6 +11,21 @@ def lengthOfLongestSubstring(s: str) -> int:
         dictionary[s[i]] = i
         # print(dictionary, (i, j), res)
     return max(res, i + 1 - j)      # i += 1 because last i in for loop is n - 1
+
+
+def lengthOfLongestSubstring(s: str) -> int:
+    if not s:
+        return 0
+    n, dic = len(s), {}
+    dp = [0] * n                    # dp[i] is length of current substring
+    j = 0                           # j points to current substring beginning
+    for i in range(n):
+        if s[i] in dic and dic[s[i]] >= j:  # dup char before j doesn't impact current substring
+            j = dic[s[i]] + 1               # update j to next to dup char
+        dic[s[i]] = i
+        dp[i] = i - j + 1
+    # print(dp)
+    return max(dp)
 
 
 def main():
