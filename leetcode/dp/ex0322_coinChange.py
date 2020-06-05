@@ -11,20 +11,21 @@ def print_dp(dp: List[List[int]]):
 
 
 def coinChange(coins: List[int], amount: int) -> int:
-    m, n = len(coins), amount + 1
-    dp = [[0] * n for _ in coins]
-    for i in range(n):
-        q, r = divmod(i, coins[0])
-        dp[0][i] = q if r == 0 else float('inf')
+    m, n = amount + 1, len(coins)           # add extra 0 for amount 0
+    dp = [[0] * m for _ in range(n)]        # first 0 represents 0 coin combines amount 0
+    for j in range(m):                      # set first dp[i - 1] for subsequent dp[i]
+        qu, re = divmod(j, coins[0])
+        dp[0][j] = qu if re == 0 else float('inf')  # inf represents can't combine the amount
 
-    for i in range(1, m):
-        for j in range(1, n):
+    for i in range(1, n):
+        for j in range(1, m):
             if j < coins[i]:
                 dp[i][j] = dp[i - 1][j]
             else:           # this is a unbounded knapsack problem
                 dp[i][j] = min(dp[i - 1][j], dp[i][j - coins[i]] + 1)
+                # dp[i][j - coins[i]] can be inf, but float('inf ') + 1 == float('inf)
 
-    print_dp(dp)
+    # print_dp(dp)
     return dp[-1][-1] if dp[-1][-1] != float('inf') else -1
 
 

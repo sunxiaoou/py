@@ -21,7 +21,7 @@ def canJump_slow(nums: List[int]) -> bool:
     return backtrack([], 0)
 
 
-def canJump(nums: List[int]) -> bool:
+def canJump2(nums: List[int]) -> bool:
     j = 0
     can = True
     for i in range(len(nums) - 2, -1, -1):
@@ -32,6 +32,16 @@ def canJump(nums: List[int]) -> bool:
             can = True
             j = 0
     return can
+
+
+def canJump(nums: List[int]) -> bool:
+    n = len(nums)
+    reach = nums[0]
+    for i in range(1, n):
+        if i > reach:
+            return False
+        reach = max(reach, i + nums[i])
+    return True
 
 
 def main():
