@@ -44,23 +44,23 @@ def myPow(x: float, n: int) -> float:
     if n < 0:
         n = -n
         x = 1 / x
-    i = 0
     dp = []                 # dynamic program
     while n > 0:
         dp.append(n & 1)    # append flag    1 ->  0 ->  1 -> 1 -> 0 -> 0 -> 1
         n >>= 1             # divide power  77 -> 38 -> 19 -> 9 -> 4 -> 2 -> 1
-        i += 1
-    dp = dp[:: -1]          # calculate     77 <- 38 <- 19 <- 9 -> 4 <- 2 <- 1
+    dp = dp[:: -1]          # calculate     77 <- 38 <- 19 <- 9 <- 4 <- 2 <- 1
     dp[0] = x
     for i in range(1, len(dp)):
         if dp[i] == 0:
             dp[i] = dp[i - 1] * dp[i - 1]
         else:
             dp[i] = dp[i - 1] * dp[i - 1] * x
+    # print(dp)
     return dp[-1]
 
 
 def main():
+    print(myPow(2, 11))                 # 2048
     print(myPow(1.2, 77))               # 1250132.21181
     print(myPow(0.00001, 2147483647))   # 0.25000
     print(myPow(2.00000, 10))           # 1024.00000
