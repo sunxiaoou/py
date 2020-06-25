@@ -11,7 +11,8 @@ def patternMatching(pattern: str, value: str) -> bool:
     cb = m - ca                         # count of b
     if not ca or not cb:
         return value[: n // m] * m == value     # summary of parts equal entirety
-    for i in range(n // ca):                    # try different i - length of a
+
+    for i in range((n + 1) // ca):              # try different length of a
         j, r = divmod(n - i * ca, cb)
         if r:                                   # not integer, illegal length of b
             continue                            # skip
@@ -30,9 +31,7 @@ def patternMatching(pattern: str, value: str) -> bool:
 
 
 def main():
-    p = "bbbbbbbbbbbbbbabbbbb"
-    v = "ppppppppppppppjsftcleifftfthiehjiheyqkhjfkyfckbtwbelfcgihlrfkrwireflijkjyppppp"
-    print(patternMatching(p, v))                        # True
+    print(patternMatching("bbab", "bbaa"))              # True, as b is empty
     print(patternMatching("b", ""))                     # True
     print(patternMatching("", "x"))                     # False
     print(patternMatching("aabab", "catcatgocatgo"))    # True
