@@ -44,24 +44,14 @@ class Twitter:
             user.followed.remove(followeeId)
 
 
-def test(func: List[str], data: List[List[int]]) -> List[int]:
-    twitter = None
-    res = []
-    for f, d in zip(func, data):
-        if f == 'Twitter':
-            twitter = Twitter()
-            res.append(None)
-        elif f == 'postTweet':
-            twitter.postTweet(*d)
-            res.append(None)
-        elif f == 'getNewsFeed':
-            res.append(twitter.getNewsFeed(*d))
-        elif f == 'follow':
-            twitter.follow(*d)
-            res.append(None)
-        elif f == 'unfollow':
-            twitter.unfollow(*d)
-            res.append(None)
+def test(commands: List[str], args: List[List[int]]) -> List[int]:
+    n, obj, res = len(commands), None, [None]
+    for i in range(n):
+        expr = commands[i] + "(" + ", ".join([str(i) for i in args[i]]) + ")"
+        if not i:
+            obj = eval(expr)        # eval is an evil creature
+        else:
+            res.append(eval("obj." + expr))
     return res
 
 

@@ -61,32 +61,27 @@ class RandomizedSet:
         return choice(self.arr)
 
 
-def test(comms: List[str], paras: List[List[int]]) -> List[int]:
-    obj = None
-    res = []
-    for i in range(len(comms)):
-        if comms[i] == "RandomizedSet":
-            obj = RandomizedSet()
-            res.append(None)
-        elif comms[i] == "insert":
-            res.append(obj.insert(paras[i][0]))
-        elif comms[i] == "remove":
-            res.append(obj.remove(paras[i][0]))
-        elif comms[i] == "getRandom":
-            res.append(obj.getRandom())
+def test(commands: List[str], args: List[List[int]]) -> List[int]:
+    n, obj, res = len(commands), None, [None]
+    for i in range(n):
+        expr = commands[i] + "(" + ", ".join([str(i) for i in args[i]]) + ")"
+        if not i:
+            obj = eval(expr)        # eval is an evil creature
+        else:
+            res.append(eval("obj." + expr))
     return res
 
 
 def main():
     commands = ["RandomizedSet", "remove", "remove", "insert", "getRandom", "remove", "insert"]
-    parameters = [[], [0], [0], [0], [], [0], [0]]
-    print(test(commands, parameters))       # [null,false,false,true,0,true,true]
+    args = [[], [0], [0], [0], [], [0], [0]]
+    print(test(commands, args))       # [null,false,false,true,0,true,true]
     commands = ["RandomizedSet", "insert", "insert", "remove", "insert", "remove", "getRandom"]
-    parameters = [[], [0], [1], [0], [2], [1], []]
-    print(test(commands, parameters))       # [null,true,true,true,true,true,2]
+    args = [[], [0], [1], [0], [2], [1], []]
+    print(test(commands, args))       # [null,true,true,true,true,true,2]
     commands = ["RandomizedSet", "insert", "remove", "insert", "getRandom", "remove", "insert", "getRandom"]
-    parameters = [[], [1], [2], [2], [], [1], [2], []]
-    print(test(commands, parameters))       # [null,true,false,true,1,true,false,2]
+    args = [[], [1], [2], [2], [], [1], [2], []]
+    print(test(commands, args))       # [null,true,false,true,1,true,false,2]
 
 
 if __name__ == "__main__":
