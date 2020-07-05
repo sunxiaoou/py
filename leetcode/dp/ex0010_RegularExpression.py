@@ -12,7 +12,7 @@ def isMatch2(s: str, p: str) -> bool:
 
 # dp[i][j] represents s[: i] matches p[: j] or not
 def isMatch(s: str, p: str) -> bool:
-    s, p = " " + s, " " + p                         # add placeholders
+    s, p = " " + s, " " + p                         # add placeholders, " " represent ""
     m, n = len(s), len(p)
     dp = [[False] * n for _ in range(m)]
     dp[0][0] = True                                 # "" matches ""
@@ -35,10 +35,11 @@ def isMatch(s: str, p: str) -> bool:
 
 def main():
     print(isMatch("aab", "c*a*b"))                  # True
-    # [T, F, T, F, T, F]            # Ts: "" = "", "" = "c*", "" = "c*a*"
-    # [F, F, F, T, T, F]            # Ts: "a" = "c*a", "a" = "c*a*"
-    # [F, F, F, F, T, F]            # Ts: "aa" = "c*a*"
-    # [F, F, F, F, F, T]            # Ts: "aab" = "c*a*b"
+    #    "", c, *, a, *, b
+    # "" [T, F, T, F, T, F]                         # Ts: "" = "", "" = "c*", "" = "c*a*"
+    # a  [F, F, F, T, T, F]                         # Ts: "a" = "c*a", "a" = "c*a*"
+    # a  [F, F, F, F, T, F]                         # Ts: "aa" = "c*a*"
+    # b  [F, F, F, F, F, T]                         # Ts: "aab" = "c*a*b"
     print(isMatch("ab", "a."))                      # True
     print(isMatch("aa", "a*"))                      # True
     print(isMatch("aaa", "a*a"))                    # True
