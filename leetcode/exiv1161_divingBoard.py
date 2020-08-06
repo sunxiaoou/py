@@ -17,7 +17,7 @@ def divingBoard(shorter: int, longer: int, k: int) -> List[int]:
 
 def main():
     print(divingBoard(1, 1, 0))         # []
-    print(divingBoard(1, 1, 2))         # []
+    print(divingBoard(1, 1, 2))         # [2]
     print(divingBoard(1, 2, 3))         # [3, 4, 5, 6]
 
 
