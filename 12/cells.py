@@ -4,7 +4,8 @@
 import openpyxl
 
 wb = openpyxl.load_workbook('example.xlsx')
-sheet = wb.get_sheet_by_name('Sheet1')
+# sheet = wb.get_sheet_by_name('Sheet1')
+sheet = wb['Sheet1']
 
 print(sheet['A1'])
 # <Cell Sheet1.A1>
@@ -16,7 +17,7 @@ c = sheet['B1']
 print(c.value)
 # 'Apples'
 
-print('Row ' + str(c.row) + ', Column ' + c.column + ' is ' + c.value)
+print('Row {}, Column {} is {}'.format(str(c.row), c.column, c.value))
 # 'Row 1, Column B is Apples'
 
 print('Cell ' + c.coordinate + ' is ' + c.value)
