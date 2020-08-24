@@ -57,15 +57,18 @@ def extract_tables2(pdf: pdfplumber.pdf.PDF, begin: int, end: int, output: str):
             for table in tables:
                 n = len(table)
                 for k in range(n):
-                    if table[k][0] is not None and \
-                            (table[k][1] != "" or table[k][2] != "" or k == n - 1 or
-                             table[k + 1][0] is not None):
-                        if table[k][1] is None and table[k][2] is None:
-                            table[k][0] = table[k - 2][0] + table[k][0]
-                            table[k][1] = table[k - 1][1]
-                            table[k][2] = table[k - 1][2]
-                        # print(table[k])
-                        writer.writerow(table[k])
+                    try:
+                        if table[k][0] is not None and \
+                                (table[k][1] != "" or table[k][2] != "" or k == n - 1 or
+                                 table[k + 1][0] is not None):
+                            if table[k][1] is None and table[k][2] is None:
+                                table[k][0] = table[k - 2][0] + table[k][0]
+                                table[k][1] = table[k - 1][1]
+                                table[k][2] = table[k - 1][2]
+                            print(table[k], flush=True)
+                            writer.writerow(table[k])
+                    except IndexError:
+                        pass
 
 
 def main():
