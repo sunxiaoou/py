@@ -78,7 +78,12 @@ def extract_balance(pdf: pdfplumber.pdf.PDF, begin: int, end: int, subjects: dic
         # 1.2.2 非流动负债
         "长期借款", "应付债券", "长期应付款",
         # 1.2.3 负债合计
-        "负债合计"]
+        "负债合计",
+        # 1.2.4 所有者权益
+        "股本", "实收资本（或股本）"]
+
+    keys2 = {
+        "股本": "实收资本（或股本）"}
 
     for i in range(begin, end + 1):
         page = pdf.pages[i]
@@ -89,6 +94,8 @@ def extract_balance(pdf: pdfplumber.pdf.PDF, begin: int, end: int, subjects: dic
                 if table[k][0] is not None and table[k][2] and table[k][2] != "-":
                     key = re.sub(r"[ \n]", "", table[k][0])
                     if key in keys:
+                        if key in keys2:
+                            key = keys2[key]
                         print(key, table[k][2])
                         subjects[key] = table[k][2]
                         if key == keys[-1]:
@@ -273,7 +280,7 @@ def main():
         with pdfplumber.open(fs) as pdf:
             subjects = get_subjects(pdf)
             put_subjects(wb, subjects, i + 2)   # skip the first column
-    wb.save(sys.argv[1] + '.xlsx')
+    wb.save(sys.argv[1] + '_2015_2019.xlsx')
 
 
 if __name__ == "__main__":
