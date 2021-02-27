@@ -1,0 +1,14 @@
+
+
+$ scrapy crawl douban_spider
+
+in Firefox browser input F12 key and refresh page to search Headers of an element 
+for example "top250", then find User-Agent in Header like:
+
+Mozilla/5.0 (Macintosh; Intel Mac OS X 10.16; rv:86.0) Gecko/20100101 Firefox/86.0
+
+
+$ scrapy crawl douban_spider -o movies250.csv
+import into excel by using utf-8
+
+
