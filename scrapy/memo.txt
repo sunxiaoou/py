@@ -9,6 +9,11 @@ Mozilla/5.0 (Macintosh; Intel Mac OS X 10.16; rv:86.0) Gecko/20100101 Firefox/86
 
 
 $ scrapy crawl douban_spider -o movies250.csv
-import into excel by using utf-8
+# needs to import into excel by using utf-8
+
+$ scrapy crawl quotes -o quotes.json
+
+# a command line interactive tool
+$ scrapy shell quotes.toscrape.com
 
 
