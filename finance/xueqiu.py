@@ -1,9 +1,12 @@
 #! /usr/bin/python3
+import sys
 from datetime import datetime
 from pprint import pprint
 from urllib.parse import urlencode
 
 import requests
+# from bson import Decimal128
+from pymongo import MongoClient
 
 stock_base = 'https://stock.xueqiu.com/v5/stock/batch/quote.json?'
 fund_base = 'https://fund.xueqiu.com/dj/open/fund/deriveds?'
@@ -36,6 +39,11 @@ funds = [
     '164906', '166002', '260108', '262001', '270002', '501021',
     '501050', '519671', '540003', '540006']
 
+mongo_host = '127.0.0.1'
+mongo_port = 27017
+mongo_db_name = 'finance'
+mongo_db_collection = 'xueqiu'
+
 
 def get_stocks(base_url: str, codes: list) -> list:
     headers['Host'] = base_url.split('/')[2]
@@ -52,11 +60,9 @@ def get_stocks(base_url: str, codes: list) -> list:
             result = []
             items = response.json()['data']['items']
             for i in items:
-                timestamp = i['quote']['timestamp']
-                date = datetime.fromtimestamp(timestamp / 1000).strftime('%Y-%m-%d')
                 dic = {
                     'code': i['quote']['symbol'],
-                    'date': date,
+                    'date': datetime.fromtimestamp(i['quote']['timestamp'] / 1000),
                     'name': i['quote']['name'],
                     'price': i['quote']['current']}
                 result.append(dic.copy())
@@ -80,9 +86,10 @@ def get_funds(base_url: str, codes: list) -> list:
             for i in items:
                 dic = {
                     'code': i['fd_code'],
-                    'date': i['end_date'],
+                    'date': datetime.strptime(i['end_date'], '%Y-%m-%d'),
                     'name': i['fd_name'],
-                    'price': i['unit_nav']}
+                    # 'price': Decimal128(i['unit_nav'])}
+                    'price': float(i['unit_nav'])}
                 result.append(dic.copy())
             return result
     except requests.ConnectionError as e:
@@ -90,14 +97,34 @@ def get_funds(base_url: str, codes: list) -> list:
 
 
 def main():
+    if len(sys.argv) < 2:
+        print('Usage: {} "a|hk|us|fund"'.format(sys.argv[0]))
+        sys.exit(1)
+
     with open('xq_cookie.txt', 'r') as f:
         headers['Cookie'] = f.read()[:-1]       # delete last '\n'
 
-    pprint(get_stocks(stock_base, a_stocks))
-    pprint(get_stocks(stock_base, a_etfs))
-    pprint(get_stocks(stock_base, hk_stocks))
-    pprint(get_stocks(stock_base, us_stocks))
-    pprint(get_funds(fund_base, funds))
+    if sys.argv[1] == 'a':
+        result = get_stocks(stock_base, a_stocks) + get_stocks(stock_base, a_etfs)
+    elif sys.argv[1] == 'hk':
+        result = get_stocks(stock_base, hk_stocks)
+    elif sys.argv[1] == 'us':
+        result = get_stocks(stock_base, us_stocks)
+    elif sys.argv[1] == 'fund':
+        result = get_funds(fund_base, funds)
+    else:
+        print("Usage: {} a!hk|us|fund".format(sys.argv[0]))
+        sys.exit(1)
+
+    for i in result:
+        i['type'] = sys.argv[1]
+    pprint(result)
+    print(len(result))
+
+    client = MongoClient(host=mongo_host, port=mongo_port)
+    db = client[mongo_db_name]
+    collection = db[mongo_db_collection]
+    collection.insert_many(result)
 
 
 if __name__ == "__main__":
