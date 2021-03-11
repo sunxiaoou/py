@@ -101,7 +101,7 @@ def main():
         print('Usage: {} "a|hk|us|fund"'.format(sys.argv[0]))
         sys.exit(1)
 
-    with open('xq_cookie.txt', 'r') as f:
+    with open('auth/xq_cookie.txt', 'r') as f:
         headers['Cookie'] = f.read()[:-1]       # delete last '\n'
 
     if sys.argv[1] == 'a':

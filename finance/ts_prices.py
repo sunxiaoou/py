@@ -11,7 +11,9 @@ def close_prices(date: str) -> list:
              '000002.SZ', '000333.SZ', '000651.SZ', '000858.SZ', '000895.SZ', '002271.SZ',
              '002304.SZ', '002372.SZ', '002415.SZ', '002508.SZ', '002677.SZ']
 
-    pro = ts.pro_api('')    # needs ts.set_token() in advance
+    with open('auth/ts_token.txt', 'r') as f:
+        token = f.read()[:-1]       # delete last '\n'
+    pro = ts.pro_api(token)
     prices = []
     for c in codes:
         df = pro.daily(ts_code=c, start_date=date, end_date=date)

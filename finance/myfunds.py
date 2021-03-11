@@ -21,7 +21,7 @@ risks = {
 
 
 def danjuan(plan='') -> list:
-    with open('dj_cookie.txt', 'r') as f:
+    with open('auth/dj_cookie.txt', 'r') as f:
         cookie = f.read()[:-1]      # delete last '\n'
     url = 'https://danjuanapp.com/djapi/holding/'
     headers = {
@@ -80,7 +80,7 @@ def danjuan(plan='') -> list:
 
 
 def tonghs() -> list:
-    with open('ths_cookie.txt', 'r') as f:
+    with open('auth/ths_cookie.txt', 'r') as f:
         cookie = f.read()[:-1]      # delete last '\n'
     url = 'https://trade.5ifund.com/pc_query/trade_queryIncomeWjZeroList.action?_=1615356614458'
     url2 = 'https://trade.5ifund.com/pc_query/trade_currentShareList.action?_=1615344156640'
