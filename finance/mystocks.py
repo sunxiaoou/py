@@ -49,61 +49,16 @@ def yinhe(img: str) -> list:
     return result
 
 
-def huasheng(img: str, currency='hkd') -> list:
-    hks = {
+def huasheng(pic: str, currency='hkd') -> list:
+    hk_stocks = {
         '00388': ('香港交易所', 3),
         '00700': ('腾讯控股', 3),
         '02840': ('SPDR金ETF', 2),
         '03033': ('南方恒生科技', 2),
         '03690': ('美团-W', 3),
         '07200': ('FL二南方恒指', 2),
-        '09988': ('阿里巴巴-SW', 3)
-    }
+        '09988': ('阿里巴巴-SW', 3)}
 
-    text = tesserocr.file_to_text(img, lang='eng+chi_sim')
-    lines = text.split('\n')
-    result = []
-    for i in range(len(lines)):
-        if lines[i].strip():
-            lines[i] = re.sub('[,‘]', '', lines[i])
-            items = re.findall('^\D+|[-+]?\d+\.?\d+', lines[i])
-            print(items)
-
-            if '现金' in items[0]:
-                dic = {
-                    'code': '00000',
-                    'currency': currency,
-                    'date': datetime.now(),
-                    'hold_gain': 0,
-                    'market_value': float(items[1]),
-                    'name': '现金',
-                    'nav': 1,
-                    'platform': '华盛',
-                    'risk': 0}
-                result.append(dic.copy())
-            elif re.search(r'\d{5}$', items[0]):
-                dic = {
-                    'code': items[0],
-                    'currency': currency,
-                    'date': datetime.now(),
-                    'hold_gain': float(items[3]),
-                    'market_value': float(items[7]),
-                    'name': hks[items[0]][0],
-                    'nav': float(items[6]),
-                    'platform': '华盛',
-                    'risk': hks[items[0]][1]}
-                result.append(dic.copy())
-    # pprint(result)
-    return result
-
-
-def my_float(s: str, a: int) -> float:
-    if '.' not in s:
-        s = s[: a] + '.' + s[a:]
-    return float(s)
-
-
-def huasheng2(pic: str, currency='hkd') -> list:
     us_stocks = {
         'AAPL': ('苹果', 3),
         'AMZN': ('亚马逊', 3),
@@ -117,20 +72,26 @@ def huasheng2(pic: str, currency='hkd') -> list:
         'PDD': ('拼多多', 3),
         'SPY': ('标普500指数ETF', 2)}
 
+    if currency == 'hkd':
+        stocks = hk_stocks
+    elif currency == 'usd':
+        stocks = us_stocks
+    else:
+        return []
+
     image = Image.open(pic)
     image = image.convert('L')
     new_size = tuple(2 * x for x in image.size)             # enlarge the image size
     image = image.resize(new_size, Image.ANTIALIAS)
     text = tesserocr.image_to_text(image, lang='eng+chi_sim', psm=tesserocr.PSM.SINGLE_BLOCK)
     # print(text)
-
     lines = text.split('\n')
     result = []
     for line in lines:
         if line:
             line = re.sub('[,‘]', '', line)
             items = re.findall('^[A-Za-z]{2,4}|[-+]?\d*\.?\d+', line)
-            # print(i, items)
+            # print(items)
             if items:
                 if '现金' in line:
                     dic = {
@@ -146,25 +107,25 @@ def huasheng2(pic: str, currency='hkd') -> list:
                     result.append(dic.copy())
                 elif re.search(r'\w{2,4}', items[0]):
                     items[0] = items[0].split()[0].upper()
-                    if items[0] in us_stocks:
+                    if items[0] in stocks:
                         if len(items) == 9:         # remove digits in name
-                           items.pop(1)
+                            items.pop(1)
                         dic = {
                             'code': items[0],
                             'currency': currency,
                             'date': datetime.now(),
-                            'hold_gain': my_float(items[3], -2),
-                            'market_value': my_float(items[7], -2),
-                            'name': us_stocks[items[0]][0],
-                            'nav': my_float(items[6], -2),
+                            'hold_gain': float(items[3]),
+                            'market_value': float(items[7]),
+                            'name': stocks[items[0]][0],
+                            'nav': float(items[6]),
                             'platform': '华盛',
-                            'risk': us_stocks[items[0]][1]}
+                            'risk': stocks[items[0]][1]}
                         result.append(dic.copy())
     return result
 
 
 def main():
-    switch = {'yh': yinhe, 'hs': huasheng2}
+    switch = {'yh': yinhe, 'hs': huasheng}
     if len(sys.argv) < 3:
         print('Usage: {} "yh||hs|ft" img [rmb|hkd|usd]'.format(sys.argv[0]))
         sys.exit(1)
