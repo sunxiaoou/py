@@ -80,9 +80,25 @@ def get_options() -> dict:
 def recognize_image(image_name: str) -> str:
     image = Image.open(image_name)
     image = image.convert('L')
+    """
     new_size = tuple(2 * x for x in image.size)             # enlarge the image size
     image = image.resize(new_size, Image.ANTIALIAS)
+    image.show()
+    """
     return tesserocr.image_to_text(image, lang='eng+chi_sim', psm=tesserocr.PSM.SINGLE_BLOCK)
+
+
+def my_float(s: str, a: int) -> float:
+    if '.' not in s:
+        s = s[: a] + '.' + s[a:]
+    return float(s)
+
+
+def verify(dic: dict):
+    if dic['nav'] * dic['volume'] != dic['market_value']:
+        print('market_value failed {} {}'.format(dic, dic['nav'] * dic['volume']))
+    if round((dic['nav'] - dic['cost']) * dic['volume']) != round(dic['hold_gain']):
+        print('hold_gain failed {} {}'.format(dic, (dic['nav'] - dic['cost']) * dic['volume']))
 
 
 def yinhe(text: str, cash: float, currency: str, exchange_rate: float, date: datetime) -> list:
@@ -107,17 +123,20 @@ def yinhe(text: str, cash: float, currency: str, exchange_rate: float, date: dat
             if len(items) == 8:
                 if items[0] in Stocks:
                     dic = {
-                        'code': items[0],
-                        'currency': currency,
-                        'date': date,
-                        'exchange_rate': exchange_rate,
-                        'hold_gain': float(items[2]),
-                        'market_value': float(items[5]),
-                        'name': Stocks[items[0]][0],
-                        'nav': float(items[6]),
                         'platform': '银河',
+                        'currency': currency,
+                        'exchange_rate': exchange_rate,
+                        'date': date,
+                        'code': items[0],
+                        'name': Stocks[items[0]][0],
                         'risk': Stocks[items[0]][1],
-                        'rmb_value': round(float(items[5]) * exchange_rate, 2)}
+                        'volume': int(items[1]),
+                        'hold_gain': my_float(items[2], -2),
+                        'market_value': my_float(items[5], -2),
+                        'rmb_value': my_float(items[5], -2),
+                        'nav': my_float(items[6], -3),
+                        'cost': my_float(items[7], -3)}
+                    verify(dic)
                     result.append(dic.copy())
     return result
 
@@ -147,17 +166,20 @@ def huasheng(text: str, cash: float, currency: str, exchange_rate: float, date: 
                     if len(items) == 9:         # remove digits in US stock's name
                         items.pop(1)
                     dic = {
-                        'code': items[0],
-                        'currency': currency,
-                        'date': date,
-                        'exchange_rate': exchange_rate,
-                        'hold_gain': float(items[3]),
-                        'market_value': float(items[7]),
-                        'name': Stocks[items[0]][0],
-                        'nav': float(items[6]),
                         'platform': '华盛',
+                        'currency': currency,
+                        'exchange_rate': exchange_rate,
+                        'date': date,
+                        'code': items[0],
+                        'name': Stocks[items[0]][0],
                         'risk': Stocks[items[0]][1],
+                        'volume': int(items[1]),
+                        'hold_gain': float(items[3]),
+                        'cost': float(items[5]),
+                        'nav': float(items[6]),
+                        'market_value': float(items[7]),
                         'rmb_value': round(float(items[7]) * exchange_rate, 2)}
+                    verify(dic)
                     result.append(dic.copy())
     return result
 
