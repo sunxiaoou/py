@@ -184,15 +184,7 @@ def huasheng(text: str, cash: float, currency: str, exchange_rate: float, date: 
     return result
 
 
-def main():
-    platforms = {'yh': yinhe, 'hs': huasheng}
-    options = get_options()
-    text = recognize_image(options['image'])
-    result = platforms[options['platform']](text, options['cash'], options['currency'], options['exchange_rate'],
-                                            options['date'])
-    pprint(result)
-    exit(1)
-
+def save_to_mongo(result: list):
     mongo_host = '127.0.0.1'
     mongo_port = 27017
     mongo_db_name = 'finance'
@@ -202,6 +194,17 @@ def main():
     db = client[mongo_db_name]
     collection = db[mongo_db_collection]
     collection.insert_many(result)
+
+
+def main():
+    platforms = {'yh': yinhe, 'hs': huasheng}
+    options = get_options()
+    text = recognize_image(options['image'])
+    result = platforms[options['platform']](text, options['cash'], options['currency'], options['exchange_rate'],
+                                            options['date'])
+    pprint(result)
+
+    save_to_mongo(result)
 
 
 if __name__ == "__main__":
