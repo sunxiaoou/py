@@ -10,6 +10,7 @@ import re
 import sys
 from datetime import datetime
 from pprint import pprint
+from typing import List
 
 import tesserocr
 from PIL import Image
@@ -79,12 +80,12 @@ def get_options() -> dict:
 
 def recognize_image(image_name: str) -> str:
     image = Image.open(image_name)
-    image = image.convert('L')
     """
+    image = image.convert('L')
     new_size = tuple(2 * x for x in image.size)             # enlarge the image size
     image = image.resize(new_size, Image.ANTIALIAS)
-    image.show()
     """
+    # image.show()
     return tesserocr.image_to_text(image, lang='eng+chi_sim', psm=tesserocr.PSM.SINGLE_BLOCK)
 
 
@@ -94,66 +95,98 @@ def my_float(s: str, a: int) -> float:
     return float(s)
 
 
-def verify(dic: dict):
-    if dic['nav'] * dic['volume'] != dic['market_value']:
-        print('market_value failed {} {}'.format(dic, dic['nav'] * dic['volume']))
-    if round((dic['nav'] - dic['cost']) * dic['volume']) != round(dic['hold_gain']):
-        print('hold_gain failed {} {}'.format(dic, (dic['nav'] - dic['cost']) * dic['volume']))
+def print_grid(word1: str, word2: str, grid: List[List[int]]):
+    row0 = ['\\', '\'\''] + [ch for ch in word1]
+    print(', '.join(row0))
+    w2 = ['\'\''] + list(word2)
+    for i in range(len(w2)):
+        print("{},  {}".format(w2[i], ', '.join([str(j) for j in grid[i]])))
+
+
+def get_distance(source: str, target: str) -> int:
+    n1, n2 = len(source), len(target)
+    grid = [[0] * (n1 + 1) for _ in range(n2 + 1)]
+    i = j = 0
+    for i in range(1, n2 + 1):
+        for j in range(1, n1 + 1):
+            if target[i - 1] != source[j - 1]:
+                grid[i][j] = max(grid[i - 1][j], grid[i][j - 1])
+            else:
+                grid[i][j] = grid[i - 1][j - 1] + 1
+    # print_grid(source, target, grid)
+    return grid[i][j]
+
+
+def get_closest_code(code: str) -> str:
+    return max(Stocks.keys(), key=lambda x: get_distance(code, x))
+
+
+def verify(result: list):
+    for i in result:
+        if i['code'] != 'cash':
+            if i['nav'] * i['volume'] != i['market_value']:
+                print('market_value failed {} {}'.format(i, i['nav'] * i['volume']))
+            if round((i['nav'] - i['cost']) * i['volume']) != round(i['hold_gain']):
+                print('hold_gain failed {} {}'.format(i, (i['nav'] - i['cost']) * i['volume']))
 
 
 def yinhe(text: str, cash: float, currency: str, exchange_rate: float, date: datetime) -> list:
     # print(text)
     dic = {
-        'code': 'cash',
-        'currency': currency,
-        'date': date,
-        'exchange_rate': exchange_rate,
-        'hold_gain': 0,
-        'market_value': cash,
-        'name': '现金',
-        'nav': 1,
         'platform': '银河',
+        'currency': currency,
+        'exchange_rate': exchange_rate,
+        'code': 'cash',
+        'date': date,
+        'name': '现金',
         'risk': 0,
-        'rmb_value': round(cash * exchange_rate, 2)}
+        'market_value': cash,
+        'hold_gain': 0,
+        'mv_rmb': cash,
+        'hg_rmb': 0,
+        'nav': 1}
     result = [dic.copy()]
     for line in text.split('\n'):
         if line:
             line = re.sub('[,‘]', '', line)
             items = re.findall('[-+]?\d*\.?\d+', line)
+            # print(items)
             if len(items) == 8:
-                if items[0] in Stocks:
-                    dic = {
-                        'platform': '银河',
-                        'currency': currency,
-                        'exchange_rate': exchange_rate,
-                        'date': date,
-                        'code': items[0],
-                        'name': Stocks[items[0]][0],
-                        'risk': Stocks[items[0]][1],
-                        'volume': int(items[1]),
-                        'hold_gain': my_float(items[2], -2),
-                        'market_value': my_float(items[5], -2),
-                        'rmb_value': my_float(items[5], -2),
-                        'nav': my_float(items[6], -3),
-                        'cost': my_float(items[7], -3)}
-                    verify(dic)
-                    result.append(dic.copy())
+                if items[0] not in Stocks:
+                    items[0] = get_closest_code(items[0])
+                dic = {
+                    'platform': '银河',
+                    'currency': currency,
+                    'exchange_rate': exchange_rate,
+                    'date': date,
+                    'code': items[0],
+                    'name': Stocks[items[0]][0],
+                    'risk': Stocks[items[0]][1],
+                    'volume': int(items[1]),
+                    'market_value': my_float(items[5], -2),
+                    'hold_gain': my_float(items[2], -2),
+                    'mv_rmb': my_float(items[5], -2),
+                    'hg_rmb': my_float(items[2], -2),
+                    'nav': my_float(items[6], -3),
+                    'cost': my_float(items[7], -3)}
+                result.append(dic.copy())
     return result
 
 
 def huasheng(text: str, cash: float, currency: str, exchange_rate: float, date: datetime) -> list:
     dic = {
-        'code': 'cash',
+        'platform': '华盛',
         'currency': currency,
-        'date': date,
         'exchange_rate': exchange_rate,
+        'date': date,
+        'code': 'cash',
+        'name': '现金',
+        'risk': 0,
         'hold_gain': 0,
         'market_value': cash,
-        'name': '现金',
-        'nav': 1,
-        'platform': '华盛',
-        'risk': 0,
-        'rmb_value': round(cash * exchange_rate, 2)}
+        'mv_rmb': round(cash * exchange_rate, 2),
+        'hg_rmb': 0,
+        'nav': 1}
     result = [dic.copy()]
     for line in text.split('\n'):
         if line:
@@ -174,12 +207,12 @@ def huasheng(text: str, cash: float, currency: str, exchange_rate: float, date: 
                         'name': Stocks[items[0]][0],
                         'risk': Stocks[items[0]][1],
                         'volume': int(items[1]),
-                        'hold_gain': float(items[3]),
-                        'cost': float(items[5]),
-                        'nav': float(items[6]),
                         'market_value': float(items[7]),
-                        'rmb_value': round(float(items[7]) * exchange_rate, 2)}
-                    verify(dic)
+                        'hold_gain': float(items[3]),
+                        'mv_rmb': round(float(items[7]) * exchange_rate, 2),
+                        'hg_rmb': round(float(items[3]) * exchange_rate, 2),
+                        'cost': float(items[5]),
+                        'nav': float(items[6])}
                     result.append(dic.copy())
     return result
 
@@ -202,7 +235,9 @@ def main():
     text = recognize_image(options['image'])
     result = platforms[options['platform']](text, options['cash'], options['currency'], options['exchange_rate'],
                                             options['date'])
-    pprint(result)
+    verify(result)
+    # pprint(result)
+    print(len(result))
 
     save_to_mongo(result)
 
