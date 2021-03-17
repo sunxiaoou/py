@@ -14,7 +14,8 @@ from typing import List
 
 import tesserocr
 from PIL import Image
-from pymongo import MongoClient
+
+from save_to import save_to_spreadsheet, save_to_mongo
 
 
 Stocks = {
@@ -175,7 +176,7 @@ def yinhe(text: str, cash: float, currency: str, exchange_rate: float, date: dat
 
 def huasheng(text: str, cash: float, currency: str, exchange_rate: float, date: datetime) -> list:
     dic = {
-        'platform': '华盛',
+        'platform': '华盛' + currency.upper(),
         'currency': currency,
         'exchange_rate': exchange_rate,
         'date': date,
@@ -199,7 +200,7 @@ def huasheng(text: str, cash: float, currency: str, exchange_rate: float, date: 
                     if len(items) == 9:         # remove digits in US stock's name
                         items.pop(1)
                     dic = {
-                        'platform': '华盛',
+                        'platform': '华盛' + currency.upper(),
                         'currency': currency,
                         'exchange_rate': exchange_rate,
                         'date': date,
@@ -217,18 +218,6 @@ def huasheng(text: str, cash: float, currency: str, exchange_rate: float, date: 
     return result
 
 
-def save_to_mongo(result: list):
-    mongo_host = '127.0.0.1'
-    mongo_port = 27017
-    mongo_db_name = 'finance'
-    mongo_db_collection = 'mystocks'
-
-    client = MongoClient(host=mongo_host, port=mongo_port)
-    db = client[mongo_db_name]
-    collection = db[mongo_db_collection]
-    collection.insert_many(result)
-
-
 def main():
     platforms = {'yh': yinhe, 'hs': huasheng}
     options = get_options()
@@ -239,7 +228,8 @@ def main():
     # pprint(result)
     print(len(result))
 
-    save_to_mongo(result)
+    save_to_spreadsheet('test.xlsx', options['date'], result)
+    # save_to_mongo('mystocks', result)
 
 
 if __name__ == "__main__":

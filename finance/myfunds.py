@@ -4,7 +4,8 @@ from datetime import datetime
 from pprint import pprint
 
 import requests
-from pymongo import MongoClient
+
+from save_to import save_to_spreadsheet, save_to_mongo
 
 risks = {
     '000730': 0,    # 现金宝
@@ -131,8 +132,8 @@ def tonghs() -> list:
 
 
 def main():
-    if len(sys.argv) < 2:
-        print('Usage: {} "dj|ths"'.format(sys.argv[0]))
+    if len(sys.argv) < 3:
+        print('Usage: {} "dj|ths" %yy%mm%dd'.format(sys.argv[0]))
         sys.exit(1)
 
     if sys.argv[1] == 'dj':
@@ -143,15 +144,8 @@ def main():
         print('Usage: {} "dj|ths"'.format(sys.argv[0]))
         sys.exit(1)
 
-    mongo_host = '127.0.0.1'
-    mongo_port = 27017
-    mongo_db_name = 'finance'
-    mongo_db_collection = 'myfunds'
-
-    client = MongoClient(host=mongo_host, port=mongo_port)
-    db = client[mongo_db_name]
-    collection = db[mongo_db_collection]
-    collection.insert_many(result)
+    save_to_spreadsheet('test.xlsx', datetime.strptime(sys.argv[2], '%y%m%d'), result)
+    # save_to_mongo('myfunds', result)
 
 
 if __name__ == "__main__":
