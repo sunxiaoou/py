@@ -74,10 +74,24 @@ def summarize_amount(file: str, sheet_name: str):
     last_row = sheet.max_row
 
     summaries = [
-        {'location': (last_row + 2, 1), 'letter': 'A',
-         'labels': ['银河', '华盛HKD', '华盛USD', '蛋卷*', '同花顺']},
-        {'location': (last_row + 2, 4), 'letter': 'B','labels': ['rmb', 'hkd', 'usd']},
-        {'location': (last_row + 2, 7), 'letter': 'E','labels': [0, 1, 2, 3]}
+        {'location': (last_row + 2, 1),
+         'letter': 'A',
+         'labels': ['银河', '华盛HKD', '华盛USD', '蛋卷*', '同花顺'],
+         'category': 'platform',
+         'anchor': 'K1'
+         },
+        {'location': (last_row + 2, 4),
+         'letter': 'B',
+         'labels': ['rmb', 'hkd', 'usd'],
+         'category': 'currency',
+         'anchor': 'K16'
+         },
+        {'location': (last_row + 2, 7),
+         'letter': 'E',
+         'labels': [0, 1, 2, 3],
+         'category': 'risk',
+         'anchor': 'K31'
+         }
     ]
 
     for summary in summaries:
@@ -106,8 +120,8 @@ def summarize_amount(file: str, sheet_name: str):
         data = Reference(sheet, min_col=col+1, min_row=row-1, max_row=row+i)
         pie.add_data(data, titles_from_data=True)
         pie.set_categories(labels)
-        pie.title = 'Pies sold by category'
-        sheet.add_chart(pie, "K1")
+        pie.title = summary['category']
+        sheet.add_chart(pie, summary['anchor'])
 
     wb.save(file)
 
