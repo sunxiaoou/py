@@ -3,6 +3,7 @@ import sys
 from datetime import datetime
 
 import openpyxl
+from openpyxl.chart import PieChart, Reference
 from openpyxl.utils import get_column_letter
 from pymongo import MongoClient
 
@@ -68,65 +69,45 @@ def save_to_mongo(collection: str, result: list):
 
 
 def summarize_amount(file: str, sheet_name: str):
-    platforms = ['银河', '华盛HKD', '华盛USD', '蛋卷*', '同花顺']
-    currencies = ['rmb', 'hkd', 'usd']
-    risks = [0, 1, 2, 3]
-
     wb = openpyxl.load_workbook(file)
     sheet = wb[sheet_name]
-    row, col = sheet.max_row + 2, 1
-    le = [get_column_letter(j) for j in range(col, col + 3)]
-    for i in range(len(platforms)):
-        sheet.cell(row=row+i, column=col).value = platforms[i]
-        c = sheet.cell(row=row+i, column=col+1)
-        c.number_format = "#,##,0.00"
-        c.value = '=SUMIF($A$2:$A{0},{1}{2},$H$2:$H${0})'.format(row - 2, le[0], row + i)
-        c = sheet.cell(row=row+i, column=col+2)
-        c.number_format = "#,##,0.00"
-        c.value = '=SUMIF($A$2:$A{0},{1}{2},$I$2:$I${0})'.format(row - 2, le[0], row + i)
-    sheet.cell(row=row+i+1, column=col).value = 'sum'
-    c = sheet.cell(row=row+i+1, column=col+1)
-    c.number_format = "#,##,0.00"
-    c.value = '=SUM({0}{1}:{0}{2})'.format(le[1], row, row + i)
-    c = sheet.cell(row=row+i+1, column=col+2)
-    c.number_format = "#,##,0.00"
-    c.value = '=SUM({0}{1}:{0}{2})'.format(le[2], row, row + i)
+    last_row = sheet.max_row
 
-    col += 3
-    le = [get_column_letter(j) for j in range(col, col + 3)]
-    for i in range(len(currencies)):
-        sheet.cell(row=row+i, column=col).value = currencies[i]
-        c = sheet.cell(row=row+i, column=col+1)
-        c.number_format = "#,##,0.00"
-        c.value = '=SUMIF($B$2:$B{0},{1}{2},$H$2:$H${0})'.format(row - 2, le[0], row + i)
-        c = sheet.cell(row=row+i, column=col+2)
-        c.number_format = "#,##,0.00"
-        c.value = '=SUMIF($B$2:$B{0},{1}{2},$I$2:$I${0})'.format(row - 2, le[0], row + i)
-    sheet.cell(row=row+i+1, column=col).value = 'sum'
-    c = sheet.cell(row=row+i+1, column=col+1)
-    c.number_format = "#,##,0.00"
-    c.value = '=SUM({0}{1}:{0}{2})'.format(le[1], row, row + i)
-    c = sheet.cell(row=row+i+1, column=col+2)
-    c.number_format = "#,##,0.00"
-    c.value = '=SUM({0}{1}:{0}{2})'.format(le[2], row, row + i)
+    summaries = [
+        {'location': (last_row + 2, 1), 'letter': 'A',
+         'labels': ['银河', '华盛HKD', '华盛USD', '蛋卷*', '同花顺']},
+        {'location': (last_row + 2, 4), 'letter': 'B','labels': ['rmb', 'hkd', 'usd']},
+        {'location': (last_row + 2, 7), 'letter': 'E','labels': [0, 1, 2, 3]}
+    ]
 
-    col += 3
-    le = [get_column_letter(j) for j in range(col, col + 3)]
-    for i in range(len(risks)):
-        sheet.cell(row=row+i, column=col).value = risks[i]
-        c = sheet.cell(row=row+i, column=col+1)
+    for summary in summaries:
+        row, col = summary['location']
+        le = [get_column_letter(j) for j in range(col, col + 3)]
+        for i in range(len(summary['labels'])):
+            sheet.cell(row=row+i, column=col).value = summary['labels'][i]
+            c = sheet.cell(row=row+i, column=col+1)
+            c.number_format = "#,##,0.00"
+            c.value = '=SUMIF(${0}$2:${0}${1},{2}{3},$H$2:$H${1})'.format(summary['letter'],
+                                                                          last_row, le[0], row + i)
+            c = sheet.cell(row=row+i, column=col+2)
+            c.number_format = "#,##,0.00"
+            c.value = '=SUMIF(${0}$2:${0}${1},{2}{3},$I$2:$I${1})'.format(summary['letter'],
+                                                                          last_row, le[0], row + i)
+        sheet.cell(row=row+i+1, column=col).value = 'sum'
+        c = sheet.cell(row=row+i+1, column=col+1)
         c.number_format = "#,##,0.00"
-        c.value = '=SUMIF($E$2:$E{0},{1}{2},$H$2:$H${0})'.format(str(row - 2), le[0], row + i)
-        c = sheet.cell(row=row+i, column=col+2)
+        c.value = '=SUM({0}{1}:{0}{2})'.format(le[1], row, row + i)
+        c = sheet.cell(row=row+i+1, column=col+2)
         c.number_format = "#,##,0.00"
-        c.value = '=SUMIF($E$2:$E{0},{1}{2},$I$2:$I${0})'.format(str(row - 2), le[0], row + i)
-    sheet.cell(row=row+i+1, column=col).value = 'sum'
-    c = sheet.cell(row=row+i+1, column=col+1)
-    c.number_format = "#,##,0.00"
-    c.value = '=SUM({0}{1}:{0}{2})'.format(le[1], row, row + i)
-    c = sheet.cell(row=row+i+1, column=col+2)
-    c.number_format = "#,##,0.00"
-    c.value = '=SUM({0}{1}:{0}{2})'.format(le[2], row, row + i)
+        c.value = '=SUM({0}{1}:{0}{2})'.format(le[2], row, row + i)
+
+        pie = PieChart()
+        labels = Reference(sheet, min_col=col, min_row=row, max_row=row+i)
+        data = Reference(sheet, min_col=col+1, min_row=row-1, max_row=row+i)
+        pie.add_data(data, titles_from_data=True)
+        pie.set_categories(labels)
+        pie.title = 'Pies sold by category'
+        sheet.add_chart(pie, "K1")
 
     wb.save(file)
 
