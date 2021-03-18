@@ -1,7 +1,9 @@
 #! /usr/bin/python3
+import sys
 from datetime import datetime
 
 import openpyxl
+from openpyxl.utils import get_column_letter
 from pymongo import MongoClient
 
 
@@ -65,8 +67,76 @@ def save_to_mongo(collection: str, result: list):
     collection.insert_many(result)
 
 
+def summarize_amount(file: str, sheet_name: str):
+    platforms = ['银河', '华盛HKD', '华盛USD', '蛋卷*', '同花顺']
+    currencies = ['rmb', 'hkd', 'usd']
+    risks = [0, 1, 2, 3]
+
+    wb = openpyxl.load_workbook(file)
+    sheet = wb[sheet_name]
+    row, col = sheet.max_row + 2, 1
+    le = [get_column_letter(j) for j in range(col, col + 3)]
+    for i in range(len(platforms)):
+        sheet.cell(row=row+i, column=col).value = platforms[i]
+        c = sheet.cell(row=row+i, column=col+1)
+        c.number_format = "#,##,0.00"
+        c.value = '=SUMIF($A$2:$A{0},{1}{2},$H$2:$H${0})'.format(row - 2, le[0], row + i)
+        c = sheet.cell(row=row+i, column=col+2)
+        c.number_format = "#,##,0.00"
+        c.value = '=SUMIF($A$2:$A{0},{1}{2},$I$2:$I${0})'.format(row - 2, le[0], row + i)
+    sheet.cell(row=row+i+1, column=col).value = 'sum'
+    c = sheet.cell(row=row+i+1, column=col+1)
+    c.number_format = "#,##,0.00"
+    c.value = '=SUM({0}{1}:{0}{2})'.format(le[1], row, row + i)
+    c = sheet.cell(row=row+i+1, column=col+2)
+    c.number_format = "#,##,0.00"
+    c.value = '=SUM({0}{1}:{0}{2})'.format(le[2], row, row + i)
+
+    col += 3
+    le = [get_column_letter(j) for j in range(col, col + 3)]
+    for i in range(len(currencies)):
+        sheet.cell(row=row+i, column=col).value = currencies[i]
+        c = sheet.cell(row=row+i, column=col+1)
+        c.number_format = "#,##,0.00"
+        c.value = '=SUMIF($B$2:$B{0},{1}{2},$H$2:$H${0})'.format(row - 2, le[0], row + i)
+        c = sheet.cell(row=row+i, column=col+2)
+        c.number_format = "#,##,0.00"
+        c.value = '=SUMIF($B$2:$B{0},{1}{2},$I$2:$I${0})'.format(row - 2, le[0], row + i)
+    sheet.cell(row=row+i+1, column=col).value = 'sum'
+    c = sheet.cell(row=row+i+1, column=col+1)
+    c.number_format = "#,##,0.00"
+    c.value = '=SUM({0}{1}:{0}{2})'.format(le[1], row, row + i)
+    c = sheet.cell(row=row+i+1, column=col+2)
+    c.number_format = "#,##,0.00"
+    c.value = '=SUM({0}{1}:{0}{2})'.format(le[2], row, row + i)
+
+    col += 3
+    le = [get_column_letter(j) for j in range(col, col + 3)]
+    for i in range(len(risks)):
+        sheet.cell(row=row+i, column=col).value = risks[i]
+        c = sheet.cell(row=row+i, column=col+1)
+        c.number_format = "#,##,0.00"
+        c.value = '=SUMIF($E$2:$E{0},{1}{2},$H$2:$H${0})'.format(str(row - 2), le[0], row + i)
+        c = sheet.cell(row=row+i, column=col+2)
+        c.number_format = "#,##,0.00"
+        c.value = '=SUMIF($E$2:$E{0},{1}{2},$I$2:$I${0})'.format(str(row - 2), le[0], row + i)
+    sheet.cell(row=row+i+1, column=col).value = 'sum'
+    c = sheet.cell(row=row+i+1, column=col+1)
+    c.number_format = "#,##,0.00"
+    c.value = '=SUM({0}{1}:{0}{2})'.format(le[1], row, row + i)
+    c = sheet.cell(row=row+i+1, column=col+2)
+    c.number_format = "#,##,0.00"
+    c.value = '=SUM({0}{1}:{0}{2})'.format(le[2], row, row + i)
+
+    wb.save(file)
+
+
 def main():
-    pass
+    if len(sys.argv) < 3:
+        print('Usage: {} file sheet'.format(sys.argv[0]))
+        sys.exit(1)
+
+    summarize_amount(sys.argv[1], sys.argv[2])
 
 
 if __name__ == "__main__":
