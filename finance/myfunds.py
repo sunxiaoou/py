@@ -133,7 +133,7 @@ def tonghs() -> list:
 
 def main():
     if len(sys.argv) < 3:
-        print('Usage: {} "dj|ths" %yy%mm%dd'.format(sys.argv[0]))
+        print('Usage: {} "dj|ths" %y%m%d'.format(sys.argv[0]))
         sys.exit(1)
 
     if sys.argv[1] == 'dj':
@@ -144,7 +144,7 @@ def main():
         print('Usage: {} "dj|ths"'.format(sys.argv[0]))
         sys.exit(1)
 
-    save_to_spreadsheet('test.xlsx', datetime.strptime(sys.argv[2], '%y%m%d'), result)
+    save_to_spreadsheet('finance.xlsx', datetime.strptime(sys.argv[2], '%y%m%d'), result)
     # save_to_mongo('myfunds', result)
 
 

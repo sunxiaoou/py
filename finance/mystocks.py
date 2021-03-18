@@ -228,7 +228,7 @@ def main():
     # pprint(result)
     print(len(result))
 
-    save_to_spreadsheet('test.xlsx', options['date'], result)
+    save_to_spreadsheet('finance.xlsx', options['date'], result)
     # save_to_mongo('mystocks', result)
 
 
