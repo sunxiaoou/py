@@ -1,6 +1,5 @@
 #! /usr/bin/python3
 import sys
-from datetime import datetime
 
 import openpyxl
 from openpyxl.chart import PieChart, Reference
@@ -75,22 +74,19 @@ def summarize_amount(file: str, sheet_name: str):
     summaries = [
         {'location': (last_row + 2, 1),
          'letter': 'A',
-         'labels': ['银河', '华盛HKD', '华盛USD', '蛋卷*', '同花顺'],
+         'labels': ['招商银行', '恒生银行', '银河', '华盛*', '富途*', '蛋卷*', '同花顺'],
          'category': 'platform',
-         'anchor': 'K1'
-         },
+         'anchor': 'K1'},
         {'location': (last_row + 2, 4),
          'letter': 'B',
          'labels': ['rmb', 'hkd', 'usd'],
          'category': 'currency',
-         'anchor': 'K16'
-         },
+         'anchor': 'K16'},
         {'location': (last_row + 2, 7),
          'letter': 'E',
          'labels': [0, 1, 2, 3],
          'category': 'risk',
-         'anchor': 'K31'
-         }
+         'anchor': 'K31'}
     ]
 
     for summary in summaries:

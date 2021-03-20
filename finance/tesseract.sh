@@ -2,7 +2,7 @@
 
 if [ $# -lt 2 ]
 then
-    echo "Usage: $0 yh|hs balance"
+    echo "Usage: $0 zsb|hsb|yh|hs balance"
     exit 1
 fi
 
