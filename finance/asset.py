@@ -15,7 +15,7 @@ from save_to import save_to_spreadsheet, save_to_mongo
 
 def usage_exit():
     print('Usage: {} --currency="rmb||hkd|usd" --exchange_rate=float --date=%y%m%d '
-          '"zsb|yh||hs|ft" png|csv balance'.format(sys.argv[0]))
+          '"zsb|hsb|yh||hs|ft" png|csv balance'.format(sys.argv[0]))
     sys.exit(1)
 
 
@@ -130,6 +130,45 @@ def zhaoshang_bank(image_file: str, cash: float, currency: str, exchange_rate: f
     # verify result
     summary = sum([i['market_value'] for i in result[1:]])
     assert amounts[0] == summary, print("summary({}) != {}".format(summary, amounts[0]))
+    return result
+
+
+def hangseng_bank(image_file: str, cash: float, currency: str, exchange_rate: float, date: datetime) -> list:
+    stocks = {
+        '540003': ('汇丰晋信动态策略混合', 3),
+        '540006': ('汇丰晋信大盘股票', 3),
+        '008407': ('前海恒生沪深港通细分行业龙头', 3),
+    }
+    result = [{'code': 'cash', 'name': '现金', 'risk': 0, 'market_value': cash, 'hold_gain': 0}]
+    text = recognize_image(image_file)
+    text = re.sub('[,‘]', '', text)
+    nums = re.findall(r'[-+]?\d*\.?\d+', text)
+    print(nums)
+    total_mv = float(nums.pop(0))
+    total_hg = float(nums.pop(0))
+    transit = float(nums.pop(0))
+    qu, rem = divmod(len(nums), 5)
+    assert(rem == 0), print('nums({}} % 5 !== 0'.format(len(nums)))
+    for i in range(qu):
+        code = nums[i * 5]
+        dic = {
+            'code': code,
+            'name': stocks[code][0],
+            'risk': stocks[code][1],
+            'market_value': float(nums[i * 5 + 4]),
+            'hold_gain': float(nums[i * 5 + 1])}
+        """
+        hg = round((dic['market_value'] - dic['hold_gain']) * float(nums[i * 5 + 2]) / 100)
+        if hg != round(dic['hold_gain']):
+           print('hold_gain failed {} {}'.format(hg, dic['hold_gain']))
+        """
+        result.append(dic.copy())
+    fill_values('恒生银行', currency, exchange_rate, date, result)
+    assert len(result) == len(stocks) + 1, print("result({}) != stocks({})".format(len(result), len(stocks) + 1))
+    sum_mv = round(sum([i['market_value'] for i in result[1:]]), 2)
+    assert sum_mv == total_mv, print("sum_mv({}) != total_mv({})".format(sum_mv, total_mv))
+    sum_hg = round(sum([i['hold_gain'] for i in result[1:]]), 2)
+    assert sum_hg == total_hg, print("sum_hg({}) != total_hg({})".format(sum_hg, total_hg))
     return result
 
 
@@ -275,7 +314,7 @@ def futu(csv_file: str, cash: float, currency: str, exchange_rate: float, date: 
 
 
 def main():
-    platforms = {'zsb': zhaoshang_bank, 'yh': yinhe, 'hs': huasheng, 'ft': futu}
+    platforms = {'zsb': zhaoshang_bank, 'hsb': hangseng_bank, 'yh': yinhe, 'hs': huasheng, 'ft': futu}
     options = get_options(list(platforms.keys()))
 
     result = platforms[options['platform']](options['datafile'],
@@ -284,10 +323,10 @@ def main():
                                             options['exchange_rate'],
                                             datetime.strptime(options['date'], '%y%m%d'))
     # verify(result)
-    # pprint(result)
+    pprint(result)
     print(len(result))
 
-    # save_to_spreadsheet('finance.xlsx', options['date'], result)
+    save_to_spreadsheet('finance.xlsx', options['date'], result)
     # save_to_mongo('mystocks', result)
 
 
