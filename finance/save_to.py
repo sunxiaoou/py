@@ -8,10 +8,9 @@ from openpyxl.utils import get_column_letter
 from pymongo import MongoClient
 
 
-def save_to_spreadsheet(filename: str, date: datetime, result: list):
+def save_to_spreadsheet(filename: str, sheet_name: str, result: list):
     titles = ['platform', 'currency', 'code', 'name', 'risk', 'market_value', 'hold_gain',
               'mv_rmb', 'hg_rmb']
-    sheet_name = date.strftime('%y%m%d')
 
     try:
         wb = openpyxl.load_workbook(filename)
@@ -19,7 +18,7 @@ def save_to_spreadsheet(filename: str, date: datetime, result: list):
     except FileNotFoundError:
         wb = openpyxl.Workbook()
         sheet = wb.active
-        sheet.title = date.strftime('%y%m%d')
+        sheet.title = sheet_name
     except KeyError:
         wb.create_sheet(title=sheet_name)
 

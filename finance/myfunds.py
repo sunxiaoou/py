@@ -1,4 +1,7 @@
 #! /usr/bin/python3
+# myfunds.py dj 210318
+
+
 import sys
 from datetime import datetime
 from pprint import pprint
@@ -144,7 +147,7 @@ def main():
         print('Usage: {} "dj|ths"'.format(sys.argv[0]))
         sys.exit(1)
 
-    save_to_spreadsheet('finance.xlsx', datetime.strptime(sys.argv[2], '%y%m%d'), result)
+    save_to_spreadsheet('finance.xlsx', sys.argv[2], result)
     # save_to_mongo('myfunds', result)
 
 

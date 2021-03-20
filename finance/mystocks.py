@@ -5,6 +5,8 @@
 # mystocks.py --currency=hkd --exchange_rate=0.8384 --date=210312 hs hs_83088.38.png 83088.38
 # mystocks.py --currency=usd --exchange_rate=6.5081 --date=210312 hs hs_17379.64.png 17379.64
 
+
+import csv
 import getopt
 import re
 import sys
@@ -50,8 +52,8 @@ Stocks = {
 
 
 def usage_exit():
-    print('Usage: {} --currency="rmb||hkd|usd" --exchange_rate=float --date=yyMMDD '
-          '"yh||hs|ft" img cash'.format(sys.argv[0]))
+    print('Usage: {} --currency="rmb||hkd|usd" --exchange_rate=float --date=%y%m%d '
+          '"yh||hs|ft" png|csv balance'.format(sys.argv[0]))
     sys.exit(1)
 
 
@@ -67,15 +69,19 @@ def get_options() -> dict:
 
     if args[0] not in ['yh', 'hs', 'ft']:
         usage_exit()
-    dic = {'platform': args[0], 'image': args[1], 'cash': float(args[2]), 'currency': 'rmb', 'exchange_rate': 1,
-           'date': datetime.now()}
+    dic = {'platform': args[0],
+           'datafile': args[1],
+           'cash': float(args[2]),
+           'currency': 'rmb',
+           'exchange_rate': 1,
+           'date': datetime.now().strftime('%y%m%d')}
     for opt, var in opts:
         if opt == '--currency' and var in ['rmb', 'hkd', 'usd']:
             dic['currency'] = var
         elif opt == '--exchange_rate':
             dic['exchange_rate'] = float(var)
         elif opt == '--date':
-            dic['date'] = datetime.strptime(var, '%y%m%d')
+            dic['date'] = var
     return dic
 
 
@@ -91,6 +97,7 @@ def recognize_image(image_name: str) -> str:
 
 
 def my_float(s: str, a: int) -> float:
+    s = re.sub(',', '', s)
     if '.' not in s:
         s = s[: a] + '.' + s[a:]
     return float(s)
@@ -131,7 +138,8 @@ def verify(result: list):
                 print('hold_gain failed {} {}'.format(i, (i['nav'] - i['cost']) * i['volume']))
 
 
-def yinhe(text: str, cash: float, currency: str, exchange_rate: float, date: datetime) -> list:
+def yinhe(image_file: str, cash: float, currency: str, exchange_rate: float, date: datetime) -> list:
+    text = recognize_image(image_file)
     # print(text)
     dic = {
         'platform': '银河',
@@ -174,7 +182,7 @@ def yinhe(text: str, cash: float, currency: str, exchange_rate: float, date: dat
     return result
 
 
-def huasheng(text: str, cash: float, currency: str, exchange_rate: float, date: datetime) -> list:
+def huasheng(image_file: str, cash: float, currency: str, exchange_rate: float, date: datetime) -> list:
     dic = {
         'platform': '华盛' + currency.upper(),
         'currency': currency,
@@ -189,6 +197,9 @@ def huasheng(text: str, cash: float, currency: str, exchange_rate: float, date: 
         'hg_rmb': 0,
         'nav': 1}
     result = [dic.copy()]
+
+    text = recognize_image(image_file)
+    # print(text)
     for line in text.split('\n'):
         if line:
             line = re.sub('[,‘]', '', line)
@@ -218,12 +229,58 @@ def huasheng(text: str, cash: float, currency: str, exchange_rate: float, date: 
     return result
 
 
+def futu(csv_file: str, cash: float, currency: str, exchange_rate: float, date: datetime) -> list:
+    dic = {
+        'platform': '富途' + currency.upper(),
+        'currency': currency,
+        'exchange_rate': exchange_rate,
+        'date': date,
+        'code': 'cash',
+        'name': '现金',
+        'risk': 0,
+        'hold_gain': 0,
+        'market_value': cash,
+        'mv_rmb': round(cash * exchange_rate, 2),
+        'hg_rmb': 0,
+        'nav': 1}
+    result = [dic.copy()]
+    try:
+        with open(csv_file) as f:
+            reader = csv.reader(f, delimiter='\t')
+            rows = list(reader)
+            rows.pop(0)
+            for row in rows:
+                dic = {
+                    'platform': '富途' + currency.upper(),
+                    'currency': currency,
+                    'exchange_rate': exchange_rate,
+                    'date': date,
+                    'code': row[1],
+                    'name': row[2],
+                    'risk': 3,
+                    'volume': int(row[3].split('@')[0]),
+                    'market_value': my_float(row[5], -2),
+                    'hold_gain': my_float(row[7], -2),
+                    'mv_rmb': round(my_float(row[5], -2) * exchange_rate, 2),
+                    'hg_rmb': round(my_float(row[7], -2) * exchange_rate, 2),
+                    'cost': my_float(row[6], -4),
+                    'nav': my_float(row[3].split('@')[1], -4)}
+                result.append(dic.copy())
+    except FileNotFoundError as e:
+        print(e)
+
+    return result
+
+
 def main():
-    platforms = {'yh': yinhe, 'hs': huasheng}
+    platforms = {'yh': yinhe, 'hs': huasheng, 'ft': futu}
     options = get_options()
-    text = recognize_image(options['image'])
-    result = platforms[options['platform']](text, options['cash'], options['currency'], options['exchange_rate'],
-                                            options['date'])
+
+    result = platforms[options['platform']](options['datafile'],
+                                            options['cash'],
+                                            options['currency'],
+                                            options['exchange_rate'],
+                                            datetime.strptime(options['date'], '%y%m%d'))
     verify(result)
     # pprint(result)
     print(len(result))
