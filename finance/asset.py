@@ -14,7 +14,7 @@ from save_to import save_to_spreadsheet, save_to_mongo
 
 
 def usage_exit():
-    print('Usage: {} --currency="rmb||hkd|usd" --exchange_rate=float --date=%y%m%d '
+    print('Usage: {} --currency="rmb||hkd|usd" --exchange_rate=float --date=%y%m%d --spreadsheet '
           '"zsb|hsb|yh||hs|ft" png|csv balance'.format(sys.argv[0]))
     sys.exit(1)
 
@@ -22,7 +22,7 @@ def usage_exit():
 def get_options(platforms: list) -> dict:
     opts = args = []
     try:
-        opts, args = getopt.getopt(sys.argv[1:], '', ['currency=', 'exchange_rate=', 'date='])
+        opts, args = getopt.getopt(sys.argv[1:], '', ['currency=', 'exchange_rate=', 'date=', 'spreadsheet='])
     except getopt.GetoptError as err:
         print(err)
         usage_exit()
@@ -44,6 +44,10 @@ def get_options(platforms: list) -> dict:
             dic['exchange_rate'] = float(var)
         elif opt == '--date':
             dic['date'] = var
+        elif opt == '--spreadsheet':
+            if not var.endswith('.xlsx'):
+                var += '.xlsx'
+            dic['spreadsheet'] = var
     return dic
 
 
@@ -143,7 +147,7 @@ def hangseng_bank(image_file: str, cash: float, currency: str, exchange_rate: fl
     text = recognize_image(image_file)
     text = re.sub('[,‘]', '', text)
     nums = re.findall(r'[-+]?\d*\.?\d+', text)
-    print(nums)
+    # print(nums)
     total_mv = float(nums.pop(0))
     total_hg = float(nums.pop(0))
     transit = float(nums.pop(0))
@@ -269,10 +273,10 @@ def huasheng(image_file: str, cash: float, currency: str, exchange_rate: float, 
                         'name': stocks[items[0]][0],
                         'risk': stocks[items[0]][1],
                         'volume': int(items[1]),
-                        'market_value': float(items[7]),
-                        'hold_gain': float(items[3]),
-                        'cost': float(items[5]),
-                        'nav': float(items[6])}
+                        'market_value': my_float(items[7], -2),
+                        'hold_gain': my_float(items[3], -3 if currency == 'hkd' else -2),
+                        'cost': my_float(items[5], -3 if currency == 'hkd' else -2),
+                        'nav': my_float(items[6], -3 if currency == 'hkd' else -2)}
                     result.append(dic.copy())
     fill_values('华盛' + currency.upper(), currency, exchange_rate, date, result)
     assert len(result) == len(stocks) + 1, print("result({}) != stocks({})".format(len(result), len(stocks) + 1))
@@ -322,11 +326,11 @@ def main():
                                             options['currency'],
                                             options['exchange_rate'],
                                             datetime.strptime(options['date'], '%y%m%d'))
-    # verify(result)
-    pprint(result)
-    print(len(result))
+    # pprint(result)
+    print('{}: {} records'.format(options['platform'], len(result)))
 
-    save_to_spreadsheet('finance.xlsx', options['date'], result)
+    if 'spreadsheet' in options:
+        save_to_spreadsheet(options['spreadsheet'], options['date'], result)
     # save_to_mongo('mystocks', result)
 
 
