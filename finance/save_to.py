@@ -19,7 +19,7 @@ def save_to_spreadsheet(filename: str, sheet_name: str, result: list):
         sheet = wb.active
         sheet.title = sheet_name
     except KeyError:
-        wb.create_sheet(title=sheet_name)
+        sheet = wb.create_sheet(title=sheet_name)
 
     row = sheet.max_row
     if row == 1:
