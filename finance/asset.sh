@@ -7,6 +7,7 @@ exit 0;
 }
 
 
+## main
 [ $# -eq 0 ] && usage
 while getopts ":b:c:d:e:f:p:" arg; do
   case $arg in
@@ -20,15 +21,13 @@ while getopts ":b:c:d:e:f:p:" arg; do
       ;;
     d) # date (%y%m%d)
       date=${OPTARG}
-      # options="$options --date=${OPTARG}"
       ;;
     e) # exchange_rate (float)
       # exchange_rate=${OPTARG}
       options="$options --exchange_rate=${OPTARG}"
       ;;
-    p) # platform ("zsb" | "hsb" | "yh" | "hs" | "ft")
+    p) # platform ("zsb" | "hsb" | "yh" | "hs" | "ft" | 'dj" | "ths")
       platform=${OPTARG}
-      # options="$options --platform=${OPTARG}"
       ;;
     h | *) # Display help.
       usage
