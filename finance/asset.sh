@@ -8,9 +8,15 @@ exit 0;
 
 
 ## main
+
+log=${0%.sh}.log
+
 [ $# -eq 0 ] && usage
-while getopts ":b:c:d:e:f:p:" arg; do
+while getopts ":a:b:c:d:e:f:p:" arg; do
   case $arg in
+    a) # run asset.log ("0" | "1")
+      to_spreadsheet=${OPTARG}
+      ;;
     b) # balance (float)
       balance=${OPTARG}
       options="$options --balance=${OPTARG}"
@@ -36,6 +42,19 @@ while getopts ":b:c:d:e:f:p:" arg; do
   esac
 done
 
+if [ ${to_spreadsheet+x} ]; then
+  if [ $to_spreadsheet = "1" ]; then
+    echo "run $log.$$"
+    sed 's/\(asset.py\)/\1 --spreadsheet=asset/g' $log > $$.log
+    . $$.log
+    rm $$.log
+  else
+    echo "run $log"
+    . $log
+  fi
+  exit 0
+fi
+
 if [ -z ${date+x} ] || [ -z ${platform+x} ]; then
   echo "date, platform are both mandatory"
   exit 1
@@ -49,10 +68,10 @@ elif [ $platform = "ft" ]; then
     datafile=$date/${platform}_$balance
     echo $datafile
     if [ ! -f $datafile.csv ]; then
-      cp -p ~/Desktop/"`ls -lrt ~/Desktop/*.csv | tail -1 | awk -F/ '{print $NF}'`" tmp.csv
-      file -I tmp.csv
-      iconv -f UTF-16LE -t utf-8 < tmp.csv > $datafile.csv
-      rm tmp.csv
+      cp -p ~/Desktop/"`ls -lrt ~/Desktop/*.csv | tail -1 | awk -F/ '{print $NF}'`" $$.csv
+      file -I $$.csv
+      iconv -f UTF-16LE -t utf-8 < $$.csv > $datafile.csv
+      rm $$.csv
     fi
     options="--datafile=$datafile.csv $options $platform $date"
   else
@@ -69,6 +88,5 @@ else
   options="--datafile=$datafile.txt $options $platform $date"
 fi
 
-echo "asset.py $options" >> asset.log
+echo "asset.py $options" >> $log
 # asset.py $options
-# sh asset.log
