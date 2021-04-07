@@ -83,7 +83,7 @@ def save_to_spreadsheet(filename: str, sheet_name: str, result: list):
 
 def good_prices(codes: list, stat_date: str, date: str) -> list:
     df = get_price(codes, count=1, end_date=date, frequency='daily', fields=['close'], panel=False)
-    df2 = get_fundamentals(query(valuation).filter(indicator.code.in_(codes)), statDate=stat_date)
+    df2 = get_fundamentals(query(valuation).filter(indicator.code.in_(codes)))  # using current value
     df3 = get_fundamentals(query(income).filter(income.code.in_(codes)), statDate=stat_date)
     df.index = df['code']
     df2.index = df2['code']

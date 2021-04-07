@@ -139,9 +139,12 @@ def zhaoshang_bank(datafile: str, cash: float, currency: str, exchange_rate: flo
 
 def hangseng_bank(datafile: str, cash: float, currency: str, exchange_rate: float, date: datetime) -> list:
     stocks = {
+        '000595': ('嘉实泰和混合', 3),
+        '001974': ('景顺长城量化新动力股票', 3),
+        '002001': ('华夏回报混合', 3),
+        '008407': ('前海恒生沪深港通细分行业龙头', 3),
         '540003': ('汇丰晋信动态策略混合', 3),
         '540006': ('汇丰晋信大盘股票', 3),
-        '008407': ('前海恒生沪深港通细分行业龙头', 3),
     }
     result = [{'code': 'cash', 'name': '现金', 'risk': 0, 'market_value': cash, 'hold_gain': 0}]
     with open(datafile) as f:
