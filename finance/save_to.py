@@ -9,7 +9,7 @@ from pymongo import MongoClient
 
 def save_to_spreadsheet(filename: str, sheet_name: str, result: list):
     titles = ['platform', 'currency', 'code', 'name', 'risk', 'market_value', 'hold_gain',
-              'mv_rmb', 'hg_rmb']
+              'mv_rmb', 'hg_rmb', 'gain_rate']
 
     try:
         wb = openpyxl.load_workbook(filename)
@@ -52,6 +52,10 @@ def save_to_spreadsheet(filename: str, sheet_name: str, result: list):
             c = sheet.cell(row=row+i+2, column=j+1)
             c.number_format = "#,##,0.00"
             c.value = result[i]['hold_gain']
+        j = titles.index('gain_rate')
+        c = sheet.cell(row=row+i+2, column=j+1)
+        c.number_format = "0.00%"
+        c.value = result[i]['hold_gain'] / (result[i]['market_value'] - result[i]['hold_gain'])
     wb.save(filename)
 
 
