@@ -12,7 +12,7 @@ exit 0;
 log=${0%.sh}.log
 
 [ $# -eq 0 ] && usage
-while getopts ":a:b:c:d:e:f:p:" arg; do
+while getopts "a:b:c:d:e:f:hp:" arg; do
   case $arg in
     a) # run asset.log ("0" | "1")
       to_spreadsheet=${OPTARG}

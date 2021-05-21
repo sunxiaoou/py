@@ -142,7 +142,7 @@ def hangseng_bank(datafile: str, cash: float, currency: str, exchange_rate: floa
         '000595': ('嘉实泰和混合', 3),
         '001974': ('景顺长城量化新动力股票', 3),
         '002001': ('华夏回报混合', 3),
-        '008407': ('前海恒生沪深港通细分行业龙头', 3),
+        '377240': ('上投摩根新兴动力混合', 3),
         '540003': ('汇丰晋信动态策略混合', 3),
         '540006': ('汇丰晋信大盘股票', 3),
     }
@@ -156,7 +156,7 @@ def hangseng_bank(datafile: str, cash: float, currency: str, exchange_rate: floa
         total_hg = float(nums.pop(0))
         transit = float(nums.pop(0))
         qu, rem = divmod(len(nums), 5)
-        assert(rem == 0), print('nums({}} % 5 !== 0'.format(len(nums)))
+        assert(rem == 0), print('nums({}) % 5 !== 0'.format(len(nums)))
         for i in range(qu):
             code = nums[i * 5]
             dic = {
@@ -322,6 +322,7 @@ def danjuan(plan='') -> list:
         '001810': 3,    # 中欧潜力价值混合
         '004069': 2,    # 南方中证全指证券联接A
         '005259': 3,    # 建信龙头企业股票
+        '006228': 3,    # 中欧医疗创新股票A
         '006327': 2,    # 易方达中概互联50ETF联接人民币A
         '110011': 3,    # 易方达中小盘混合
         '161128': 2,    # 易方达标普信息科技
