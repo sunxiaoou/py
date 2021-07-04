@@ -126,8 +126,9 @@ def zhaoshang_bank(datafile: str, cash: float, currency: str, exchange_rate: flo
     # print(amounts)
     amounts = [float(i) for i in amounts]
     result += [
-        {'name': '招赢尊享日日盈', 'risk': 0, 'market_value': amounts[1], 'hold_gain': amounts[2]},
-        {'name': '招赢尊享日日盈', 'risk': 0, 'market_value': amounts[3], 'hold_gain': amounts[4]},
+        {'name': '尊享日日盈', 'risk': 0, 'market_value': amounts[1], 'hold_gain': amounts[2]},
+        {'name': '尊享日日盈', 'risk': 0, 'market_value': amounts[3], 'hold_gain': amounts[4]},
+        # {'name': '招赢日日盈', 'risk': 0, 'market_value': amounts[5], 'hold_gain': amounts[6]},
         {'name': '睿远平衡二十七期', 'risk': 1, 'market_value': amounts[5], 'hold_gain': amounts[6]},
         {'name': '卓远一年半定开8号', 'risk': 1, 'market_value': amounts[7], 'hold_gain': amounts[8]}]
     fill_values('招商银行', currency, exchange_rate, date, result)
@@ -142,9 +143,9 @@ def hangseng_bank(datafile: str, cash: float, currency: str, exchange_rate: floa
         '000595': ('嘉实泰和混合', 3),
         '001974': ('景顺长城量化新动力股票', 3),
         '002001': ('华夏回报混合', 3),
+        '005267': ('嘉实价值精选股票', 3),
         '377240': ('上投摩根新兴动力混合', 3),
-        '540003': ('汇丰晋信动态策略混合', 3),
-        '540006': ('汇丰晋信大盘股票', 3),
+        '540003': ('汇丰晋信动态策略混合', 3)
     }
     result = [{'code': 'cash', 'name': '现金', 'risk': 0, 'market_value': cash, 'hold_gain': 0}]
     with open(datafile) as f:
@@ -183,43 +184,55 @@ def hangseng_bank(datafile: str, cash: float, currency: str, exchange_rate: floa
 def yinhe(datafile: str, cash: float, currency: str, exchange_rate: float, date: datetime) -> list:
     stocks = {
         '000858': ('五粮液', 3),
+        '110080': ('东湖转债', 2),
+        '113033': ('利群转债', 2),
+        '127018': ('本钢转债', 2),
+        '128085': ('鸿达转债', 2),
+        '128127': ('文科转债', 2),
         '501046': ('财通福鑫', 3),
         '512170': ('医疗ETF', 2),
-        '515170': ('食品饮料', 2),
         '600009': ('上海机场', 3),
         '600036': ('招商银行', 3),
         '600309': ('万华化学', 3)
     }
 
-    dic = {
-        'code': 'cash',
-        'name': '现金',
-        'risk': 0,
-        'market_value': cash,
-        'hold_gain': 0,
-        'nav': 1}
-    result = [dic.copy()]
-
+    result = [{'code': 'cash', 'name': '现金', 'risk': 0, 'market_value': cash, 'hold_gain': 0}]
     with open(datafile) as f:
-        for line in f.readlines():
-            line = re.sub('[,‘]', '', line)
-            items = re.findall('[-+]?\d*\.?\d+', line)
-            # print(items)
-            if len(items) == 8:
-                if items[0] not in stocks:
-                    items[0] = get_closest_code(items[0], list(stocks.keys()))
-                dic = {
-                    'code': items[0],
-                    'name': stocks[items[0]][0],
-                    'risk': stocks[items[0]][1],
-                    'volume': int(items[1]),
-                    'market_value': my_float(items[5], -2),
-                    'hold_gain': my_float(items[2], -2),
-                    'nav': my_float(items[6], -3),
-                    'cost': my_float(items[7], -3)}
-                result.append(dic.copy())
+        text = f.read()
+        text = re.sub('[,‘]', '', text)
+        nums = re.findall(r'[-+]?\d*\.?\d+', text)
+        # print(nums)
+        nums.pop(0)
+        total_mv = float(nums.pop(0))
+        total_hg = float(nums.pop(0))
+        nums.pop(0)
+        nums.pop(0)
+        qu, rem = divmod(len(nums), 8)
+        assert(rem == 0), print('nums({}) % 5 !== 0'.format(len(nums)))
+        for i in range(qu):
+            code = nums[i * 8]
+            dic = {
+                'code': code,
+                'name': stocks[code][0],
+                'risk': stocks[code][1],
+                'market_value': float(nums[i * 8 + 4]),
+                'hold_gain': float(nums[i * 8 + 1]),
+                'volume': int(nums[i * 8 + 2]),
+                'nav': float(nums[i * 8 + 7]),
+                'cost': float(nums[i * 8 + 3])}
+            """
+            hg = round((dic['market_value'] - dic['hold_gain']) * float(nums[i * 5 + 2]) / 100)
+            if hg != round(dic['hold_gain']):
+               print('hold_gain failed {} {}'.format(hg, dic['hold_gain']))
+            """
+            result.append(dic.copy())
+
     fill_values('银河', currency, exchange_rate, date, result)
     assert len(result) == len(stocks) + 1, print("result({}) != stocks({})".format(len(result), len(stocks) + 1))
+    sum_mv = round(sum([i['market_value'] for i in result[1:]]), 2)
+    assert sum_mv == total_mv, print("sum_mv({}) != total_mv({})".format(sum_mv, total_mv))
+    sum_hg = round(sum([i['hold_gain'] for i in result[1:]]), 2)
+    assert sum_hg == total_hg, print("sum_hg({}) != total_hg({})".format(sum_hg, total_hg))
     verify(result)
     return result
 
