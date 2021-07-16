@@ -184,10 +184,26 @@ def hangseng_bank(datafile: str, cash: float, currency: str, exchange_rate: floa
 def yinhe(datafile: str, cash: float, currency: str, exchange_rate: float, date: datetime) -> list:
     stocks = {
         '000858': ('五粮液', 3),
+        '072833': ('弘亚发债', 2),
         '110080': ('东湖转债', 2),
+        '113027': ('华钰转债', 2),
         '113033': ('利群转债', 2),
+        '113036': ('宁建转债', 2),
+        '113570': ('百达转债', 2),
+        '113576': ('起步转债', 2),
+        '113578': ('全筑转债', 2),
+        '113591': ('胜达转债', 2),
+        '113601': ('塞力转债', 2),
+        '113624': ('正川转债', 2),
+        '123023': ('迪森转债', 2),
+        '123088': ('威唐转债', 2),
         '127018': ('本钢转债', 2),
+        '127027': ('靖远转债', 2),
+        '127034': ('绿茵转债', 2),
+        '128013': ('洪涛转债', 2),
+        '128066': ('亚泰转债', 2),
         '128085': ('鸿达转债', 2),
+        '128087': ('孚日转债', 2),
         '128127': ('文科转债', 2),
         '501046': ('财通福鑫', 3),
         '512170': ('医疗ETF', 2),
@@ -208,7 +224,7 @@ def yinhe(datafile: str, cash: float, currency: str, exchange_rate: float, date:
         nums.pop(0)
         nums.pop(0)
         qu, rem = divmod(len(nums), 8)
-        assert(rem == 0), print('nums({}) % 5 !== 0'.format(len(nums)))
+        assert(rem == 0), print('nums({}) % 8 !== 0'.format(len(nums)))
         for i in range(qu):
             code = nums[i * 8]
             dic = {
@@ -250,8 +266,6 @@ def huasheng(datafile: str, cash: float, currency: str, exchange_rate: float, da
     us_stocks = {
         'AAPL': ('苹果', 3),
         'AMZN': ('亚马逊', 3),
-        'ARKG': ('ARK Genomic ETF', 3),
-        'ARKK': ('ARK Innovation ETF', 3),
         'ARKW': ('ARK Web x.0 ETF', 3),
         'BABA': ('阿里巴巴', 3),
         'BILI': ('哔哩哔哩', 3),

@@ -6,6 +6,17 @@ echo "$0 usage:" && grep " .)\ #" $0;
 exit 0;
 }
 
+get_friday()
+{
+for i in {0..6}
+do
+  date=`date -v -${i}d | grep Fri`
+  if [[ ! -z $date ]]; then
+    break
+  fi
+done
+date=`date -v -${i}d +"%y%m%d"`
+}
 
 ## main
 
@@ -53,6 +64,11 @@ if [ ${to_spreadsheet+x} ]; then
     . $log
   fi
   exit 0
+fi
+
+if [ -z ${date+x} ]; then
+  get_friday
+  # echo $date
 fi
 
 if [ -z ${date+x} ] || [ -z ${platform+x} ]; then
