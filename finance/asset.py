@@ -126,11 +126,11 @@ def zhaoshang_bank(datafile: str, cash: float, currency: str, exchange_rate: flo
     # print(amounts)
     amounts = [float(i) for i in amounts]
     result += [
-        {'name': '尊享日日盈', 'risk': 0, 'market_value': amounts[1], 'hold_gain': amounts[2]},
-        {'name': '尊享日日盈', 'risk': 0, 'market_value': amounts[3], 'hold_gain': amounts[4]},
+        # {'name': '尊享日日盈', 'risk': 0, 'market_value': amounts[1], 'hold_gain': amounts[2]},
+        # {'name': '尊享日日盈', 'risk': 0, 'market_value': amounts[3], 'hold_gain': amounts[4]},
         # {'name': '招赢日日盈', 'risk': 0, 'market_value': amounts[5], 'hold_gain': amounts[6]},
-        {'name': '睿远平衡二十七期', 'risk': 1, 'market_value': amounts[5], 'hold_gain': amounts[6]},
-        {'name': '卓远一年半定开8号', 'risk': 1, 'market_value': amounts[7], 'hold_gain': amounts[8]}]
+        {'name': '睿远平衡二十七期', 'risk': 1, 'market_value': amounts[1], 'hold_gain': amounts[2]},
+        {'name': '卓远一年半定开8号', 'risk': 1, 'market_value': amounts[3], 'hold_gain': amounts[4]}]
     fill_values('招商银行', currency, exchange_rate, date, result)
     # verify result
     summary = round(sum([i['market_value'] for i in result[1:]]), 2)
@@ -141,11 +141,11 @@ def zhaoshang_bank(datafile: str, cash: float, currency: str, exchange_rate: flo
 def hangseng_bank(datafile: str, cash: float, currency: str, exchange_rate: float, date: datetime) -> list:
     stocks = {
         '000595': ('嘉实泰和混合', 3),
-        '001974': ('景顺长城量化新动力股票', 3),
+        '001974': ('景顺长城量化新动力股票', 2),
         '002001': ('华夏回报混合', 3),
-        '005267': ('嘉实价值精选股票', 3),
+        '005267': ('嘉实价值精选股票', 2),
         '377240': ('上投摩根新兴动力混合', 3),
-        '540003': ('汇丰晋信动态策略混合', 3)
+        '540003': ('汇丰晋信动态策略混合', 2)
     }
     result = [{'code': 'cash', 'name': '现金', 'risk': 0, 'market_value': cash, 'hold_gain': 0}]
     with open(datafile) as f:
@@ -184,32 +184,39 @@ def hangseng_bank(datafile: str, cash: float, currency: str, exchange_rate: floa
 def yinhe(datafile: str, cash: float, currency: str, exchange_rate: float, date: datetime) -> list:
     stocks = {
         '000858': ('五粮液', 3),
-        '072833': ('弘亚发债', 2),
-        '110080': ('东湖转债', 2),
+        '110033': ('国贸转债', 2),
+        '110070': ('凌钢转债', 2),
+        '113009': ('广汽转债', 2),
         '113027': ('华钰转债', 2),
         '113033': ('利群转债', 2),
-        '113036': ('宁建转债', 2),
+        '113504': ('艾华转债', 2),
+        '113525': ('台华转债', 2),
+        '113536': ('三星转债', 2),
+        '113541': ('荣晟转债', 2),
+        '113561': ('正裕转债', 2),
+        '113565': ('宏辉转债', 2),
+        '113567': ('君禾转债', 2),
         '113570': ('百达转债', 2),
-        '113576': ('起步转债', 2),
-        '113578': ('全筑转债', 2),
-        '113591': ('胜达转债', 2),
-        '113601': ('塞力转债', 2),
-        '113624': ('正川转债', 2),
-        '123023': ('迪森转债', 2),
-        '123088': ('威唐转债', 2),
-        '127018': ('本钢转债', 2),
-        '127027': ('靖远转债', 2),
-        '127034': ('绿茵转债', 2),
+        '113577': ('春秋转债', 2),
+        '113585': ('寿仙转债', 2),
+        '113610': ('灵康转债', 2),
+        '123012': ('万顺转债', 2),
+        '123024': ('岱勒转债', 2),
+        '123052': ('飞鹿转债', 2),
+        '123062': ('三超转债', 2),
+        '123080': ('海波转债', 2),
         '128013': ('洪涛转债', 2),
+        '128040': ('华通转债', 2),
+        '128057': ('博彦转债', 2),
         '128066': ('亚泰转债', 2),
         '128085': ('鸿达转债', 2),
         '128087': ('孚日转债', 2),
+        '128094': ('星帅转债', 2),
+        '128100': ('搜特转债', 2),
         '128127': ('文科转债', 2),
-        '501046': ('财通福鑫', 3),
-        '512170': ('医疗ETF', 2),
+        '501046': ('财通福鑫', 2),
+        '512170': ('医疗ETF', 3),
         '600009': ('上海机场', 3),
-        '600036': ('招商银行', 3),
-        '600309': ('万华化学', 3)
     }
 
     result = [{'code': 'cash', 'name': '现金', 'risk': 0, 'market_value': cash, 'hold_gain': 0}]
@@ -244,7 +251,7 @@ def yinhe(datafile: str, cash: float, currency: str, exchange_rate: float, date:
             result.append(dic.copy())
 
     fill_values('银河', currency, exchange_rate, date, result)
-    assert len(result) == len(stocks) + 1, print("result({}) != stocks({})".format(len(result), len(stocks) + 1))
+    # assert len(result) == len(stocks) + 1, print("result({}) != stocks({})".format(len(result), len(stocks) + 1))
     sum_mv = round(sum([i['market_value'] for i in result[1:]]), 2)
     assert sum_mv == total_mv, print("sum_mv({}) != total_mv({})".format(sum_mv, total_mv))
     sum_hg = round(sum([i['hold_gain'] for i in result[1:]]), 2)
@@ -257,22 +264,20 @@ def huasheng(datafile: str, cash: float, currency: str, exchange_rate: float, da
     hk_stocks = {
         '00388': ('香港交易所', 3),
         '00700': ('腾讯控股', 3),
-        '02840': ('SPDR金ETF', 2),
-        '03033': ('南方恒生科技', 2),
+        '02015': ('理想汽车', 3),
+        '03033': ('南方恒生科技', 3),
         '03690': ('美团-W', 3),
-        '07200': ('FL二南方恒指', 2),
+        '07200': ('FL二南方恒指', 3),
         '09988': ('阿里巴巴-SW', 3),
     }
     us_stocks = {
         'AAPL': ('苹果', 3),
-        'AMZN': ('亚马逊', 3),
         'ARKW': ('ARK Web x.0 ETF', 3),
         'BABA': ('阿里巴巴', 3),
         'BILI': ('哔哩哔哩', 3),
         'GS':  ('高盛', 3),
         'MSFT': ('微软', 3),
         'PDD': ('拼多多', 3),
-        'SPY': ('标普500指数ETF', 2)
     }
     stocks = hk_stocks if currency == 'hkd' else us_stocks
 
@@ -346,13 +351,11 @@ def futu(csv_file: str, cash: float, currency: str, exchange_rate: float, date: 
 def danjuan(plan='') -> list:
     risks = {
         '000730': 0,    # 现金宝
-        '001810': 3,    # 中欧潜力价值混合
-        '004069': 2,    # 南方中证全指证券联接A
-        '005259': 3,    # 建信龙头企业股票
+        '004069': 3,    # 南方中证全指证券联接A
+        '005259': 2,    # 建信龙头企业股票
         '006228': 3,    # 中欧医疗创新股票A
-        '006327': 2,    # 易方达中概互联50ETF联接人民币A
+        '006327': 3,    # 易方达中概互联50ETF联接人民币A
         '110011': 3,    # 易方达中小盘混合
-        '161128': 2,    # 易方达标普信息科技
         '501050': 2,    # 华夏上证50AH优选指数（LOF）A
         'CSI1014': 1,   # 我要稳稳的幸福
         'CSI1019': 1    # 钉钉宝365天组合
@@ -405,7 +408,8 @@ def danjuan(plan='') -> list:
                         'hold_gain': i['hold_gain'],
                         'market_value': i['market_value'],
                         'platform': '蛋卷' + plan_code,
-                        'risk': 2 if plan_code == 'CSI666' else 3
+                        # 'risk': 2 if plan_code == 'CSI666' else 3
+                        'risk': 2
                     }
                     if dic['market_value']:
                         result.append(dic.copy())

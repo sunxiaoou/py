@@ -70,9 +70,10 @@ def is_number(s: str) -> bool:
 
 
 def parse(l: list) -> list:
+    date = l[3]
     valuations = []
     i = 0
-    while not l[i].startswith('202'):
+    while l[i] != date:
         i += 1
     while True:
         while l[i] != "场外代码":
@@ -90,7 +91,7 @@ def parse(l: list) -> list:
                 k = '中概互联'
             v = l[i]
             i += 1
-            if v.startswith('202'):
+            if v == date:
                 break
             valuations.append((k, float(v)))
             while is_number(l[i]):
@@ -136,20 +137,28 @@ def calculate_thresholds(vals: list) -> pd.DataFrame:
     df['距最低%'] = df.apply(lambda row: to_lowest(row), axis=1)
     df['距低估%'] = df.apply(lambda row: to_low(row), axis=1)
     df['距高估%'] = df.apply(lambda row: to_high(row), axis=1)
-    return df.sort_values(by=['距最低%', '距低估%', '距高估%'])
+    df = df.sort_values(by=['距最低%', '距低估%', '距高估%'])
+    return df.reset_index(drop=True)
 
 
 def main():
     if len(sys.argv) < 2:
-        print('Usage: {} file'.format(sys.argv[0]))
+        print('Usage: {} txt'.format(sys.argv[0]))
+        print('       {} txt xlsx'.format(sys.argv[0]))
         sys.exit(1)
 
     with open(sys.argv[1]) as fp:
         lines = [line.rstrip('%\n') for line in fp.readlines()]
 
-    df = calculate_thresholds(parse(lines))
-    print(df)
     date = lines[3]
+    df = calculate_thresholds(parse(lines))
+    df.rename(columns={'当日': date}, inplace=True)
+    print(df)
+
+    if len(sys.argv) > 2:
+        writer = pd.ExcelWriter(sys.argv[2])
+        df.to_excel(writer, date)
+        writer.save()
 
 
 if __name__ == "__main__":
