@@ -7,6 +7,7 @@ from pprint import pprint
 import pandas as pd
 import requests
 from forex_python.converter import CurrencyRates
+from openpyxl import load_workbook
 
 columns = ['platform', 'currency', 'code', 'name', 'risk', 'market_value', 'hold_gain']
 col2 = ['volume', 'nav', 'cost']
@@ -276,7 +277,7 @@ def danjuan(plan='') -> pd.DataFrame:
     return df
 
 
-def tonghs() -> list:
+def tonghs() -> pd.DataFrame:
     with open('auth/ths_cookie.txt', 'r') as f:
         cookie = f.read()[:-1]      # delete last '\n'
     url = 'https://trade.5ifund.com/pc_query/trade_queryIncomeWjZeroList.action?_=1615356614458'
@@ -309,9 +310,8 @@ def tonghs() -> list:
         hold_gain = float(i['totalprofitlossText'])
         risk = 5 - int(i['fundType'])
         result.append(('同花顺', 'rmb', code, name, risk, market_value, hold_gain))
-
-    # pprint(result)
-    return result
+    df = pd.DataFrame(result, columns=columns)
+    return df
 
 
 def run(file: str) -> pd.DataFrame:
@@ -365,21 +365,26 @@ def main():
         sys.exit(1)
 
     path = sys.argv[1]
-    if os.path.isfile(path):
+    if os.path.isfile(path) or path in ['dj', 'ths']:
         print(run(path))
         sys.exit(0)
 
     assert(os.path.isdir(path))
     frames = [run(os.path.join(path, file)) for file in os.listdir(path)]
     frames.append(danjuan())
+    frames.append(tonghs())
     df = pd.concat(frames)
     fill(df)
     if len(sys.argv) == 2:
         print(df)
-    else:
-        writer = pd.ExcelWriter(sys.argv[2])            # usually asset.xlsx
-        df.to_excel(writer, path, index=False)          # path = "yymmdd"
-        writer.save()
+        sys.exit(0)
+
+    book = load_workbook(sys.argv[2])
+    writer = pd.ExcelWriter(sys.argv[2], engine='openpyxl')
+    writer.book = book
+    writer.sheets = {worksheet.title: worksheet for worksheet in book.worksheets}
+    df.to_excel(writer, sheet_name=path, index=False)
+    writer.save()
 
 
 if __name__ == "__main__":
