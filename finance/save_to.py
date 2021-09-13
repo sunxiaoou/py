@@ -74,6 +74,12 @@ def summarize_amount(file: str, sheet_name: str):
     wb = openpyxl.load_workbook(file)
     sheet = wb[sheet_name]
     last_row = sheet.max_row
+    last_col = sheet.max_column
+
+    for i in range(2, last_row + 1):
+        for j in range(6, last_col):
+            sheet.cell(row=i, column=j).number_format = '#,##,0.00'
+        sheet.cell(row=i, column=last_col).number_format = '0.00%'
 
     summaries = [
         {'location': (last_row + 2, 1),
