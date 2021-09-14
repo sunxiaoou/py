@@ -4,6 +4,8 @@ import sys
 from pprint import pprint
 
 import pandas as pd
+from openpyxl import load_workbook
+from openpyxl.styles import PatternFill
 
 columns = ['名称', '代码', '参考指标', '低估', '高估', '最高', '最低']
 thresholds = [
@@ -105,7 +107,7 @@ def to_lowest(row: pd.Series) -> float:
             return None
     elif val > low:
         return None
-    return round((lowest - val) / (lowest - low), 4) * 100
+    return round((lowest - val) / (lowest - low), 4)
 
 
 def to_low(row: pd.Series) -> float:
@@ -115,7 +117,7 @@ def to_low(row: pd.Series) -> float:
             return None
     elif val <= low or val >= high:
         return None
-    return round((low - val) / (low - high), 4) * 100
+    return round((low - val) / (low - high), 4)
 
 
 def to_high(row: pd.Series) -> float:
@@ -125,7 +127,7 @@ def to_high(row: pd.Series) -> float:
             return None
     elif val < high:
         return None
-    return round((high - val) / (high - highest), 4) * 100
+    return round((high - val) / (high - highest), 4)
 
 
 def calculate_thresholds(vals: list) -> pd.DataFrame:
@@ -134,11 +136,41 @@ def calculate_thresholds(vals: list) -> pd.DataFrame:
     df2 = pd.DataFrame(vals, columns=['名称', '当日'])
     # print(df2)
     df = pd.merge(df, df2, on='名称')
-    df['距最低%'] = df.apply(lambda row: to_lowest(row), axis=1)
-    df['距低估%'] = df.apply(lambda row: to_low(row), axis=1)
-    df['距高估%'] = df.apply(lambda row: to_high(row), axis=1)
-    df = df.sort_values(by=['距最低%', '距低估%', '距高估%'])
+    df['距最低'] = df.apply(to_lowest, axis=1)
+    df['距低估'] = df.apply(to_low, axis=1)
+    df['距正常'] = df.apply(to_high, axis=1)
+    df = df.sort_values(by=['距最低', '距低估', '距正常'])
     return df.reset_index(drop=True)
+
+
+def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
+    wb = load_workbook(xlsx)
+    writer = pd.ExcelWriter(xlsx, engine='openpyxl')
+    writer.book = wb
+    writer.sheets = {worksheet.title: worksheet for worksheet in wb.worksheets}
+    df.to_excel(writer, sheet_name=sheet, index=False)
+    writer.save()
+
+    wb = load_workbook(xlsx)
+    ws = wb[sheet]
+    last_row = ws.max_row
+    last_col = ws.max_column
+    for i in range(2, last_row + 1):
+        for j in range(4, 9):
+            ws.cell(row=i, column=j).number_format = '#,##,0.00'
+        for j in range(9, last_col + 1):
+            ws.cell(row=i, column=j).number_format = '0.00%'
+
+    colors = ['99CC00', 'FFCC00', 'FF6600']
+    i = 1
+    for k in range(9, 12):
+        fill = PatternFill(patternType='solid', fgColor=colors[k - 9])
+        while ws.cell(row=i, column=k).value is not None:
+            for j in range(1, last_col + 1):
+                ws.cell(row=i, column=j).fill = fill
+            i += 1
+
+    wb.save(xlsx)
 
 
 def main():
@@ -156,9 +188,7 @@ def main():
     print(df)
 
     if len(sys.argv) > 2:
-        writer = pd.ExcelWriter(sys.argv[2])
-        df.to_excel(writer, date)
-        writer.save()
+        to_excel(sys.argv[2], date, df)
 
 
 if __name__ == "__main__":
