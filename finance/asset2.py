@@ -4,10 +4,13 @@ import re
 import sys
 from pprint import pprint
 
+import openpyxl
 import pandas as pd
 import requests
 from forex_python.converter import CurrencyRates
 from openpyxl import load_workbook
+from openpyxl.chart import PieChart, Reference
+from openpyxl.utils import get_column_letter
 
 columns = ['platform', 'currency', 'code', 'name', 'risk', 'market_value', 'hold_gain']
 col2 = ['volume', 'nav', 'cost']
@@ -358,6 +361,76 @@ def fill(df: pd.DataFrame):
     df['gain_rate'] = df.apply(gain_rate, axis=1)
 
 
+def to_execl(xlsx: str, sheet: str, df: pd.DataFrame):
+    try:
+        wb = load_workbook(xlsx)
+    except FileNotFoundError:
+        wb = openpyxl.Workbook()
+
+    writer = pd.ExcelWriter(xlsx, engine='openpyxl')
+    writer.book = wb
+    writer.sheets = {worksheet.title: worksheet for worksheet in wb.worksheets}
+    df.to_excel(writer, sheet_name=sheet, index=False)
+    writer.save()
+
+    ws = wb[sheet]
+    last_row = ws.max_row
+    last_col = ws.max_column
+
+    for i in range(2, last_row + 1):
+        for j in range(6, last_col):
+            ws.cell(row=i, column=j).number_format = '#,##,0.00'
+        ws.cell(row=i, column=last_col).number_format = '0.00%'
+
+    summaries = [
+        {'location': (last_row + 2, 1),
+         'letter': 'A',
+         'labels': ['招商银行', '恒生银行', '银河', '华盛*', '富途*', '蛋卷*', '同花顺'],
+         'category': 'platform',
+         'anchor': 'K1'},
+        {'location': (last_row + 2, 4),
+         'letter': 'B',
+         'labels': ['rmb', 'hkd', 'usd'],
+         'category': 'currency',
+         'anchor': 'K16'},
+        {'location': (last_row + 2, 7),
+         'letter': 'E',
+         'labels': [0, 1, 2, 3],
+         'category': 'risk',
+         'anchor': 'K31'}
+    ]
+
+    for summary in summaries:
+        row, col = summary['location']
+        le = [get_column_letter(j) for j in range(col, col + 3)]
+        for i in range(len(summary['labels'])):
+            ws.cell(row=row+i, column=col).value = summary['labels'][i]
+            c = ws.cell(row=row+i, column=col+1)
+            c.number_format = "#,##,0.00"
+            c.value = '=SUMIF(${0}$2:${0}${1},{2}{3},$H$2:$H${1})'.format(summary['letter'],
+                                                                          last_row, le[0], row + i)
+            c = ws.cell(row=row+i, column=col+2)
+            c.number_format = "#,##,0.00"
+            c.value = '=SUMIF(${0}$2:${0}${1},{2}{3},$I$2:$I${1})'.format(summary['letter'],
+                                                                          last_row, le[0], row + i)
+        ws.cell(row=row+i+1, column=col).value = 'sum'
+        c = ws.cell(row=row+i+1, column=col+1)
+        c.number_format = "#,##,0.00"
+        c.value = '=SUM({0}{1}:{0}{2})'.format(le[1], row, row + i)
+        c = ws.cell(row=row+i+1, column=col+2)
+        c.number_format = "#,##,0.00"
+        c.value = '=SUM({0}{1}:{0}{2})'.format(le[2], row, row + i)
+
+        pie = PieChart()
+        labels = Reference(ws, min_col=col, min_row=row, max_row=row+i)
+        data = Reference(ws, min_col=col+1, min_row=row-1, max_row=row+i)
+        pie.add_data(data, titles_from_data=True)
+        pie.set_categories(labels)
+        pie.title = summary['category']
+        ws.add_chart(pie, summary['anchor'])
+    wb.save(xlsx)
+
+
 def main():
     if len(sys.argv) < 2:
         print('Usage: {} txt'.format(sys.argv[0]))
@@ -379,12 +452,7 @@ def main():
         print(df)
         sys.exit(0)
 
-    book = load_workbook(sys.argv[2])
-    writer = pd.ExcelWriter(sys.argv[2], engine='openpyxl')
-    writer.book = book
-    writer.sheets = {worksheet.title: worksheet for worksheet in book.worksheets}
-    df.to_excel(writer, sheet_name=path, index=False)
-    writer.save()
+    to_execl(sys.argv[2], path, df)
 
 
 if __name__ == "__main__":
