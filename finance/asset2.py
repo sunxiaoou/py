@@ -38,7 +38,7 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
     while lines[i] != '理财产品':
         i += 1
     total_mv = float(lines[i + 1])
-    asset = cash + total_mv
+    asset = round(cash + total_mv, 2)
     i += 2
     while i < len(lines) and lines[i]:
         name = lines[i]
