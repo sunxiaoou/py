@@ -182,10 +182,14 @@ def to_highest2(row: pd.Series) -> float:
 
 def calculate_thresholds(vals: list) -> pd.DataFrame:
     df = pd.DataFrame(thresholds, columns=columns)
-    # print(df)
     df2 = pd.DataFrame(vals, columns=['名称', '当日'])
-    # print(df2)
-    df = pd.merge(df, df2, on='名称')
+    # print(len(df), len(df2))
+    # df = pd.merge(df, df2, on='名称', how='left', indicator=True)
+    # print(df[df['_merge'] == 'left_only'])
+    df = pd.merge(df, df2, on='名称', how='left')
+    nan = df[df['当日'].isna()]
+    assert len(nan) == 0, print(nan)
+
     df['距最低'] = df.apply(to_lowest, axis=1)     # to_lowest(), to_low(), to_high() are just for sort
     df['距低估'] = df.apply(to_low, axis=1)
     df['距高估'] = df.apply(to_high, axis=1)
