@@ -361,6 +361,21 @@ def fill(df: pd.DataFrame):
     df['gain_rate'] = df.apply(gain_rate, axis=1)
 
 
+def run_all(files: list) -> pd.DataFrame:
+    platforms = ['zsb_', 'hsb_', 'yh_', 'hs_', 'ft_']   # to sort files
+    fs = sorted(files)
+    frames = []
+    for p in platforms:
+        for f in fs:
+            if p in f:
+                frames.append(run(f))
+    frames.append(run('dj'))
+    frames.append(run('ths'))
+    df = pd.concat(frames)
+    fill(df)
+    return df
+
+
 def to_execl(xlsx: str, sheet: str, df: pd.DataFrame):
     try:
         wb = load_workbook(xlsx)
@@ -443,11 +458,8 @@ def main():
         sys.exit(0)
 
     assert(os.path.isdir(path))
-    frames = [run(os.path.join(path, file)) for file in os.listdir(path)]
-    frames.append(danjuan())
-    frames.append(tonghs())
-    df = pd.concat(frames)
-    fill(df)
+    df = run_all([os.path.join(path, file) for file in os.listdir(path)])
+
     if len(sys.argv) == 2:
         print(df)
         sys.exit(0)
