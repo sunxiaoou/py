@@ -83,11 +83,11 @@ def is_number(s: str) -> bool:
 
 
 def parse(l: list) -> list:
-    date = l[3]
-    valuations = []
     i = 0
-    while l[i] != date:
+    while re.match('20\d{6}', l[i]) is None:
         i += 1
+    valuations = [l[i]]     # first element is date
+    i += 1
     while True:
         while l[i] != "场外代码":
             i += 1
@@ -106,7 +106,7 @@ def parse(l: list) -> list:
                 k = k.strip('（市销率）')
             v = l[i]
             i += 1
-            if v == date:
+            if v == valuations[0]:
                 break
             valuations.append((k, float(v)))
             while is_number(l[i]):
@@ -114,7 +114,7 @@ def parse(l: list) -> list:
 
 
 def to_lowest(row: pd.Series) -> float:
-    val, lowest, low = row['当日'], row['最低'], row['低估']
+    val, lowest, low = row.iat[7], row['最低'], row['低估']
     if row['参考指标'] == '盈利收益率':
         if val < low:
             return None
@@ -124,7 +124,7 @@ def to_lowest(row: pd.Series) -> float:
 
 
 def to_lowest2(row: pd.Series) -> float:
-    val, lowest, low = row['当日'], row['最低'], row['低估']
+    val, lowest, low = row.iat[7], row['最低'], row['低估']
     if row['参考指标'] == '盈利收益率':
         if val < low:
             return None
@@ -135,7 +135,7 @@ def to_lowest2(row: pd.Series) -> float:
 
 
 def to_low(row: pd.Series) -> float:
-    val, low, high = row['当日'], row['低估'], row['高估']
+    val, low, high = row.iat[7], row['低估'], row['高估']
     if row['参考指标'] == '盈利收益率':
         if val >= low or val <= high:
             return None
@@ -145,7 +145,7 @@ def to_low(row: pd.Series) -> float:
 
 
 def to_low2(row: pd.Series) -> float:
-    val, low, high = row['当日'], row['低估'], row['高估']
+    val, low, high = row.iat[7], row['低估'], row['高估']
     if row['参考指标'] == '盈利收益率':
         if val <= high:
             return None
@@ -156,7 +156,7 @@ def to_low2(row: pd.Series) -> float:
 
 
 def to_high(row: pd.Series) -> float:
-    val, high, highest = row['当日'], row['高估'], row['最高']
+    val, high, highest = row.iat[7], row['高估'], row['最高']
     if row['参考指标'] == '盈利收益率':
         if val > high:
             return None
@@ -166,7 +166,7 @@ def to_high(row: pd.Series) -> float:
 
 
 def to_high2(row: pd.Series) -> float:
-    val, low, high = row['当日'], row['低估'], row['高估']
+    val, low, high = row.iat[7], row['低估'], row['高估']
     if row['参考指标'] == '盈利收益率':
         if val >= low:
             return None
@@ -177,7 +177,7 @@ def to_high2(row: pd.Series) -> float:
 
 
 def to_highest2(row: pd.Series) -> float:
-    val, high, highest = row['当日'], row['高估'], row['最高']
+    val, high, highest = row.iat[7], row['高估'], row['最高']
     if row['参考指标'] == '盈利收益率':
         if val >= high:
             return None
@@ -189,12 +189,13 @@ def to_highest2(row: pd.Series) -> float:
 
 def calculate_thresholds(vals: list) -> pd.DataFrame:
     df = pd.DataFrame(thresholds, columns=columns)
-    df2 = pd.DataFrame(vals, columns=['名称', '当日'])
+    date = vals.pop(0)
+    df2 = pd.DataFrame(vals, columns=['名称', date])
     # print(len(df), len(df2))
     # df = pd.merge(df, df2, on='名称', how='left', indicator=True)
     # print(df[df['_merge'] == 'left_only'])
     df = pd.merge(df, df2, on='名称', how='left')
-    nan = df[df['当日'].isna()]
+    nan = df[df[date].isna()]
     assert len(nan) == 0, print(nan)
 
     df['距最低'] = df.apply(to_lowest, axis=1)     # to_lowest(), to_low(), to_high() are just for sort
@@ -247,9 +248,8 @@ def main():
     with open(sys.argv[1]) as fp:
         lines = [line.rstrip('%\n') for line in fp.readlines()]
 
-    date = lines[3]
     df = calculate_thresholds(parse(lines))
-    df.rename(columns={'当日': date}, inplace=True)
+    date = list(df.keys())[7]
     print(df)
 
     if len(sys.argv) > 2:
