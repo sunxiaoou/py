@@ -82,34 +82,35 @@ def is_number(s: str) -> bool:
     return True
 
 
-def parse(l: list) -> list:
+def parse(lines: list, names: list) -> list:
     i = 0
-    while re.match('20\d{6}', l[i]) is None:
+    while re.match('20\d{6}', lines[i]) is None:
         i += 1
-    valuations = [l[i]]     # first element is date
+    valuations = [lines[i]]     # first element is date
     i += 1
     while True:
-        while l[i] != "场外代码":
+        while lines[i] != "场外代码":
             i += 1
         i += 1
         while True:
-            k = l[i]
+            k = lines[i]
             if k == '美股优秀行业进入绿色是进入到估值中枢以下':
                 return valuations
             i += 1
             if k == '市销率）':
                 continue
-            while not is_number(l[i]):
-                k += l[i]
+            while not is_number(lines[i]):
+                k += lines[i]
                 i += 1
             if k.endswith('（市销率）'):
                 k = k.strip('（市销率）')
-            v = l[i]
+            v = lines[i]
             i += 1
             if v == valuations[0]:
                 break
+            assert k in names, print(k)
             valuations.append((k, float(v)))
-            while is_number(l[i]):
+            while is_number(lines[i]):
                 i += 1
 
 
@@ -248,7 +249,8 @@ def main():
     with open(sys.argv[1]) as fp:
         lines = [line.rstrip('%\n') for line in fp.readlines()]
 
-    df = calculate_thresholds(parse(lines))
+    names = [t[1] for t in thresholds] + ['中证500', '消费50']      # same as '500增强' and '消费龙头'
+    df = calculate_thresholds(parse(lines, names))
     date = list(df.keys())[7]
     print(df)
 
