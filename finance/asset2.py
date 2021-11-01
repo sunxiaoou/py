@@ -62,7 +62,7 @@ def hangseng_bank(datafile: str) -> pd.DataFrame:
     while lines[i] != '总市值（元）':
         i += 1
     total_mv = float(lines[i + 1])
-    asset = cash + total_mv
+    asset = round(cash + total_mv, 2)
     total_hg = float(re.sub(r'[^-\d.]+', '', lines[i + 2]))
     i += 3
     # print(cash, total_mv, total_hg)
@@ -193,7 +193,7 @@ def futu(datafile: str) -> pd.DataFrame:
     asset = float(lines[i + 1])
     total_mv = float(lines[i + 11])
     total_hg = float(lines[i + 7])
-    cash = float(lines[i + 18])
+    cash = float(lines[i + 17])
     assert round(total_mv + cash, 2) == asset, \
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
     result = [('富途', currency, 'cash', '现金', 0, cash, 0)]
