@@ -124,12 +124,25 @@ def yinhe(datafile: str) -> pd.DataFrame:
         i += 1
         risk = 2 if code[0] == '1' else 3
         hold_gain = float(lines[i])
-        volume = int(lines[i + 1])
-        cost = float(lines[i + 2])
-        market_value = float(lines[i + 3])
-        nav = float(lines[i + 6])
+        i += 1
+        if ' ' in lines[i]:     # volume, cost are in same line
+            l = lines[i].split()
+            volume, cost = int(l[0]), float(l[1])
+            i += 1
+        else:
+            volume, cost = int(lines[i]), float(lines[i + 1])
+            i += 2
+        market_value = float(lines[i])
+        i += 2
+        if ' ' in lines[i]:
+            l = lines[i].split()
+            v2, nav = int(l[0]), float(l[1])
+            i += 1
+        else:
+            v2, nav = int(lines[i]), float(lines[i + 1])
+            i += 2
+        assert v2 == volume, print("v2{} != volume{}".format(v2, volume))
         result.append(('银河', 'rmb', code, name, risk, market_value, hold_gain, volume, nav, cost))
-        i += 7
     df = pd.DataFrame(result, columns=columns + col2)
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
