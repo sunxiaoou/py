@@ -204,13 +204,16 @@ def futu(datafile: str) -> pd.DataFrame:
         i += 1
     currency = 'hkd' if '港币' in lines[i] else 'usd'
     asset = float(lines[i + 1])
-    total_mv = float(lines[i + 11])
     total_hg = float(lines[i + 7])
-    cash = float(lines[i + 17])
+    total_mv = float(lines[i + 11])
+    i += 12
+    while not lines[i].startswith('冻结资金'):
+        i += 1
+    cash = float(lines[i + 1])
     assert round(total_mv + cash, 2) == asset, \
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
     result = [('富途', currency, 'cash', '现金', 0, cash, 0)]
-    i += 19
+    i += 2
     while not lines[i].startswith('持仓盈亏'):
         i += 1
     i += 2
