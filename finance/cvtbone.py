@@ -27,8 +27,8 @@ def get_radical_bones(xlsx: str) -> pd.DataFrame:
         code = str(ws.cell(row=i, column=col).value)
         name = ws.cell(row=i, column=col + 1).value
         nav = float(ws.cell(row=i, column=col + 3).value)
-        if nav < 170:
-            lst.append((rank, code, name, nav))
+        # if nav < 170:
+        lst.append((rank, code, name, nav))
     return pd.DataFrame(lst, columns=columns)
 
 
@@ -87,7 +87,8 @@ def main():
     print(inner2)
 
     to_buy = radical.append(inner).drop_duplicates(keep=False)
-    print('未持有的激进转债({})'.format(len(to_buy)))
+    to_buy = to_buy[to_buy['nav'] < 170]
+    print('未持有的<170的激进转债({})'.format(len(to_buy)))
     print(to_buy)
     to_buy2 = low2.append(inner2).drop_duplicates(keep=False)
     print('未持有的双低转债({})'.format(len(to_buy2)))
