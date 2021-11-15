@@ -15,6 +15,48 @@ from openpyxl.utils import get_column_letter
 columns = ['platform', 'currency', 'code', 'name', 'risk', 'market_value', 'hold_gain']
 col2 = ['volume', 'nav', 'cost']
 
+funds = {
+    "000730": ("博时现金宝", "货币", 0),
+    "000773": ("万家现金宝", "货币", 0),
+
+    "004868": ("交银股息优化", "混合", 2),
+    "000595": ("嘉实泰和", "混合", 2),
+    "001766": ("上投摩根医疗健康", "股票", 3),
+    "001810": ("中欧潜力价值", "混合", 2),
+    "001974": ("景顺长城量化新动力", "股票", 2),
+    "003095": ("中欧医疗健康A", "混合", 3),
+    "005259": ("建信龙头企业", "股票", 2),
+    "005267": ("嘉实价值精选", "股票", 2),
+    "005354": ("富国沪港深行业精选A", "混合", 2),
+    "006228": ("中欧医疗创新A", "股票", 3),
+    "110011": ("易方达优质精选", "混合", 2),
+    "161005": ("富国天惠成长", "混合", 2),
+    "163402": ("兴全趋势投资", "混合", 2),
+    "163406": ("兴全合润", "混合", 2),
+    "163415": ("兴全商业模式优选", "混合", 2),
+    "166002": ("中欧新蓝筹A", "混合", 2),
+    "169101": ("东方红睿丰", "混合", 2),
+    "377240": ("上投摩根新兴动力", "混合", 3),
+    "519035": ("富国天博创新", "混合", 2),
+    "519688": ("交银精选", "混合", 2),
+    "540003": ("汇丰晋信动态策略A", "混合", 2),
+
+    "001556": ("天弘中证500A", "指数", 2),
+    "001594": ("天弘中证银行A", "指数", 2),
+    "003318": ("景顺长城中证500低波动", "指数", 2),
+    "004069": ("南方中证全指证券", "指数", 2),
+    "006327": ("易方达中证海外50ETF联接", "指数", 3),
+    "090010": ("大成中证红利指数A", "指数", 2),
+    "110003": ("易方达上证50指数A", "指数", 2),
+    "163407": ("兴全沪深300A", "指数", 2),
+    "164906": ("交银中证海外中国互联网", "指数", 3),
+    "501009": ("汇添富中证生物科技", "指数", 3),
+    "501050": ("华夏上证50AH", "指数", 2),
+    "501090": ("华宝中证消费龙头", "指数", 2),
+    "519671": ("银河沪深300价值", "指数", 2),
+    "540012": ("汇丰晋信恒生A股龙头", "指数", 2)
+}
+
 
 def verify(row: pd.Series):
     mv = round(row['nav'] * row['volume'], 2)
@@ -71,11 +113,11 @@ def hangseng_bank(datafile: str) -> pd.DataFrame:
     i += 1
     while re.match(r'\d{6}.*', lines[i]):
         if len(lines[i]) == 6:
-            code, name = lines[i], lines[i + 1]
+            code = lines[i]
             i += 1
         else:
-            code, name = lines[i][: 6], lines[i][6:].lstrip()
-        risk = 3 if '医疗' in name else 2
+            code = lines[i][: 6]
+        name, _, risk = funds[code]
         i += 1
         hold_gain = float(lines[i])
         i += 6
@@ -142,6 +184,8 @@ def yinhe(datafile: str) -> pd.DataFrame:
             v2, nav = int(lines[i]), float(lines[i + 1])
             i += 2
         assert v2 == volume, print("v2{} != volume{}".format(v2, volume))
+        assert market_value == round(nav * volume, 2),\
+            print("mv({}) != nav({}) * volume({})".format(market_value, nav, volume))
         result.append(('银河', 'rmb', code, name, risk, market_value, hold_gain, volume, nav, cost))
     df = pd.DataFrame(result, columns=columns + col2)
     sum_mv = round(df['market_value'].sum(), 2)
@@ -216,7 +260,7 @@ def futu(datafile: str) -> pd.DataFrame:
     i += 2
     while not lines[i].startswith('持仓盈亏'):
         i += 1
-    i += 2
+    i += 1
     while len(lines) - i >= 7:
         code = lines[i + 4]
         name = lines[i]
@@ -233,18 +277,6 @@ def futu(datafile: str) -> pd.DataFrame:
 
 
 def danjuan(plan='') -> pd.DataFrame:
-    risks = {
-        '000730': 0,    # 现金宝
-        '004069': 3,    # 南方中证全指证券联接A
-        '005259': 2,    # 建信龙头企业股票
-        '006228': 3,    # 中欧医疗创新股票A
-        '006327': 3,    # 易方达中概互联50ETF联接人民币A
-        '110011': 3,    # 易方达中小盘混合
-        '501050': 2,    # 华夏上证50AH优选指数（LOF）A
-        'CSI1014': 1,   # 我要稳稳的幸福
-        'CSI1019': 1    # 钉钉宝365天组合
-    }
-
     with open('auth/dj_cookie.txt', 'r') as f:
         cookie = f.read()[:-1]      # delete last '\n'
     url = 'https://danjuanapp.com/djapi/holding/'
@@ -268,11 +300,11 @@ def danjuan(plan='') -> pd.DataFrame:
         for i in items:
             plan_code = i['plan_code']
             code = i['fd_code']
-            name = i['fd_name']
             market_value = float(i['market_value'])
             hold_gain = float(i['hold_gain'])
             if market_value:
-                result.append(('蛋卷' + plan_code, 'rmb', code, name, 2, market_value, hold_gain))
+                name, _, risk = funds[code]
+                result.append(('蛋卷' + plan_code, 'rmb', code, name, risk, market_value, hold_gain))
         return result   # return a list as a workaround
 
     asset = float(response.json()['data']['total_assets'])
@@ -281,13 +313,16 @@ def danjuan(plan='') -> pd.DataFrame:
     items = response.json()['data']['items']
     for i in items:
         code = i['fd_code']
-        name = i['fd_name']
-        market_value = float(i['market_value'])
-        hold_gain = float(i['hold_gain'])
-        if code not in ['CSI666', 'CSI1033']:
-            result.append(('蛋卷', 'rmb', code, name, risks[code], market_value, hold_gain))
-        else:
+        if code in ['CSI666', 'CSI1033']:       # 螺丝钉指数基金组合, 螺丝钉主动优选组合
             result.extend(danjuan(plan=code))
+        else:
+            if code in ['CSI1014', 'CSI1019']:  # 我要稳稳的幸福, 钉钉宝365天组合
+                name, risk = i['fd_name'], 1
+            else:
+                name, _, risk = funds[code]
+            market_value = float(i['market_value'])
+            hold_gain = float(i['hold_gain'])
+            result.append(('蛋卷', 'rmb', code, name, risk, market_value, hold_gain))
     df = pd.DataFrame(result, columns=columns)
     sum_mv = round(df['market_value'].sum(), 2)
     assert abs(sum_mv - asset) <= 1, print("sum_mv({}) != asset({})".format(sum_mv, asset))
@@ -315,19 +350,19 @@ def tonghs() -> pd.DataFrame:
     items = response.json()['singleData']['IncomeShareListResult']
     for i in items:
         code = i['fundCode']
-        name = i['fundName']
+        name, _, risk = funds[code]
         market_value = float(i['totalVol'])
         hold_gain = float(i['sumIncome'])
-        result.append(('同花顺', 'rmb', code, name, 0, market_value, hold_gain))
+        result.append(('同花顺', 'rmb', code, name, risk, market_value, hold_gain))
     response = requests.get(url2, headers=headers)
     assert response.status_code == 200, print('status_code({}) != 200'.format(response.status_code))
     items = response.json()['singleData']['currentShareList']
     for i in items:
         code = i['fundCode']
-        name = i['fundName']
+        name, _, risk = funds[code]
         market_value = float(i['currentValueText'])
         hold_gain = float(i['totalprofitlossText'])
-        risk = 5 - int(i['fundType'])
+        # risk = 5 - int(i['fundType'])
         result.append(('同花顺', 'rmb', code, name, risk, market_value, hold_gain))
     df = pd.DataFrame(result, columns=columns)
     return df
