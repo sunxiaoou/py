@@ -10,9 +10,8 @@ def clipboard2file(file: str):
         header = 'Cookie: '
         assert text.startswith(header), print(text[: len(header)])
         text = text.lstrip(header)
-    with open(file) as fp:
-        f = open(file, 'w')
-        f.write(text)
+    with open(file, 'w') as fp:
+        fp.write(text)
 
 
 def main():
