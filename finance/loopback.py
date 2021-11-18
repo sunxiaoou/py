@@ -1,10 +1,12 @@
 #! /usr/bin/python3
+import sys
 from datetime import date
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 import openpyxl
 import pandas as pd
-import akshare as ak    # 导入数据源
+import akshare as ak
 from openpyxl import load_workbook
 
 
@@ -21,12 +23,12 @@ def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
     writer.save()
 
 
-def hs300():
-    # hs300_pe_df = ak.stock_a_pe(market="000300.XSHG").iloc[-1708:]    # 获取沪深300的PE和收盘价数据
-    hs300_pe_df = ak.stock_a_pe(market="510310.XSHG").iloc[-1708:]    # 获取沪深300的PE和收盘价数据
-    print(hs300_pe_df)
-    hs300_pe_pct = hs300_pe_df[['middlePETTM','close']].rank(ascending=True, pct=True)*100    # 计算PE和收盘价的历史百分位
-    hs300_pe_pct.plot(figsize=(16, 8), grid=True,title='沪深300估值和价格百分位')    # 画图
+def get_index_name(code: str) -> str:
+    df = ak.stock_zh_index_spot()
+    print(df)
+    to_excel('loopback.xlsx', 'indexes', df)
+    i = df.loc[df['代码'] == code].index[0]
+    return df.at[i, '名称']
 
 
 def xirr(df: pd.DataFrame, date_column: str, amount_column: str) -> float:
@@ -50,34 +52,58 @@ def xirr(df: pd.DataFrame, date_column: str, amount_column: str) -> float:
     return guess - 1
 
 
-def loop_back(symbol: str, begin: date):
-    commission_rate = 0.001
-
-    df = ak.stock_zh_index_daily(symbol=symbol)
+def loop_back(code: str, begin: date):
+    names = {
+        "sz161039": "1000增强LOF",
+        "sz164906": "中概互联网LOF",
+        "sh501009": "生物科技LOF",
+        "sh501050": "50AHLOF",
+        "sh501090": "消费龙头LOF",
+        "sh502000": "500增强LOF",
+        "sh510310": "沪深300ETF易方达",
+        "sh510580": "中证500ETF易方达",
+        "sh510710": "上证50ETF博时",
+        "sh512000": "券商ETF",
+        "sh512170": "医疗ETF",
+        "sh512260": "中证500低波ETF",
+        "sh512800": "银行ETF",
+        "sh513050": "中国互联网ETF",
+        "sh515180": "红利ETF易方达"
+    }
+    name = names[code]
+    df = ak.stock_zh_index_daily(symbol=code)[['date', 'close']]
     df = df[df['date'] > begin]
-    df = df[['date', 'close']]
+    df['index'] = df['date']
+    df = df.set_index('index')
     df['每期金额'] = 100
     df['累计金额'] = df['每期金额'].cumsum()
-    df['每期数量'] = df.apply(lambda x: x['每期金额'] / x['close'] * (1 - commission_rate), axis=1)
+    fee_rate = 0.001
+    df['每期数量'] = df['每期金额'] / df['close'] * (1 - fee_rate)
     df['累计数量'] = df['每期数量'].cumsum()
-    df['累计净值'] = df.apply(lambda x: x['close'] * x['累计数量'], axis=1)
+    df['累计净值'] = df['close'] * df['累计数量']
     df['现金流'] = -100
     m = df.shape[0]     # number of row
     cumulative_amount = df.iloc[m - 1, df.columns.get_loc('累计金额')]
     cumulative_net = df.iloc[m - 1, df.columns.get_loc('累计净值')]
     hold_gain = cumulative_net - cumulative_amount
     df.iloc[m - 1, df.columns.get_loc('现金流')] += cumulative_net
-    return_rate = xirr(df, 'date', '现金流')
     print(df)
+    return_rate = xirr(df, 'date', '现金流')
     print(cumulative_amount, cumulative_net, hold_gain, return_rate)
     # to_excel('loopback.xlsx', symbol, df)
+    df[['累计金额', '累计净值']].plot(figsize=(12, 6), grid=True, title=name + '定投曲线')
 
 
 def main():
-    # ttm_lyr()
-    # hs300()
-    # plt.show()
-    loop_back('sh000300', date(2015, 6, 1))
+    if len(sys.argv) < 3:
+        print('Usage: {} code YYYYmmdd'.format(sys.argv[0]))
+        sys.exit(1)
+
+    loop_back(sys.argv[1], datetime.strptime(sys.argv[2], '%Y%m%d').date())
+    # loop_back('sh510310', date(2015, 6, 1))           # 沪深300ETF易方达
+    # loop_back('sh501050', date(2015, 6, 1))           # 50AHLOF
+    # loop_back('sh502000', date(2015, 6, 1))           # 500增强
+    plt.show()
 
 
 if __name__ == "__main__":
