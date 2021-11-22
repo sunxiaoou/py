@@ -74,7 +74,7 @@ names = {
 def get_daily(code: str, begin: date) -> pd.DataFrame:
     df = pd.DataFrame()
     if re.match(r'(sh|sz)\d{6}', code) is not None:
-        df = ak.stock_zh_index_daily(symbol=code)[['date', 'close']]
+        df = ak.stock_zh_index_daily_tx(symbol=code)[['date', 'close']]
     elif re.match(r'\d{6}', code) is not None:
         df = ak.fund_em_open_fund_info(fund=code, indicator='累计净值走势')   # [['净值日期', '单位净值']]
         df = df.rename({'净值日期': 'date', '累计净值': 'close'}, axis=1)
@@ -82,8 +82,8 @@ def get_daily(code: str, begin: date) -> pd.DataFrame:
             df['close'] = df['close'].apply(lambda x: float(x))
     else:
         assert True
-    df = df[df['date'] > begin]
     df['date'] = pd.to_datetime(df['date'])
+    df = df[df['date'] > begin]
     # print(df)
     df['index'] = df['date']
     df = df.set_index('index')
@@ -163,7 +163,7 @@ def main():
         print('Usage: {} code YYYYmmdd'.format(sys.argv[0]))
         sys.exit(1)
 
-    begin = datetime.strptime(sys.argv[2], '%Y%m%d').date()
+    begin = datetime.strptime(sys.argv[2], '%Y%m%d')    # .date()
     loop_back(sys.argv[1], begin)
     plt.show()
 
