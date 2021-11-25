@@ -22,10 +22,10 @@ names = {
     "sh501090": "消费龙头LOF",
     "sh502000": "500增强LOF",
     "sh510310": "沪深300ETF易方达",
-    "sh510580": "中证500ETF易方达",
+    # "sh510580": "中证500ETF易方达",
     "sh510710": "上证50ETF博时",
     "sh512000": "券商ETF",
-    "sh512170": "医疗ETF",
+    # "sh512170": "医疗ETF",
     "sh512260": "中证500低波ETF",
     "sh512800": "银行ETF",
     "sh513050": "中国互联网ETF",
@@ -72,6 +72,10 @@ names = {
 
 
 def get_weekly(code: str, begin: date) -> pd.DataFrame:
+    base = ak.stock_zh_index_daily(symbol='sh510310')[['date']]     # use '沪深300ETF' as base
+    base['date'] = pd.to_datetime(base['date'])
+    base = base[base['date'] > begin]
+
     df = pd.DataFrame()
     if re.match(r'(sh|sz)\d{6}', code) is not None:
         # df = ak.stock_zh_index_daily_tx(symbol=code)[['date', 'close']]
@@ -84,7 +88,10 @@ def get_weekly(code: str, begin: date) -> pd.DataFrame:
     else:
         assert True
     df['date'] = pd.to_datetime(df['date'])
-    weekday = 1             # Mon: 0, Tue: 1, ... Sun: 6
+    df = pd.merge(base, df, on='date', how='outer')
+    df.fillna(method='ffill', inplace=True)     # fill NaN with previous value
+    df.fillna({'close': 1.0}, inplace=True)     # no previous value, fill with 1.0
+    weekday = 1                                 # choose Tuesday, Mon: 0, Tue: 1, ... Sun: 6
     df = df[(df['date'] > begin) & (df['date'].dt.dayofweek == weekday)]
     # print(df)
     return df
@@ -144,15 +151,14 @@ def loop_back(code: str, begin: date) -> tuple:
     cumulative_net = df.iloc[m - 1, df.columns.get_loc('累计持仓净值')]
     hold_gain = cumulative_net - cumulative_amount
     df.iloc[m - 1, df.columns.get_loc('现金流')] += cumulative_net
-    # print(df)
     return_rate = xirr(df, 'date', '现金流')
-    # try:
-    #     name = '{}({})'.format(names[code], code)
-    # except KeyError:
-    #     name = code
-    df = df.rename({'累计持仓净值': code}, axis=1).set_index('date')
+    try:
+        name = '{}({})'.format(names[code], code)
+    except KeyError:
+        name = code
+    df = df.rename({'累计持仓净值': name}, axis=1).set_index('date')
     # print(df)
-    return (cumulative_amount, cumulative_net, hold_gain, return_rate), df[['累计定投金额', code]]
+    return (cumulative_amount, cumulative_net, hold_gain, return_rate), df[['累计定投金额', name]]
 
 
 def main():
@@ -161,26 +167,12 @@ def main():
         sys.exit(1)
 
     begin = datetime.strptime(sys.argv[2], '%Y%m%d')    # .date()
-    _, df = loop_back('sh510310', begin)    # use as base
-
-    codes = ["sz161039", "sz164906"]    # , "sh501009", "sh501050", "sh501090"]
-    # df = pd.concat([df] + [loop_back(i, begin)[1].iloc[:, -1:] for i in codes], axis=1)
-    df = pd.concat([df] + [loop_back(i, begin)[1][i] for i in codes], axis=1)
-    # df['sz161039'].fillna(df['累计定投金额'], inplace=True)
-
-    # for i in range(2, df.shape[1]):
-    #     df.iloc[:, [i]].fillna(df['累计定投金额'], inplace=True)
-    #     print(df.iloc[:, [i]])
-
-    # print(df)
-
-    # s = loop_back('sz161039', begin)[1].iloc[:, -1:]
-    # print(s)
-    # df = pd.concat([df, s], axis=1)
-
-    # codes = ["sz161039", "sh510310"]    # , "sh501009", "sh501050", "sh501090"]
-    # df = pd.concat([loop_back(i, begin)[1] for i in codes], axis=1)
-    # print(df)
+    codes = ["sz161039", "sz164906", "sh501009", "sh501050", "sh501090"]
+    codes = ["sh502000", "sh510310", "sh510710", "sh512000"]
+    codes = ["sh512260", "sh512800", "sh513050", "sh515180"]
+    df = pd.concat([loop_back(i, begin)[1] for i in codes], axis=1)
+    df = df.loc[:, ~df.columns.duplicated()]        # remove duplicated '累计定投金额'
+    print(df)
 
     df.plot(figsize=(12, 6), grid=True, title='定投累计持仓曲线')
     plt.show()
