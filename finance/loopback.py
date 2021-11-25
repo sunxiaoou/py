@@ -71,10 +71,11 @@ names = {
 }
 
 
-def get_daily(code: str, begin: date) -> pd.DataFrame:
+def get_weekly(code: str, begin: date) -> pd.DataFrame:
     df = pd.DataFrame()
     if re.match(r'(sh|sz)\d{6}', code) is not None:
-        df = ak.stock_zh_index_daily_tx(symbol=code)[['date', 'close']]
+        # df = ak.stock_zh_index_daily_tx(symbol=code)[['date', 'close']]
+        df = ak.stock_zh_index_daily(symbol=code)[['date', 'close']]
     elif re.match(r'\d{6}', code) is not None:
         df = ak.fund_em_open_fund_info(fund=code, indicator='累计净值走势')   # [['净值日期', '单位净值']]
         df = df.rename({'净值日期': 'date', '累计净值': 'close'}, axis=1)
@@ -83,17 +84,10 @@ def get_daily(code: str, begin: date) -> pd.DataFrame:
     else:
         assert True
     df['date'] = pd.to_datetime(df['date'])
-    df = df[df['date'] > begin]
-    # print(df)
-    df['index'] = df['date']
-    df = df.set_index('index')
-    weekly = pd.DataFrame()
-    weekly['date'] = df['date'].resample('W').last()
-    weekly['close'] = df['close'].resample('W').last()
-    # weekly['weekday'] = weekly['date'].dt.dayofweek + 1
-    weekly = weekly.dropna()
-    print(weekly)
-    return weekly
+    weekday = 1             # Mon: 0, Tue: 1, ... Sun: 6
+    df = df[(df['date'] > begin) & (df['date'].dt.dayofweek == weekday)]
+    print(df)
+    return df
 
 
 def get_index_name(code: str) -> str:
@@ -137,7 +131,7 @@ def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
 
 
 def loop_back(code: str, begin: date):
-    df = get_daily(code, begin)
+    df = get_weekly(code, begin)
     df['每期定投金额'] = 1000
     df['累计定投金额'] = df['每期定投金额'].cumsum()
     fee_rate = 0.001
@@ -154,7 +148,10 @@ def loop_back(code: str, begin: date):
     return_rate = xirr(df, 'date', '现金流')
     print(cumulative_amount, cumulative_net, hold_gain, return_rate)
     # to_excel('loopback.xlsx', symbol, df)
-    title = '{}({})_定投曲线'.format(names[code], code)
+    try:
+        title = '{}({})-定投曲线'.format(names[code], code)
+    except KeyError:
+        title = '{}-定投曲线'.format(code)
     df[['累计定投金额', '累计持仓净值']].plot(figsize=(12, 6), grid=True, title=title)
 
 
@@ -165,7 +162,7 @@ def main():
 
     begin = datetime.strptime(sys.argv[2], '%Y%m%d')    # .date()
     loop_back(sys.argv[1], begin)
-    plt.show()
+    # plt.show()
 
 
 if __name__ == "__main__":
