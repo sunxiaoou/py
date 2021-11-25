@@ -11,7 +11,7 @@ import pandas as pd
 import akshare as ak
 from openpyxl import load_workbook
 
-# pd.set_option('display.max_rows', 100)
+pd.set_option('display.max_rows', 1000)
 # pd.set_option('display.max_columns', 6)
 
 names = {
@@ -86,7 +86,7 @@ def get_weekly(code: str, begin: date) -> pd.DataFrame:
     df['date'] = pd.to_datetime(df['date'])
     weekday = 1             # Mon: 0, Tue: 1, ... Sun: 6
     df = df[(df['date'] > begin) & (df['date'].dt.dayofweek == weekday)]
-    print(df)
+    # print(df)
     return df
 
 
@@ -130,7 +130,7 @@ def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
     writer.save()
 
 
-def loop_back(code: str, begin: date):
+def loop_back(code: str, begin: date) -> tuple:
     df = get_weekly(code, begin)
     df['每期定投金额'] = 1000
     df['累计定投金额'] = df['每期定投金额'].cumsum()
@@ -144,15 +144,15 @@ def loop_back(code: str, begin: date):
     cumulative_net = df.iloc[m - 1, df.columns.get_loc('累计持仓净值')]
     hold_gain = cumulative_net - cumulative_amount
     df.iloc[m - 1, df.columns.get_loc('现金流')] += cumulative_net
-    print(df)
+    # print(df)
     return_rate = xirr(df, 'date', '现金流')
-    print(cumulative_amount, cumulative_net, hold_gain, return_rate)
-    # to_excel('loopback.xlsx', symbol, df)
-    try:
-        title = '{}({})-定投曲线'.format(names[code], code)
-    except KeyError:
-        title = '{}-定投曲线'.format(code)
-    df[['累计定投金额', '累计持仓净值']].plot(figsize=(12, 6), grid=True, title=title)
+    # try:
+    #     name = '{}({})'.format(names[code], code)
+    # except KeyError:
+    #     name = code
+    df = df.rename({'累计持仓净值': code}, axis=1).set_index('date')
+    # print(df)
+    return (cumulative_amount, cumulative_net, hold_gain, return_rate), df[['累计定投金额', code]]
 
 
 def main():
@@ -161,8 +161,29 @@ def main():
         sys.exit(1)
 
     begin = datetime.strptime(sys.argv[2], '%Y%m%d')    # .date()
-    loop_back(sys.argv[1], begin)
-    # plt.show()
+    _, df = loop_back('sh510310', begin)    # use as base
+
+    codes = ["sz161039", "sz164906"]    # , "sh501009", "sh501050", "sh501090"]
+    # df = pd.concat([df] + [loop_back(i, begin)[1].iloc[:, -1:] for i in codes], axis=1)
+    df = pd.concat([df] + [loop_back(i, begin)[1][i] for i in codes], axis=1)
+    # df['sz161039'].fillna(df['累计定投金额'], inplace=True)
+
+    # for i in range(2, df.shape[1]):
+    #     df.iloc[:, [i]].fillna(df['累计定投金额'], inplace=True)
+    #     print(df.iloc[:, [i]])
+
+    # print(df)
+
+    # s = loop_back('sz161039', begin)[1].iloc[:, -1:]
+    # print(s)
+    # df = pd.concat([df, s], axis=1)
+
+    # codes = ["sz161039", "sh510310"]    # , "sh501009", "sh501050", "sh501090"]
+    # df = pd.concat([loop_back(i, begin)[1] for i in codes], axis=1)
+    # print(df)
+
+    df.plot(figsize=(12, 6), grid=True, title='定投累计持仓曲线')
+    plt.show()
 
 
 if __name__ == "__main__":
