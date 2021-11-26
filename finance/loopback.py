@@ -180,15 +180,15 @@ def main():
     # 行业指数
     # codes = ["000248", "162412", "501009", "sz164906", "sh512000", "sh512800"]
     # 主动基金
-    # codes = ["001643", "001717", "001810", "005267", "161005", "163402"]
+    codes = ["001643", "001717", "001810", "005267", "161005", "163402"]
 
     results = [loop_back(i, begin) for i in codes]
     columns = ['name', '累计定投金额(万)', '累计持仓净值(万)', '累计收益(万)', '内部收益率(%)']
     df = pd.DataFrame([r[0] for r in results], columns=columns)
-    df['累计定投金额(万)'] /= 10000
-    df['累计持仓净值(万)'] /= 10000
-    df['累计收益(万)'] /= 10000
-    df['内部收益率(%)'] *= 100
+    df[columns[1]] = df[columns[1]].apply(lambda x: round(x / 10000))
+    df[columns[2]] = df[columns[2]].apply(lambda x: round(x / 10000))
+    df[columns[3]] = df[columns[3]].apply(lambda x: round(x / 10000))
+    df[columns[4]] = df[columns[4]].apply(lambda x: round(x * 100))
     df.set_index('name', inplace=True)
     df.index.name = None
     print(df)
@@ -199,10 +199,12 @@ def main():
     _, axes = plt.subplots(nrows=2, ncols=1)
     typ = '宽基指数'
     # typ = '行业指数'
-    # typ = '主动基金'
+    typ = '主动基金'
     title = typ + '定投回测：累计持仓曲线及收益率'
     df2.plot(ax=axes[0], figsize=(12, 8), grid=True, rot=0, title=title)
-    df.plot.bar(ax=axes[1], figsize=(12, 8), rot=20)
+    ax = df.plot.bar(ax=axes[1], figsize=(12, 8), rot=20)
+    for i in ax.containers:
+        ax.bar_label(i)
     plt.figtext(.9, .1, '- 同光和尘')
     plt.show()
 
