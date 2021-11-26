@@ -11,19 +11,20 @@ import pandas as pd
 import akshare as ak
 from openpyxl import load_workbook
 
-pd.set_option('display.max_rows', 1000)
+# pd.set_option('display.max_rows', 1000)
 # pd.set_option('display.max_columns', 6)
 
 names = {
-    "sz161039": "1000增强LOF",
+    "sz159928": "消费ETF",
+    "sz161039": "1000增强",
     "sz164906": "中概互联网LOF",
     "sh501009": "生物科技LOF",
-    "sh501050": "50AHLOF",
+    "sh501050": "50AH",
     "sh501090": "消费龙头LOF",
     "sh502000": "500增强LOF",
-    "sh510310": "沪深300ETF易方达",
+    "sh510310": "沪深300",
     # "sh510580": "中证500ETF易方达",
-    "sh510710": "上证50ETF博时",
+    "sh510710": "上证50",
     "sh512000": "券商ETF",
     # "sh512170": "医疗ETF",
     "sh512260": "中证500低波ETF",
@@ -56,17 +57,17 @@ names = {
     "000248": "汇添富中证消费ETF联接",
     "001556": "天弘中证500A",
     "001594": "天弘中证银行A",
-    "003318": "景顺长城中证500低波动",
+    "003318": "景顺500低波",
     "004069": "南方中证全指证券",
     "006327": "易方达中证海外50ETF联接",
-    "090010": "大成中证红利指数A",
+    "090010": "大成中证红利",
     "110003": "易方达上证50指数A",
     "163407": "兴全沪深300A",
     "164906": "交银中证海外中国互联网",
     "501009": "汇添富中证生物科技",
     "501050": "华夏上证50AH",
     "501090": "华宝中证消费龙头",
-    "519671": "银河沪深300价值",
+    "519671": "银河300价值",
     "540012": "汇丰晋信恒生A股龙头"
 }
 
@@ -157,8 +158,9 @@ def loop_back(code: str, begin: date) -> tuple:
     except KeyError:
         name = code
     df = df.rename({'累计持仓净值': name}, axis=1).set_index('date')
+    df.index.name = None
     # print(df)
-    return (cumulative_amount, cumulative_net, hold_gain, return_rate), df[['累计定投金额', name]]
+    return (name, cumulative_amount, cumulative_net, hold_gain, return_rate), df[['累计定投金额', name]]
 
 
 def main():
@@ -167,14 +169,28 @@ def main():
         sys.exit(1)
 
     begin = datetime.strptime(sys.argv[2], '%Y%m%d')    # .date()
-    codes = ["sz161039", "sz164906", "sh501009", "sh501050", "sh501090"]
-    codes = ["sh502000", "sh510310", "sh510710", "sh512000"]
-    codes = ["sh512260", "sh512800", "sh513050", "sh515180"]
-    df = pd.concat([loop_back(i, begin)[1] for i in codes], axis=1)
-    df = df.loc[:, ~df.columns.duplicated()]        # remove duplicated '累计定投金额'
-    print(df)
+    codes = ["sz161039", "sh502000", "sh510310", "sh510710", "sh501050", "003318", "090010", "519671"]
+    # codes = ["sz159928", "sz164906", "sh512800", "003095"]
 
-    df.plot(figsize=(12, 6), grid=True, title='定投累计持仓曲线')
+    results = [loop_back(i, begin) for i in codes]
+    columns = ['name', '累计定投金额(万)', '累计持仓净值(万)', '累计收益(万)', '内部收益率(%)']
+    df = pd.DataFrame([r[0] for r in results], columns=columns)
+    df['累计定投金额(万)'] /= 10000
+    df['累计持仓净值(万)'] /= 10000
+    df['累计收益(万)'] /= 10000
+    df['内部收益率(%)'] *= 100
+    df.set_index('name', inplace=True)
+    df.index.name = None
+    print(df)
+    df2 = pd.concat([r[1] for r in results], axis=1)
+    df2 = df2.loc[:, ~df2.columns.duplicated()]        # remove duplicated '累计定投金额'
+    print(df2)
+
+    _, axes = plt.subplots(nrows=2, ncols=1)
+    title = '基金定投回测：宽基指数的累计持仓曲线及收益率'
+    df2.plot(ax=axes[0], figsize=(12, 8), grid=True, rot=0, title=title)
+    df.plot.bar(ax=axes[1], figsize=(12, 8), rot=20)
+    plt.figtext(.9, .1, '- 同光和尘')
     plt.show()
 
 
