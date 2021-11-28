@@ -84,8 +84,12 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
     i += 2
     while i < len(lines) and lines[i]:
         name = lines[i]
+        i += 1
+        while not re.match(r'.*[\d.]+', lines[i]):
+            i += 1
+        hold_gain = float(re.sub('[^\d.]+', '', lines[i]))
         market_value = float(lines[i + 1])
-        hold_gain = float(re.sub('[^\d.]+', '', lines[i + 3]))
+        # hold_gain = float(re.sub('[^\d.]+', '', lines[i + 3]))
         result.append(('招商银行', 'rmb', 'product', name, 1, market_value, hold_gain))
         i += 4
     df = pd.DataFrame(result, columns=columns)
@@ -218,16 +222,16 @@ def huasheng(datafile: str) -> pd.DataFrame:
     i += 1
     while len(lines) - i >= 8:
         name = lines[i]
+        volume = int(lines[i + 1])
+        hold_gain = float(lines[i + 2])
+        nav = float(lines[i + 3])
         code = lines[i + 4].rstrip('融')
         market_value = float(lines[i + 5])
-        hold_gain = float(lines[i + 2])
-        volume = int(lines[i + 1])
-        nav = float(lines[i + 3])
-        try:
-            cost = float(lines[i + 7])
-        except ValueError:
-            cost = 0.0
-        i += 8
+        i += 6
+        while not re.match(r'.*[\d.]+$', lines[i]):
+            i += 1
+        cost = float(lines[i])
+        i += 1
         result.append(('华盛', currency, code, name, 3, market_value, hold_gain, volume, nav, cost))
     df = pd.DataFrame(result, columns=columns + col2)
     sum_mv = round(df['market_value'].sum(), 2)
