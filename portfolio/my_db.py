@@ -6,6 +6,7 @@ from datetime import datetime
 
 import akshare as ak
 import jqdatasdk as jq
+import numpy as np
 import pandas as pd
 from pymongo import MongoClient
 
@@ -150,6 +151,10 @@ def fund_nav_daily(code: str) -> dict:
     df = pd.merge(df, df2, on='净值日期', how='outer')
     df = df.rename({'净值日期': '_id', '单位净值': 'nav', '日增长率': 'growth_rate', '累计净值': 'cum_nav',
                    '同类型排名-每日近3月收益排名百分比': 'rank_3m'}, axis=1)
+    if df.dtypes['nav'] != np.dtype('float64'):
+        df['nav'] = df['nav'].apply(lambda x: None if x is None else float(x))
+    if df.dtypes['cum_nav'] != np.dtype('float64'):
+        df['cum_nav'] = df['cum_nav'].apply(lambda x: None if x is None else float(x))
     df['_id'] = pd.to_datetime(df['_id'])
     print(df)
     return json.loads(df.T.to_json())
@@ -173,11 +178,32 @@ def save_securities(codes: list, db: MongoClient):
         time.sleep(1)
 
 
-def load_security(code: str, db: MongoClient) -> pd.DataFrame:
-    cursor = db[code].find()
+def load_info(code: str, db: MongoClient) -> dict:
+    dic = {}
+    if re.match(r'(sh|sz)\d{6}', code) is not None:
+        dic = db['indexes_info'].find_one({'_id': int(code[2:])})
+    elif re.match(r'f\d{6}', code) is not None:
+        dic = db['funds_info'].find_one({'_id': int(code[1:])})
+    else:
+        assert True, print('code is not valid')
+    return dic
+
+
+def load_close_price(code: str, db: MongoClient) -> pd.DataFrame:
+    fields = {}
+    names = {'_id': 'date'}
+    if re.match(r'(sh|sz)\d{6}', code) is not None:
+        fields = {'close': 1}
+    elif re.match(r'f\d{6}', code) is not None:
+        fields = {'cum_nav': 1}
+        names['cum_nav'] = 'close'
+    else:
+        assert True, print('code is not valid')
+    cursor = db[code].find({}, fields)
     df = pd.DataFrame(list(cursor))
     df['_id'] = pd.to_datetime(df['_id'], unit='ms')
-    print(df)
+    df = df.rename(names, axis=1)
+    # print(df)
     return df
 
 
@@ -185,9 +211,9 @@ def main():
     client = MongoClient(host=mongo_host, port=mongo_port)
     db = client[mongo_db_name]
 
-    dic = indexes_info()
-    collection = db['indexes_info']
-    collection.insert(dic.values())
+    # dic = indexes_info()
+    # collection = db['indexes_info']
+    # collection.insert(dic.values())
 
     # code = 'sh000985'
     # dic = index_price_daily(code, 'em')
@@ -199,10 +225,13 @@ def main():
     # collection = db['funds_info']
     # collection.insert(dic.values())
 
-    # fund_nav_daily('f163406')
+    # fund_nav_daily('f162412')
     # save_securities(funds, db)
 
-    # load_security('f540003', db)
+    code = 'sh000985'
+    code = 'f540003'
+    print(load_info(code, db))
+    print(load_close_price(code, db))
 
 
 if __name__ == "__main__":

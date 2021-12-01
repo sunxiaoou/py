@@ -63,11 +63,24 @@ mongo <<-!end
 !end
 }
 
+drop_collections()
+{
+mongo <<-!end
+  use $db
+  regex = /^f/;
+  db.getCollectionNames().filter(function(name){
+    return name.match(regex)
+  }).forEach(function(name){
+    db.getCollection(name).drop()
+  })
+!end
+}
 
 ## main ##
 
 db='portfolio'
-collection='funds_info'
-count
+# collection='funds_info'
+# count
 # count_type
-find_date
+# find_date
+drop_collections
