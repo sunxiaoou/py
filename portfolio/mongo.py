@@ -10,8 +10,8 @@ import numpy as np
 import pandas as pd
 from pymongo import MongoClient
 
-pd.set_option('display.max_rows', 1000)
-pd.set_option('display.max_columns', 6)
+# pd.set_option('display.max_rows', 1000)
+# pd.set_option('display.max_columns', 6)
 
 
 class Mongo:
@@ -24,6 +24,18 @@ class Mongo:
         df = ak.index_stock_info()
         df = df.rename({'index_code': '_id', 'display_name': 'name'}, axis=1)
         df['_id'] = df['_id'].apply(lambda x: int(x))
+        print(df)
+        return json.loads(df.T.to_json())
+
+    @staticmethod
+    def on_market_info() -> dict:
+        df = ak.fund_etf_category_sina(symbol='ETF基金')[['代码', '名称']]
+        # print(df)
+        df2 = ak.fund_etf_category_sina(symbol='LOF基金')[['代码', '名称']]
+        df3 = ak.fund_etf_category_sina(symbol='封闭式基金')[['代码', '名称']]
+        df = pd.concat([df, df2, df3], ignore_index=True, sort=False)
+        df = df.rename({'代码': 'code', '名称': 'name'}, axis=1)
+        df['_id'] = df['code'].apply(lambda x: int(x[2:]))
         print(df)
         return json.loads(df.T.to_json())
 
@@ -73,6 +85,10 @@ class Mongo:
         print(df)
         return json.loads(df.T.to_json())
 
+    def save(self, collection: str, dic: dict):
+        collection = self.db[collection]
+        collection.insert(dic.values())
+
     def save_securities(self, codes: list):
         for code in codes:
             if code in self.db.list_collection_names():
@@ -86,14 +102,15 @@ class Mongo:
                 dic = Mongo.fund_nav_daily(code)
             else:
                 assert True, print('code is not valid')
-            collection = self.db[code]
-            collection.insert(dic.values())
+            self.save(code, dic)
             time.sleep(1)
 
     def load_info(self, code: str) -> dict:
         dic = {}
         if re.match(r'(sh|sz)\d{6}', code) is not None:
             dic = self.db['indexes_info'].find_one({'_id': int(code[2:])})
+            if dic is None:
+                dic = self.db['on_market_info'].find_one({'_id': int(code[2:])})
         elif re.match(r'f\d{6}', code) is not None:
             dic = self.db['funds_info'].find_one({'_id': int(code[1:])})
         else:
@@ -125,7 +142,10 @@ def main():
     #     sys.exit(1)
 
     # Mongo.indexes_info()
+    # Mongo.on_market_info()
+
     mongo = Mongo()
+    # mongo.save('on_market_info', Mongo.on_market_info())
     code = 'sh000985'
     code = 'sh502000'
     # code = 'f540003'
