@@ -14,6 +14,20 @@ from mongo import Mongo
 # pd.set_option('display.max_columns', 6)
 
 
+def get_close_price(code: str, begin: date) -> tuple:
+    mongo = Mongo()
+    name = mongo.load_info(code)['name']
+    name = '{}({})'.format(name if len(name) <= 10 else name[: 8] + '..', code)
+    base = mongo.load_close_price('sh510310')[['date']]         # use '沪深300ETF' as base
+    base['date'] = pd.to_datetime(base['date'])
+    base = base[base['date'] > begin]
+    df = mongo.load_close_price(code)
+    df = pd.merge(base, df, on='date', how='outer')
+    df.fillna(method='ffill', inplace=True)                     # fill NaN with previous value
+    df.fillna({'close': 1.0}, inplace=True)                     # no previous value, fill with 1.0
+    return name, df
+
+
 def xirr(df: pd.DataFrame, date_column: str, amount_column: str) -> float:
     residual = 1
     step = 0.05
@@ -49,15 +63,7 @@ def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
 
 
 def loop_back(code: str, begin: date) -> tuple:
-    mongo = Mongo()
-    base = mongo.load_close_price('sh510310')[['date']]         # use '沪深300ETF' as base
-    base['date'] = pd.to_datetime(base['date'])
-    base = base[base['date'] > begin]
-
-    df = mongo.load_close_price(code)
-    df = pd.merge(base, df, on='date', how='outer')
-    df.fillna(method='ffill', inplace=True)     # fill NaN with previous value
-    df.fillna({'close': 1.0}, inplace=True)     # no previous value, fill with 1.0
+    name, df = get_close_price(code, begin)
     weekday = 1                                 # choose Tuesday, Mon: 0, Tue: 1, ... Sun: 6
     df = df[(df['date'] > begin) & (df['date'].dt.dayofweek == weekday)]
 
@@ -74,8 +80,6 @@ def loop_back(code: str, begin: date) -> tuple:
     hold_gain = cumulative_net - cumulative_amount
     df.iloc[m - 1, df.columns.get_loc('现金流')] += cumulative_net
     return_rate = xirr(df, 'date', '现金流')
-    name = mongo.load_info(code)['name']
-    name = '{}({})'.format(name if len(name) <= 10 else name[: 8] + '..', code)
     df = df.rename({'累计持仓净值': name}, axis=1).set_index('date')
     df.index.name = None
     # print(df)
@@ -113,10 +117,11 @@ def main():
         sys.exit(1)
 
     begin = datetime.strptime(sys.argv[2], '%Y%m%d')    # .date()
-    comparision('宽基指数', ["sh502000", "sh510310", "sh510710", "f050025", "f040046", "f000071"], begin)
+    # comparision('宽基指数', ["sh502000", "sh510310", "sh510710", "f050025", "f040046", "f000071"], begin)
     # comparision('宽基指数', ["sz161039", "sh501050", "f006341", "f003318", "f090010", "f519671"], begin)
     # comparision('行业指数', ["f000248", "f162412", "f501009", "sz164906", "sh512000", "sh512800"], begin)
     # comparision('主动基金', ["f001643", "f001717", "f001810", "f005267", "f161005", "f163406"], begin)
+    comparision('主动基金', ["f000595", "f001766", "f001974", "f005267", "f377240", "f540003"], begin)
 
 
 if __name__ == "__main__":
