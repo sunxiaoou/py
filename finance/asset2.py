@@ -12,6 +12,9 @@ from openpyxl import load_workbook
 from openpyxl.chart import PieChart, Reference
 from openpyxl.utils import get_column_letter
 
+pd.set_option('display.max_rows', 1000)
+pd.set_option('display.max_columns', 6)
+
 from securities import *
 
 columns = ['platform', 'currency', 'code', 'name', 'risk', 'market_value', 'hold_gain']
@@ -35,7 +38,7 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
     while lines[i] != '尾号8884':
         i += 1
     cash = float(lines[i + 1])
-    result = [('招商银行', 'rmb', 'cash', '现金', 0, cash, 0)]
+    result = [('招商银行', 'cny', 'cash', '现金', 0, cash, 0)]
     i += 2
     while lines[i] != '理财产品':
         i += 1
@@ -50,7 +53,7 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
         hold_gain = float(re.sub('[^\d.]+', '', lines[i]))
         market_value = float(lines[i + 1])
         # hold_gain = float(re.sub('[^\d.]+', '', lines[i + 3]))
-        result.append(('招商银行', 'rmb', 'product', name, 1, market_value, hold_gain))
+        result.append(('招商银行', 'cny', 'product', name, 1, market_value, hold_gain))
         i += 4
     df = pd.DataFrame(result, columns=columns)
     sum_mv = round(df['market_value'].sum(), 2)
@@ -60,7 +63,7 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
 
 def hangseng_bank(datafile: str) -> pd.DataFrame:
     cash = float(re.sub(r'.+_', '', datafile[: -4]))
-    result = [('恒生银行', 'rmb', 'cash', '现金', 0, cash, 0)]
+    result = [('恒生银行', 'cny', 'cash', '现金', 0, cash, 0)]
 
     with open(datafile) as fp:
         lines = [re.sub(r'[,＋]', '', re.sub('－', '-', line)).rstrip('\n') for line in fp.readlines()]
@@ -90,7 +93,7 @@ def hangseng_bank(datafile: str) -> pd.DataFrame:
         else:
             i += 1
             market_value = float(lines[i])
-        result.append(('恒生银行', 'rmb', code, name, risk, market_value, hold_gain))
+        result.append(('恒生银行', 'cny', code, name, risk, market_value, hold_gain))
         i += 1
     df = pd.DataFrame(result, columns=columns)
     sum_mv = round(df['market_value'].sum(), 2)
@@ -113,7 +116,7 @@ def yinhe(datafile: str) -> pd.DataFrame:
     cash = float(lines[i + 7])
     assert round(total_mv + cash, 2) == asset,\
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
-    result = [('银河', 'rmb', 'cash', '现金', 0, cash, 0, 1, cash, cash)]
+    result = [('银河', 'cny', 'cash', '现金', 0, cash, 0, 1, cash, cash)]
     i += 8
     while not lines[i].startswith('参考盈亏'):
         i += 1
@@ -150,7 +153,7 @@ def yinhe(datafile: str) -> pd.DataFrame:
         assert v2 == volume, print("v2{} != volume{}".format(v2, volume))
         assert market_value == round(nav * volume, 2),\
             print("mv({}) != nav({}) * volume({})".format(market_value, nav, volume))
-        result.append(('银河', 'rmb', code, name, risk, market_value, hold_gain, volume, nav, cost))
+        result.append(('银河', 'cny', code, name, risk, market_value, hold_gain, volume, nav, cost))
     df = pd.DataFrame(result, columns=columns + col2)
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
@@ -258,7 +261,7 @@ def danjuan(datafile: str) -> pd.DataFrame:
                 hold_gain = float(i['hold_gain'])
                 if market_value:
                     name, _, risk = off_market[code]
-                    result.append(('蛋卷' + plan_code, 'rmb', code, name, risk, market_value, hold_gain))
+                    result.append(('蛋卷' + plan_code, 'cny', code, name, risk, market_value, hold_gain))
             return result   # return a list as a workaround
 
         asset = float(response.json()['data']['total_assets'])
@@ -276,7 +279,7 @@ def danjuan(datafile: str) -> pd.DataFrame:
                     name, _, risk = off_market[code]
                 market_value = float(i['market_value'])
                 hold_gain = float(i['hold_gain'])
-                result.append(('蛋卷', 'rmb', code, name, risk, market_value, hold_gain))
+                result.append(('蛋卷', 'cny', code, name, risk, market_value, hold_gain))
         return result
 
     if os.path.isfile(datafile):
@@ -329,7 +332,7 @@ def tonghs(datafile: str) -> pd.DataFrame:
         name, _, risk = off_market[code]
         market_value = float(i['totalVol'])
         hold_gain = float(i['sumIncome'])
-        result.append(('同花顺', 'rmb', code, name, risk, market_value, hold_gain))
+        result.append(('同花顺', 'cny', code, name, risk, market_value, hold_gain))
     response = requests.get(url2, headers=headers)
     assert response.status_code == 200, print('status_code({}) != 200'.format(response.status_code))
     items = response.json()['singleData']['currentShareList']
@@ -339,7 +342,7 @@ def tonghs(datafile: str) -> pd.DataFrame:
         market_value = float(i['currentValueText'])
         hold_gain = float(i['totalprofitlossText'])
         # risk = 5 - int(i['fundType'])
-        result.append(('同花顺', 'rmb', code, name, risk, market_value, hold_gain))
+        result.append(('同花顺', 'cny', code, name, risk, market_value, hold_gain))
     df = pd.DataFrame(result, columns=columns)
     df.to_csv(datafile)
     return df
@@ -352,14 +355,9 @@ def run(file: str) -> pd.DataFrame:
     return func(file)
 
 
-def to_rmb(row: pd.Series, key: str, rates: tuple) -> float:
+def to_cny(row: pd.Series, key: str, rates: tuple) -> float:
     h2c, u2c = rates
-    if row['currency'] == 'hkd':
-        value = row[key] * h2c
-    elif row['currency'] == 'usd':
-        value = row[key] * u2c
-    else:
-        value = row[key]
+    value = row[key] * h2c if row['currency'] == 'hkd' else row[key] * u2c if row['currency'] == 'usd' else row[key]
     return round(value, 2)
 
 
@@ -378,8 +376,8 @@ def fill(df: pd.DataFrame):
     u2c = round(cr.get_rate('USD', 'CNY'), 2)
     # print(h2c, u2c)
     df['name'] = df['name'].apply(lambda s: s if len(s) <= 10 else s[: 8] + '..')   # truncate name
-    df['mv_rmb'] = df.apply(lambda row: to_rmb(row, 'market_value', (h2c, u2c)), axis=1)
-    df['hg_rmb'] = df.apply(lambda row: to_rmb(row, 'hold_gain', (h2c, u2c)), axis=1)
+    df['market_value'] = df.apply(lambda row: to_cny(row, 'market_value', (h2c, u2c)), axis=1)
+    df['hold_gain'] = df.apply(lambda row: to_cny(row, 'hold_gain', (h2c, u2c)), axis=1)
     df['gain_rate'] = df.apply(gain_rate, axis=1)
 
 
@@ -426,7 +424,7 @@ def to_execl(xlsx: str, sheet: str, df: pd.DataFrame):
          'anchor': 'K1'},
         {'location': (last_row + 2, 4),
          'letter': 'B',
-         'labels': ['rmb', 'hkd', 'usd'],
+         'labels': ['cny', 'hkd', 'usd'],
          'category': 'currency',
          'anchor': 'K16'},
         {'location': (last_row + 2, 7),
@@ -443,11 +441,11 @@ def to_execl(xlsx: str, sheet: str, df: pd.DataFrame):
             ws.cell(row=row+i, column=col).value = summary['labels'][i]
             c = ws.cell(row=row+i, column=col+1)
             c.number_format = "#,##,0.00"
-            c.value = '=SUMIF(${0}$2:${0}${1},{2}{3},$H$2:$H${1})'.format(summary['letter'],
+            c.value = '=SUMIF(${0}$2:${0}${1},{2}{3},$F$2:$F${1})'.format(summary['letter'],
                                                                           last_row, le[0], row + i)
             c = ws.cell(row=row+i, column=col+2)
             c.number_format = "#,##,0.00"
-            c.value = '=SUMIF(${0}$2:${0}${1},{2}{3},$I$2:$I${1})'.format(summary['letter'],
+            c.value = '=SUMIF(${0}$2:${0}${1},{2}{3},$G$2:$G${1})'.format(summary['letter'],
                                                                           last_row, le[0], row + i)
         ws.cell(row=row+i+1, column=col).value = 'sum'
         c = ws.cell(row=row+i+1, column=col+1)
