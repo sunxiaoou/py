@@ -344,7 +344,9 @@ def danjuan(datafile: str) -> pd.DataFrame:
 
 def tonghs(datafile: str) -> pd.DataFrame:
     if os.path.isfile(datafile):
-        return pd.read_csv(datafile, index_col=0)
+        df = pd.read_csv(datafile, index_col=0)
+        df['code'] = df['code'].apply(lambda x: '{0:06d}'.format(x))
+        return df
 
     with open('auth/ths_cookie.txt', 'r') as f:
         cookie = f.read()[:-1]      # delete last '\n'
