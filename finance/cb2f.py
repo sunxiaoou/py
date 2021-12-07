@@ -6,7 +6,7 @@ import pyperclip
 
 def clipboard2file(file: str):
     text = pyperclip.paste()
-    if file == 'auth/ths_cookie.txt':
+    if file.endswith('_cookie.txt'):
         header = 'Cookie: '
         assert text.startswith(header), print(text[: len(header)])
         text = text.lstrip(header)

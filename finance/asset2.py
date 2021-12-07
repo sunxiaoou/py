@@ -12,50 +12,10 @@ from openpyxl import load_workbook
 from openpyxl.chart import PieChart, Reference
 from openpyxl.utils import get_column_letter
 
+from securities import *
+
 columns = ['platform', 'currency', 'code', 'name', 'risk', 'market_value', 'hold_gain']
 col2 = ['volume', 'nav', 'cost']
-
-funds = {
-    "000730": ("博时现金宝", "货币", 0),
-    "000773": ("万家现金宝", "货币", 0),
-
-    "004868": ("交银股息优化", "混合", 2),
-    "000595": ("嘉实泰和", "混合", 2),
-    "001766": ("上投摩根医疗健康", "股票", 3),
-    "001810": ("中欧潜力价值", "混合", 2),
-    "001974": ("景顺长城量化新动力", "股票", 2),
-    "003095": ("中欧医疗健康A", "混合", 3),
-    "005259": ("建信龙头企业", "股票", 2),
-    "005267": ("嘉实价值精选", "股票", 2),
-    "005354": ("富国沪港深行业精选A", "混合", 2),
-    "006228": ("中欧医疗创新A", "股票", 3),
-    "110011": ("易方达优质精选", "混合", 2),
-    "161005": ("富国天惠成长", "混合", 2),
-    "163402": ("兴全趋势投资", "混合", 2),
-    "163406": ("兴全合润", "混合", 2),
-    "163415": ("兴全商业模式优选", "混合", 2),
-    "166002": ("中欧新蓝筹A", "混合", 2),
-    "169101": ("东方红睿丰", "混合", 2),
-    "377240": ("上投摩根新兴动力", "混合", 3),
-    "519035": ("富国天博创新", "混合", 2),
-    "519688": ("交银精选", "混合", 2),
-    "540003": ("汇丰晋信动态策略A", "混合", 2),
-
-    "001556": ("天弘中证500A", "指数", 2),
-    "001594": ("天弘中证银行A", "指数", 2),
-    "003318": ("景顺长城中证500低波动", "指数", 2),
-    "004069": ("南方中证全指证券", "指数", 2),
-    "006327": ("易方达中证海外50ETF联接", "指数", 3),
-    "090010": ("大成中证红利指数A", "指数", 2),
-    "110003": ("易方达上证50指数A", "指数", 2),
-    "163407": ("兴全沪深300A", "指数", 2),
-    "164906": ("交银中证海外中国互联网", "指数", 3),
-    "501009": ("汇添富中证生物科技", "指数", 3),
-    "501050": ("华夏上证50AH", "指数", 2),
-    "501090": ("华宝中证消费龙头", "指数", 2),
-    "519671": ("银河沪深300价值", "指数", 2),
-    "540012": ("汇丰晋信恒生A股龙头", "指数", 2)
-}
 
 
 def verify(row: pd.Series):
@@ -121,7 +81,7 @@ def hangseng_bank(datafile: str) -> pd.DataFrame:
             i += 1
         else:
             code = lines[i][: 6]
-        name, _, risk = funds[code]
+        name, _, risk = off_market[code]
         i += 1
         hold_gain = float(lines[i])
         i += 6
@@ -297,7 +257,7 @@ def danjuan(datafile: str) -> pd.DataFrame:
                 market_value = float(i['market_value'])
                 hold_gain = float(i['hold_gain'])
                 if market_value:
-                    name, _, risk = funds[code]
+                    name, _, risk = off_market[code]
                     result.append(('蛋卷' + plan_code, 'rmb', code, name, risk, market_value, hold_gain))
             return result   # return a list as a workaround
 
@@ -313,7 +273,7 @@ def danjuan(datafile: str) -> pd.DataFrame:
                 if code in ['CSI1014', 'CSI1019']:  # 我要稳稳的幸福, 钉钉宝365天组合
                     name, risk = i['fd_name'], 1
                 else:
-                    name, _, risk = funds[code]
+                    name, _, risk = off_market[code]
                 market_value = float(i['market_value'])
                 hold_gain = float(i['hold_gain'])
                 result.append(('蛋卷', 'rmb', code, name, risk, market_value, hold_gain))
@@ -366,7 +326,7 @@ def tonghs(datafile: str) -> pd.DataFrame:
     items = response.json()['singleData']['IncomeShareListResult']
     for i in items:
         code = i['fundCode']
-        name, _, risk = funds[code]
+        name, _, risk = off_market[code]
         market_value = float(i['totalVol'])
         hold_gain = float(i['sumIncome'])
         result.append(('同花顺', 'rmb', code, name, risk, market_value, hold_gain))
@@ -375,7 +335,7 @@ def tonghs(datafile: str) -> pd.DataFrame:
     items = response.json()['singleData']['currentShareList']
     for i in items:
         code = i['fundCode']
-        name, _, risk = funds[code]
+        name, _, risk = off_market[code]
         market_value = float(i['currentValueText'])
         hold_gain = float(i['totalprofitlossText'])
         # risk = 5 - int(i['fundType'])
