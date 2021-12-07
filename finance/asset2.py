@@ -280,62 +280,72 @@ def futu(datafile: str) -> pd.DataFrame:
     return df
 
 
-def danjuan(plan='') -> pd.DataFrame:
-    with open('auth/dj_cookie.txt', 'r') as f:
-        cookie = f.read()[:-1]      # delete last '\n'
-    url = 'https://danjuanapp.com/djapi/holding/'
-    headers = {
-        'Cookie': cookie,
-        'Host': url.split('/')[2],
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_1) '
-                      'AppleWebKit/537.36 (KHTML, like Gecko) '
-                      'Chrome/88.0.4324.192 Safari/537.36'}
-    if plan:
-        url += 'plan/' + plan
-    else:
-        url += 'summary'
+def danjuan(datafile: str) -> pd.DataFrame:
 
-    response = requests.get(url, headers=headers)
-    assert response.status_code == 200, print('status_code({}) != 200'.format(response.status_code))
+    def dj(plan: str = '') -> list:
+        nonlocal asset, total_hg
 
-    if plan:
+        url = url_base + 'plan/' + plan if plan else url_base + 'summary'
+        response = requests.get(url, headers=headers)
+        assert response.status_code == 200, print('status_code({}) != 200'.format(response.status_code))
+        if plan:
+            result = []
+            items = response.json()['data']['items']
+            for i in items:
+                plan_code = i['plan_code']
+                code = i['fd_code']
+                market_value = float(i['market_value'])
+                hold_gain = float(i['hold_gain'])
+                if market_value:
+                    name, _, risk = funds[code]
+                    result.append(('蛋卷' + plan_code, 'rmb', code, name, risk, market_value, hold_gain))
+            return result   # return a list as a workaround
+
+        asset = float(response.json()['data']['total_assets'])
+        total_hg = float(response.json()['data']['hold_gain'])
         result = []
         items = response.json()['data']['items']
         for i in items:
-            plan_code = i['plan_code']
             code = i['fd_code']
-            market_value = float(i['market_value'])
-            hold_gain = float(i['hold_gain'])
-            if market_value:
-                name, _, risk = funds[code]
-                result.append(('蛋卷' + plan_code, 'rmb', code, name, risk, market_value, hold_gain))
-        return result   # return a list as a workaround
-
-    asset = float(response.json()['data']['total_assets'])
-    total_hg = float(response.json()['data']['hold_gain'])
-    result = []
-    items = response.json()['data']['items']
-    for i in items:
-        code = i['fd_code']
-        if code in ['CSI666', 'CSI1033']:       # 螺丝钉指数基金组合, 螺丝钉主动优选组合
-            result.extend(danjuan(plan=code))
-        else:
-            if code in ['CSI1014', 'CSI1019']:  # 我要稳稳的幸福, 钉钉宝365天组合
-                name, risk = i['fd_name'], 1
+            if code in ['CSI666', 'CSI1033']:       # 螺丝钉指数基金组合, 螺丝钉主动优选组合
+                result.extend(dj(plan=code))
             else:
-                name, _, risk = funds[code]
-            market_value = float(i['market_value'])
-            hold_gain = float(i['hold_gain'])
-            result.append(('蛋卷', 'rmb', code, name, risk, market_value, hold_gain))
-    df = pd.DataFrame(result, columns=columns)
+                if code in ['CSI1014', 'CSI1019']:  # 我要稳稳的幸福, 钉钉宝365天组合
+                    name, risk = i['fd_name'], 1
+                else:
+                    name, _, risk = funds[code]
+                market_value = float(i['market_value'])
+                hold_gain = float(i['hold_gain'])
+                result.append(('蛋卷', 'rmb', code, name, risk, market_value, hold_gain))
+        return result
+
+    if os.path.isfile(datafile):
+        return pd.read_csv(datafile, index_col=0)
+
+    with open('auth/dj_cookie.txt', 'r') as f:
+        cookie = f.read()[:-1]      # delete last '\n'
+    url_base = 'https://danjuanapp.com/djapi/holding/'
+    headers = {
+        'Cookie': cookie,
+        'Host': url_base.split('/')[2],
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_1) '
+                      'AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/88.0.4324.192 Safari/537.36'}
+
+    asset, total_hg = 0.0, 0.0
+    df = pd.DataFrame(dj(), columns=columns)
     sum_mv = round(df['market_value'].sum(), 2)
     assert abs(sum_mv - asset) <= 1, print("sum_mv({}) != asset({})".format(sum_mv, asset))
     sum_hg = round(df['hold_gain'].sum(), 2)
     assert abs(sum_hg - total_hg) <= 1, print("sum_hg({}) != total_hg({})".format(sum_hg, total_hg))
+    df.to_csv(datafile)
     return df
 
 
-def tonghs() -> pd.DataFrame:
+def tonghs(datafile: str) -> pd.DataFrame:
+    if os.path.isfile(datafile):
+        return pd.read_csv(datafile, index_col=0)
+
     with open('auth/ths_cookie.txt', 'r') as f:
         cookie = f.read()[:-1]      # delete last '\n'
     url = 'https://trade.5ifund.com/pc_query/trade_queryIncomeWjZeroList.action?_=1615356614458'
@@ -369,20 +379,15 @@ def tonghs() -> pd.DataFrame:
         # risk = 5 - int(i['fundType'])
         result.append(('同花顺', 'rmb', code, name, risk, market_value, hold_gain))
     df = pd.DataFrame(result, columns=columns)
+    df.to_csv(datafile)
     return df
 
 
 def run(file: str) -> pd.DataFrame:
-    platforms = {'zsb': zhaoshang_bank, 'hsb': hangseng_bank, 'yh': yinhe, 'hs': huasheng, 'ft': futu}
-
-    if file == 'dj':
-        df = danjuan()
-    elif file == 'ths':
-        df = tonghs()
-    else:
-        func = platforms[re.search(r'.*/(.*)_.*', file).group(1)]
-        df = func(file)
-    return df
+    platforms = {'zsb': zhaoshang_bank, 'hsb': hangseng_bank, 'yh': yinhe, 'hs': huasheng, 'ft': futu,
+                 'dj': danjuan, 'ths': tonghs}
+    func = platforms[re.search(r'.*/(.*)_.*', file).group(1)]
+    return func(file)
 
 
 def to_rmb(row: pd.Series, key: str, rates: tuple) -> float:
@@ -417,15 +422,14 @@ def fill(df: pd.DataFrame):
 
 
 def run_all(files: list) -> pd.DataFrame:
-    platforms = ['zsb_', 'hsb_', 'yh_', 'hs_', 'ft_']   # to sort files
+    platforms = ['zsb_', 'hsb_', 'yh_', 'hs_', 'ft_', 'dj_', 'ths_']   # to sort files
     fs = sorted(files)
     frames = []
     for p in platforms:
         for f in fs:
-            if p in f:
+            if os.path.basename(f).startswith(p):
+                # print(f, p)
                 frames.append(run(f))
-    frames.append(run('dj'))
-    frames.append(run('ths'))
     df = pd.concat(frames)
     fill(df)
     return df
@@ -508,7 +512,7 @@ def main():
         sys.exit(1)
 
     path = sys.argv[1]
-    if os.path.isfile(path) or path in ['dj', 'ths']:
+    if os.path.isfile(path) or path.endswith('.csv'):
         print(run(path))
         sys.exit(0)
 
