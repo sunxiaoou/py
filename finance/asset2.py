@@ -12,12 +12,12 @@ from openpyxl import load_workbook
 from openpyxl.chart import PieChart, Reference
 from openpyxl.utils import get_column_letter
 
-pd.set_option('display.max_rows', 1000)
-pd.set_option('display.max_columns', 6)
+# pd.set_option('display.max_rows', 1000)
+# pd.set_option('display.max_columns', 10)
 
 from securities import *
 
-columns = ['platform', 'currency', 'code', 'name', 'risk', 'market_value', 'hold_gain']
+columns = ['platform', 'currency', 'code', 'name', 'type', 'risk', 'market_value', 'hold_gain']
 col2 = ['volume', 'nav', 'cost']
 
 
@@ -31,14 +31,15 @@ def verify(row: pd.Series):
 
 
 def zhaoshang_bank(datafile: str) -> pd.DataFrame:
+    bonds = ['招智睿远平衡二十七期']
+
     with open(datafile) as fp:
         lines = [re.sub(',', '', line).rstrip('\n') for line in fp.readlines()]
-
     i = 0
     while lines[i] != '尾号8884':
         i += 1
     cash = float(lines[i + 1])
-    result = [('招商银行', 'cny', 'cash', '现金', 0, cash, 0)]
+    result = [('招商银行', 'cny', 'cash', '现金', '货币', 0, cash, 0)]
     i += 2
     while lines[i] != '理财产品':
         i += 1
@@ -52,8 +53,8 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
             i += 1
         hold_gain = float(re.sub('[^\d.]+', '', lines[i]))
         market_value = float(lines[i + 1])
-        # hold_gain = float(re.sub('[^\d.]+', '', lines[i + 3]))
-        result.append(('招商银行', 'cny', 'product', name, 1, market_value, hold_gain))
+        type, risk = ('债券', 1) if name in bonds else ('货币', 0)
+        result.append(('招商银行', 'cny', 'product', name, type, risk, market_value, hold_gain))
         i += 4
     df = pd.DataFrame(result, columns=columns)
     sum_mv = round(df['market_value'].sum(), 2)
@@ -63,7 +64,7 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
 
 def hangseng_bank(datafile: str) -> pd.DataFrame:
     cash = float(re.sub(r'.+_', '', datafile[: -4]))
-    result = [('恒生银行', 'cny', 'cash', '现金', 0, cash, 0)]
+    result = [('恒生银行', 'cny', 'cash', '现金', '货币', 0, cash, 0)]
 
     with open(datafile) as fp:
         lines = [re.sub(r'[,＋]', '', re.sub('－', '-', line)).rstrip('\n') for line in fp.readlines()]
@@ -84,7 +85,7 @@ def hangseng_bank(datafile: str) -> pd.DataFrame:
             i += 1
         else:
             code = lines[i][: 6]
-        name, _, risk = off_market[code]
+        name, type, risk = off_market[code]
         i += 1
         hold_gain = float(lines[i])
         i += 6
@@ -93,7 +94,7 @@ def hangseng_bank(datafile: str) -> pd.DataFrame:
         else:
             i += 1
             market_value = float(lines[i])
-        result.append(('恒生银行', 'cny', code, name, risk, market_value, hold_gain))
+        result.append(('恒生银行', 'cny', code, name, type, risk, market_value, hold_gain))
         i += 1
     df = pd.DataFrame(result, columns=columns)
     sum_mv = round(df['market_value'].sum(), 2)
@@ -116,7 +117,7 @@ def yinhe(datafile: str) -> pd.DataFrame:
     cash = float(lines[i + 7])
     assert round(total_mv + cash, 2) == asset,\
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
-    result = [('银河', 'cny', 'cash', '现金', 0, cash, 0, 1, cash, cash)]
+    result = [('银河', 'cny', 'cash', '现金', '货币', 0, cash, 0, 1, cash, cash)]
     i += 8
     while not lines[i].startswith('参考盈亏'):
         i += 1
@@ -131,7 +132,11 @@ def yinhe(datafile: str) -> pd.DataFrame:
         else:
             name, code = lines[i][: -6].rstrip(), lines[i][-6:]
         i += 1
-        risk = 2 if code[0] == '1' else 3
+        if code[0] == '1':
+            type, risk = '转债', 2
+        else:
+            name, type, risk = on_market[code]
+
         hold_gain = float(lines[i])
         i += 1
         if ' ' in lines[i]:     # volume, cost are in same line
@@ -153,7 +158,7 @@ def yinhe(datafile: str) -> pd.DataFrame:
         assert v2 == volume, print("v2{} != volume{}".format(v2, volume))
         assert market_value == round(nav * volume, 2),\
             print("mv({}) != nav({}) * volume({})".format(market_value, nav, volume))
-        result.append(('银河', 'cny', code, name, risk, market_value, hold_gain, volume, nav, cost))
+        result.append(('银河', 'cny', code, name, type, risk, market_value, hold_gain, volume, nav, cost))
     df = pd.DataFrame(result, columns=columns + col2)
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
@@ -178,7 +183,7 @@ def huasheng(datafile: str) -> pd.DataFrame:
     cash = float(lines[i + 14])
     assert round(total_mv + cash, 2) == asset,\
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
-    result = [('华盛', currency, 'cash', '现金', 0, cash, 0, 1, cash, cash)]
+    result = [('华盛', currency, 'cash', '现金', '货币', 0, cash, 0, 1, cash, cash)]
     i += 15
     while not lines[i].startswith('持仓盈亏'):
         i += 1
@@ -189,13 +194,14 @@ def huasheng(datafile: str) -> pd.DataFrame:
         hold_gain = float(lines[i + 2])
         nav = float(lines[i + 3])
         code = lines[i + 4].rstrip('融')
+        name, type, risk = on_market[code]
         market_value = float(lines[i + 5])
         i += 6
         while not re.match(r'.*[\d.]+$', lines[i]):
             i += 1
         cost = float(lines[i])
         i += 1
-        result.append(('华盛', currency, code, name, 3, market_value, hold_gain, volume, nav, cost))
+        result.append(('华盛', currency, code, name, type, risk, market_value, hold_gain, volume, nav, cost))
     df = pd.DataFrame(result, columns=columns + col2)
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
@@ -223,7 +229,7 @@ def futu(datafile: str) -> pd.DataFrame:
     cash = float(lines[i + 1])
     assert round(total_mv + cash, 2) == asset, \
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
-    result = [('富途', currency, 'cash', '现金', 0, cash, 0)]
+    result = [('富途', currency, 'cash', '现金', '货币', 0, cash, 0)]
     i += 2
     while not lines[i].startswith('持仓盈亏'):
         i += 1
@@ -231,9 +237,10 @@ def futu(datafile: str) -> pd.DataFrame:
     while len(lines) - i >= 7:
         code = lines[i + 4]
         name = lines[i]
+        name, type, risk = on_market[code]
         market_value = float(lines[i + 1])
         hold_gain = float(lines[i + 2])
-        result.append(('富途', currency, code, name, 3, market_value, hold_gain))
+        result.append(('富途', currency, code, name, type, risk, market_value, hold_gain))
         i += 7
     df = pd.DataFrame(result, columns=columns)
     sum_mv = round(df['market_value'].sum(), 2)
@@ -260,8 +267,8 @@ def danjuan(datafile: str) -> pd.DataFrame:
                 market_value = float(i['market_value'])
                 hold_gain = float(i['hold_gain'])
                 if market_value:
-                    name, _, risk = off_market[code]
-                    result.append(('蛋卷' + plan_code, 'cny', code, name, risk, market_value, hold_gain))
+                    name, type, risk = off_market[code]
+                    result.append(('蛋卷' + plan_code, 'cny', code, name, type, risk, market_value, hold_gain))
             return result   # return a list as a workaround
 
         asset = float(response.json()['data']['total_assets'])
@@ -274,12 +281,12 @@ def danjuan(datafile: str) -> pd.DataFrame:
                 result.extend(dj(plan=code))
             else:
                 if code in ['CSI1014', 'CSI1019']:  # 我要稳稳的幸福, 钉钉宝365天组合
-                    name, risk = i['fd_name'], 1
+                    name, type, risk = i['fd_name'], '债券', 1
                 else:
-                    name, _, risk = off_market[code]
+                    name, type, risk = off_market[code]
                 market_value = float(i['market_value'])
                 hold_gain = float(i['hold_gain'])
-                result.append(('蛋卷', 'cny', code, name, risk, market_value, hold_gain))
+                result.append(('蛋卷', 'cny', code, name, type, risk, market_value, hold_gain))
         return result
 
     if os.path.isfile(datafile):
@@ -329,20 +336,20 @@ def tonghs(datafile: str) -> pd.DataFrame:
     items = response.json()['singleData']['IncomeShareListResult']
     for i in items:
         code = i['fundCode']
-        name, _, risk = off_market[code]
+        name, type, risk = off_market[code]
         market_value = float(i['totalVol'])
         hold_gain = float(i['sumIncome'])
-        result.append(('同花顺', 'cny', code, name, risk, market_value, hold_gain))
+        result.append(('同花顺', 'cny', code, name, type, risk, market_value, hold_gain))
     response = requests.get(url2, headers=headers)
     assert response.status_code == 200, print('status_code({}) != 200'.format(response.status_code))
     items = response.json()['singleData']['currentShareList']
     for i in items:
         code = i['fundCode']
-        name, _, risk = off_market[code]
+        name, type, risk = off_market[code]
         market_value = float(i['currentValueText'])
         hold_gain = float(i['totalprofitlossText'])
         # risk = 5 - int(i['fundType'])
-        result.append(('同花顺', 'cny', code, name, risk, market_value, hold_gain))
+        result.append(('同花顺', 'cny', code, name, type, risk, market_value, hold_gain))
     df = pd.DataFrame(result, columns=columns)
     df.to_csv(datafile)
     return df
@@ -427,11 +434,16 @@ def to_execl(xlsx: str, sheet: str, df: pd.DataFrame):
          'labels': ['cny', 'hkd', 'usd'],
          'category': 'currency',
          'anchor': 'K16'},
-        {'location': (last_row + 2, 7),
-         'letter': 'E',
+        {'location': (last_row + 6, 4),
+         'letter': 'F',
          'labels': [0, 1, 2, 3],
          'category': 'risk',
-         'anchor': 'K31'}
+         'anchor': 'K31'},
+        {'location': (last_row + 2, 7),
+         'letter': 'E',
+         'labels': ['货币', '债券', '转债', '指数', '主动', '股票', '医药', '中概股'],
+         'category': 'type',
+         'anchor': 'K46'}
     ]
 
     for summary in summaries:
@@ -441,11 +453,11 @@ def to_execl(xlsx: str, sheet: str, df: pd.DataFrame):
             ws.cell(row=row+i, column=col).value = summary['labels'][i]
             c = ws.cell(row=row+i, column=col+1)
             c.number_format = "#,##,0.00"
-            c.value = '=SUMIF(${0}$2:${0}${1},{2}{3},$F$2:$F${1})'.format(summary['letter'],
+            c.value = '=SUMIF(${0}$2:${0}${1},{2}{3},$G$2:$G${1})'.format(summary['letter'],
                                                                           last_row, le[0], row + i)
             c = ws.cell(row=row+i, column=col+2)
             c.number_format = "#,##,0.00"
-            c.value = '=SUMIF(${0}$2:${0}${1},{2}{3},$G$2:$G${1})'.format(summary['letter'],
+            c.value = '=SUMIF(${0}$2:${0}${1},{2}{3},$H$2:$H${1})'.format(summary['letter'],
                                                                           last_row, le[0], row + i)
         ws.cell(row=row+i+1, column=col).value = 'sum'
         c = ws.cell(row=row+i+1, column=col+1)
