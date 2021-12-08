@@ -12,10 +12,11 @@ from openpyxl import load_workbook
 from openpyxl.chart import PieChart, Reference
 from openpyxl.utils import get_column_letter
 
+from securities import *
+
 # pd.set_option('display.max_rows', 1000)
 # pd.set_option('display.max_columns', 10)
 
-from securities import *
 
 columns = ['platform', 'currency', 'code', 'name', 'type', 'risk', 'market_value', 'hold_gain']
 
@@ -376,7 +377,7 @@ def gain_rate(row: pd.Series) -> float:
     return round(rate, 4)
 
 
-def fill(df: pd.DataFrame):
+def fill(df: pd.DataFrame) -> pd.DataFrame:
     cr = CurrencyRates()
     h2c = round(cr.get_rate('HKD', 'CNY'), 2)
     u2c = round(cr.get_rate('USD', 'CNY'), 2)
@@ -385,6 +386,8 @@ def fill(df: pd.DataFrame):
     df['market_value'] = df.apply(lambda row: to_cny(row, 'market_value', (h2c, u2c)), axis=1)
     df['hold_gain'] = df.apply(lambda row: to_cny(row, 'hold_gain', (h2c, u2c)), axis=1)
     df['gain_rate'] = df.apply(gain_rate, axis=1)
+    col2 = ['platform', 'currency', 'code', 'name', 'type', 'risk', 'nav', 'market_value', 'hold_gain', 'gain_rate']
+    return df.reindex(columns=col2)
 
 
 def run_all(files: list) -> pd.DataFrame:
@@ -397,7 +400,7 @@ def run_all(files: list) -> pd.DataFrame:
                 # print(f, p)
                 frames.append(run(f))
     df = pd.concat(frames)
-    fill(df)
+    df = fill(df)
     return df
 
 
@@ -416,6 +419,7 @@ def to_execl(xlsx: str, sheet: str, df: pd.DataFrame):
     ws = wb[sheet]
     last_row = ws.max_row
     last_col = ws.max_column
+
 
     for i in range(2, last_row + 1):
         for j in range(6, last_col):
@@ -452,11 +456,11 @@ def to_execl(xlsx: str, sheet: str, df: pd.DataFrame):
             ws.cell(row=row+i, column=col).value = summary['labels'][i]
             c = ws.cell(row=row+i, column=col+1)
             c.number_format = "#,##,0.00"
-            c.value = '=SUMIF(${0}$2:${0}${1},{2}{3},$G$2:$G${1})'.format(summary['letter'],
+            c.value = '=SUMIF(${0}$2:${0}${1},{2}{3},$H$2:$H${1})'.format(summary['letter'],
                                                                           last_row, le[0], row + i)
             c = ws.cell(row=row+i, column=col+2)
             c.number_format = "#,##,0.00"
-            c.value = '=SUMIF(${0}$2:${0}${1},{2}{3},$H$2:$H${1})'.format(summary['letter'],
+            c.value = '=SUMIF(${0}$2:${0}${1},{2}{3},$I$2:$I${1})'.format(summary['letter'],
                                                                           last_row, le[0], row + i)
         ws.cell(row=row+i+1, column=col).value = 'sum'
         c = ws.cell(row=row+i+1, column=col+1)
