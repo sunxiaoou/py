@@ -18,16 +18,17 @@ from openpyxl.utils import get_column_letter
 from securities import *
 
 columns = ['platform', 'currency', 'code', 'name', 'type', 'risk', 'market_value', 'hold_gain']
-col2 = ['volume', 'nav', 'cost']
 
 
 def verify(row: pd.Series):
-    mv = round(row['nav'] * row['volume'], 2)
-    if row['market_value'] != mv:
-        print('Warning: {} market_value({}) != {}'.format(row['name'], row['market_value'], mv))
-    hg = round((row['nav'] - row['cost']) * row['volume'], 2)
-    if abs(row['hold_gain'] - hg) >= 1:
-        print('Warning: {} hold_gain({}) != {}'.format(row['name'], row['hold_gain'], hg))
+    if not pd.isna(row['nav']):
+        mv = round(row['nav'] * row['volume'], 2)
+        if row['market_value'] != mv:
+            print(row['nav'], type(row['nav']))
+            print('Warning: {} market_value({}) != {}'.format(row['name'], row['market_value'], mv))
+        hg = round((row['nav'] - row['cost']) * row['volume'], 2)
+        if abs(row['hold_gain'] - hg) >= 1:
+            print('Warning: {} hold_gain({}) != {}'.format(row['name'], row['hold_gain'], hg))
 
 
 def zhaoshang_bank(datafile: str) -> pd.DataFrame:
@@ -117,7 +118,7 @@ def yinhe(datafile: str) -> pd.DataFrame:
     cash = float(lines[i + 7])
     assert round(total_mv + cash, 2) == asset,\
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
-    result = [('银河', 'cny', 'cash', '现金', '货币', 0, cash, 0, 1, cash, cash)]
+    result = [('银河', 'cny', 'cash', '现金', '货币', 0, cash, 0)]
     i += 8
     while not lines[i].startswith('参考盈亏'):
         i += 1
@@ -159,13 +160,13 @@ def yinhe(datafile: str) -> pd.DataFrame:
         assert market_value == round(nav * volume, 2),\
             print("mv({}) != nav({}) * volume({})".format(market_value, nav, volume))
         result.append(('银河', 'cny', code, name, type, risk, market_value, hold_gain, volume, nav, cost))
-    df = pd.DataFrame(result, columns=columns + col2)
+    df = pd.DataFrame(result, columns=columns + ['volume', 'nav', 'cost'])
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
     sum_hg = round(df['hold_gain'].sum(), 2)
     assert sum_hg == total_hg, print("sum_hg({}) != total_hg({})".format(sum_hg, total_hg))
     df.apply(verify, axis=1)
-    df.drop(columns=col2, inplace=True)
+    df.drop(columns=['volume', 'cost'], inplace=True)
     return df
 
 
@@ -183,7 +184,7 @@ def huasheng(datafile: str) -> pd.DataFrame:
     cash = float(lines[i + 14])
     assert round(total_mv + cash, 2) == asset,\
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
-    result = [('华盛', currency, 'cash', '现金', '货币', 0, cash, 0, 1, cash, cash)]
+    result = [('华盛', currency, 'cash', '现金', '货币', 0, cash, 0)]
     i += 15
     while not lines[i].startswith('持仓盈亏'):
         i += 1
@@ -202,13 +203,13 @@ def huasheng(datafile: str) -> pd.DataFrame:
         cost = float(lines[i])
         i += 1
         result.append(('华盛', currency, code, name, type, risk, market_value, hold_gain, volume, nav, cost))
-    df = pd.DataFrame(result, columns=columns + col2)
+    df = pd.DataFrame(result, columns=columns + ['volume', 'nav', 'cost'])
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
     sum_hg = round(df['hold_gain'].sum(), 2)
     assert sum_hg == total_hg, print("sum_hg({}) != total_hg({})".format(sum_hg, total_hg))
     df.apply(verify, axis=1)
-    df.drop(columns=col2, inplace=True)
+    df.drop(columns=['volume', 'cost'], inplace=True)
     return df
 
 
@@ -236,13 +237,15 @@ def futu(datafile: str) -> pd.DataFrame:
     i += 1
     while len(lines) - i >= 7:
         code = lines[i + 4]
-        name = lines[i]
+        volume = lines[i + 5]
+        # name = lines[i]
         name, type, risk = on_market[code]
         market_value = float(lines[i + 1])
         hold_gain = float(lines[i + 2])
-        result.append(('富途', currency, code, name, type, risk, market_value, hold_gain))
+        nav = round(market_value / int(volume), 2)
+        result.append(('富途', currency, code, name, type, risk, market_value, hold_gain, nav))
         i += 7
-    df = pd.DataFrame(result, columns=columns)
+    df = pd.DataFrame(result, columns=columns + ['nav'])
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
     sum_hg = round(df['hold_gain'].sum(), 2)
@@ -252,41 +255,19 @@ def futu(datafile: str) -> pd.DataFrame:
 
 def danjuan(datafile: str) -> pd.DataFrame:
 
-    def dj(plan: str = '') -> list:
-        nonlocal asset, total_hg
-
-        url = url_base + 'plan/' + plan if plan else url_base + 'summary'
-        response = requests.get(url, headers=headers)
-        assert response.status_code == 200, print('status_code({}) != 200'.format(response.status_code))
-        if plan:
-            result = []
-            items = response.json()['data']['items']
-            for i in items:
-                plan_code = i['plan_code']
-                code = i['fd_code']
-                market_value = float(i['market_value'])
-                hold_gain = float(i['hold_gain'])
-                if market_value:
-                    name, type, risk = off_market[code]
-                    result.append(('蛋卷' + plan_code, 'cny', code, name, type, risk, market_value, hold_gain))
-            return result   # return a list as a workaround
-
-        asset = float(response.json()['data']['total_assets'])
-        total_hg = float(response.json()['data']['hold_gain'])
+    def get_plan(plan: str) -> list:
+        resp = requests.get(url + 'plan/' + plan, headers=headers)
+        assert resp.status_code == 200, print('status_code({}) != 200'.format(resp.status_code))
         result = []
-        items = response.json()['data']['items']
-        for i in items:
+        for i in resp.json()['data']['items']:
+            plan_code = i['plan_code']
             code = i['fd_code']
-            if code in ['CSI666', 'CSI1033']:       # 螺丝钉指数基金组合, 螺丝钉主动优选组合
-                result.extend(dj(plan=code))
-            else:
-                if code in ['CSI1014', 'CSI1019']:  # 我要稳稳的幸福, 钉钉宝365天组合
-                    name, type, risk = i['fd_name'], '债券', 1
-                else:
-                    name, type, risk = off_market[code]
-                market_value = float(i['market_value'])
-                hold_gain = float(i['hold_gain'])
-                result.append(('蛋卷', 'cny', code, name, type, risk, market_value, hold_gain))
+            market_value = float(i['market_value'])
+            hold_gain = float(i['hold_gain'])
+            nav = float(i['nav'])
+            if market_value:
+                name, type, risk = off_market[code]
+                result.append(('蛋卷' + plan_code, 'cny', code, name, type, risk, market_value, hold_gain, nav))
         return result
 
     if os.path.isfile(datafile):
@@ -294,16 +275,33 @@ def danjuan(datafile: str) -> pd.DataFrame:
 
     with open('auth/dj_cookie.txt', 'r') as f:
         cookie = f.read()[:-1]      # delete last '\n'
-    url_base = 'https://danjuanapp.com/djapi/holding/'
+    url = 'https://danjuanapp.com/djapi/holding/'
     headers = {
         'Cookie': cookie,
-        'Host': url_base.split('/')[2],
+        'Host': url.split('/')[2],
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_1) '
                       'AppleWebKit/537.36 (KHTML, like Gecko) '
                       'Chrome/88.0.4324.192 Safari/537.36'}
 
-    asset, total_hg = 0.0, 0.0
-    df = pd.DataFrame(dj(), columns=columns)
+    response = requests.get(url + 'summary', headers=headers)
+    assert response.status_code == 200, print('status_code({}) != 200'.format(response.status_code))
+    asset = float(response.json()['data']['total_assets'])
+    total_hg = float(response.json()['data']['hold_gain'])
+    result = []
+    for i in response.json()['data']['items']:
+        code = i['fd_code']
+        if code in ['CSI666', 'CSI1033']:       # 螺丝钉指数基金组合, 螺丝钉主动优选组合
+            result.extend(get_plan(code))
+        else:
+            if code in ['CSI1014', 'CSI1019']:  # 我要稳稳的幸福, 钉钉宝365天组合
+                name, type, risk = i['fd_name'], '债券', 1
+            else:
+                name, type, risk = off_market[code]
+            market_value = float(i['market_value'])
+            hold_gain = float(i['hold_gain'])
+            nav = float(i['nav'])
+            result.append(('蛋卷', 'cny', code, name, type, risk, market_value, hold_gain, nav))
+    df = pd.DataFrame(result, columns=columns + ['nav'])
     sum_mv = round(df['market_value'].sum(), 2)
     assert abs(sum_mv - asset) <= 1, print("sum_mv({}) != asset({})".format(sum_mv, asset))
     sum_hg = round(df['hold_gain'].sum(), 2)
@@ -339,7 +337,8 @@ def tonghs(datafile: str) -> pd.DataFrame:
         name, type, risk = off_market[code]
         market_value = float(i['totalVol'])
         hold_gain = float(i['sumIncome'])
-        result.append(('同花顺', 'cny', code, name, type, risk, market_value, hold_gain))
+        nav = 1.0
+        result.append(('同花顺', 'cny', code, name, type, risk, market_value, hold_gain, nav))
     response = requests.get(url2, headers=headers)
     assert response.status_code == 200, print('status_code({}) != 200'.format(response.status_code))
     items = response.json()['singleData']['currentShareList']
@@ -348,9 +347,9 @@ def tonghs(datafile: str) -> pd.DataFrame:
         name, type, risk = off_market[code]
         market_value = float(i['currentValueText'])
         hold_gain = float(i['totalprofitlossText'])
-        # risk = 5 - int(i['fundType'])
-        result.append(('同花顺', 'cny', code, name, type, risk, market_value, hold_gain))
-    df = pd.DataFrame(result, columns=columns)
+        nav = float(i['navText'])
+        result.append(('同花顺', 'cny', code, name, type, risk, market_value, hold_gain, nav))
+    df = pd.DataFrame(result, columns=columns + ['nav'])
     df.to_csv(datafile)
     return df
 
