@@ -36,17 +36,23 @@ def request_zsxq(url: str, headers: dict) -> str:
         i += 1
     assert response.status_code == 200, print('status_code({}) != 200'.format(response.status_code))
     items = response.json()['resp_data']['topics']
+    create = ''
     for i in items:
-        create = i['create_time']
-        try:
-            pic = i['talk']['images'][1]['original']['url']
-        except KeyError:
-            pic = i['talk']['images'][2]['original']['url']
-        save_pic(create, pic)
+        if 'images' in i['talk']:
+            for j in i['talk']['images']:
+                if 'original' in j:
+                    pic = j['original']['url']
+                    create = i['create_time']
+                    save_pic(create, pic)
     return create
 
 
 def main():
+    if len(sys.argv) < 2:
+        print('Usage: {} num'.format(sys.argv[0]))
+        print('       {} num [end_time(%Y%m%d)]'.format(sys.argv[0]))
+        sys.exit(1)
+
     with open('zsxq_cookie.txt', 'r') as f:
         cookie = f.read()[:-1]      # delete last '\n'
     headers = {
@@ -64,15 +70,17 @@ def main():
     }
 
     url_base = 'https://api.zsxq.com/v2/hashtags/2425888411/topics?count=20'
-    end_time = ''
-    if len(sys.argv) > 1:
-        date = datetime.strptime(sys.argv[1], '%Y%m%d')
+
+    num = int(sys.argv[1])
+    if len(sys.argv) == 2:
+        end_time = ''
+    else:
+        date = datetime.strptime(sys.argv[2], '%Y%m%d')
         end_time = date.strftime('%Y-%m-%dT%H:%M:%S.%f')[: -3] + '+0800'
 
-    for i in range(2):
-        # print(end_time)
+    for i in range(num):
         url = url_base + '&end_time=' + quote(end_time) if end_time else url_base
-        print(url)
+        print(i, url)
         end_time = request_zsxq(url, headers)
 
 
