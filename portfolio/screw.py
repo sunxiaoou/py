@@ -44,6 +44,10 @@ def request_zsxq(url: str, headers: dict) -> str:
                     pic = j['original']['url']
                     create = i['create_time']
                     save_pic(create, pic)
+                elif 'large' in j:
+                    pic = j['large']['url']
+                    create = i['create_time']
+                    save_pic(create, pic)
     return create
 
 
@@ -68,7 +72,6 @@ def main():
         'Upgrade-Insecure-Requests': '1',
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:94.0) Gecko/20100101 Firefox/94.0'
     }
-
     url_base = 'https://api.zsxq.com/v2/hashtags/2425888411/topics?count=20'
 
     num = int(sys.argv[1])
@@ -82,6 +85,8 @@ def main():
         url = url_base + '&end_time=' + quote(end_time) if end_time else url_base
         print(i, url)
         end_time = request_zsxq(url, headers)
+        if not end_time:
+            break
 
 
 if __name__ == "__main__":
