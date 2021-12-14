@@ -29,7 +29,8 @@ def get_radical_bones(xlsx: str) -> pd.DataFrame:
         nav = float(ws.cell(row=i, column=col + 3).value)
         # if nav < 170:
         lst.append((rank, code, name, nav))
-    return pd.DataFrame(lst, columns=columns)
+    df = pd.DataFrame(lst, columns=columns)
+    return df.head(50)
 
 
 def get_low2_bones(xlsx: str) -> pd.DataFrame:

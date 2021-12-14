@@ -420,7 +420,6 @@ def to_execl(xlsx: str, sheet: str, df: pd.DataFrame):
     last_row = ws.max_row
     last_col = ws.max_column
 
-
     for i in range(2, last_row + 1):
         for j in range(6, last_col):
             ws.cell(row=i, column=j).number_format = '#,##,0.00'
