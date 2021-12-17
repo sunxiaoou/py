@@ -19,7 +19,7 @@ indexes = [
 ]
 
 
-def parse(file: str) -> list:
+def parse_170627(file: str) -> list:
     with open(file) as fp:
         lines = [line.rstrip('\n') for line in fp.readlines()]
 
@@ -58,12 +58,53 @@ def parse(file: str) -> list:
     return result
 
 
+def parse_170919(file: str) -> list:
+    with open(file) as f:
+        lines = []
+        for l in f.readlines():
+            lines += l.rstrip('\n').split()
+
+    # with open('tmp.txt', 'w') as f:
+    #     for l in lines:
+    #         f.write(l + '\n')
+
+    reg_date = re.compile(r'20\d{6}')
+    result = []
+    try:
+        i = 0
+        while True:
+            while reg_date.search(lines[i]) is None:
+                i += 1
+            date = reg_date.search(lines[i]).group()
+            # print(date)
+            dic = {}
+            i += 1
+            while True:
+                while lines[i] not in indexes:
+                    if lines[i] == '注：':
+                        i += 1
+                        break
+                    i += 1
+                else:
+                    key, value = lines[i], lines[i + 1]
+                    i += 2
+                    # print(key, value)
+                    dic[key] = float(value.rstrip('%'))
+                    continue
+                break               # break out of multiple loops as encountered '注：'
+            result.append((date, dic))
+    except IndexError:
+        pass
+    return result
+
+
 def main():
     if len(sys.argv) < 2:
         print('Usage: {} txt'.format(sys.argv[0]))
         print('       {} txt xlsx'.format(sys.argv[0]))
         sys.exit(1)
-    pprint(parse(sys.argv[1]))
+    # pprint(parse_170627(sys.argv[1]))
+    pprint(parse_170919(sys.argv[1]))
 
 
 if __name__ == "__main__":
