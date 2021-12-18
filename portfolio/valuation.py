@@ -80,16 +80,23 @@ def parse_170919(file: str) -> list:
             dic = {}
             i += 1
             while True:
-                while lines[i] not in indexes:
-                    if lines[i] == '注：':
+                while lines[i] not in indexes and not lines[i].startswith('中概互联（'):
+                    if lines[i].startswith('注'):
                         i += 1
                         break
                     i += 1
                 else:
-                    key, value = lines[i], lines[i + 1]
+                    key = '中概互联' if lines[i].startswith('中概互联（') else lines[i]
+                    if key == '中概互联':
+                        if lines[i + 1] == '513050':            # there is no value
+                            i += 2
+                            continue
+                        if lines[i + 1] == '市销率）':
+                            i += 1
+                    value = lines[i + 1]
                     i += 2
                     # print(key, value)
-                    dic[key] = float(value.rstrip('%'))
+                    dic[key] = float(value.rstrip('%％'))
                     continue
                 break               # break out of multiple loops as encountered '注：'
             result.append((date, dic))
@@ -104,7 +111,9 @@ def main():
         print('       {} txt xlsx'.format(sys.argv[0]))
         sys.exit(1)
     # pprint(parse_170627(sys.argv[1]))
-    pprint(parse_170919(sys.argv[1]))
+    result = parse_170919(sys.argv[1])
+    pprint(result)
+    print(len(result))
 
 
 if __name__ == "__main__":
