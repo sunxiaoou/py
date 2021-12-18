@@ -15,7 +15,7 @@ indexes = [
     '纳斯达克100', '标普500', '标普科技', '美股消费', '全球医疗', '香港中小', '中概互联', '恒生科技',
     'A股龙头', '竞争力指数', 'MSCI质量', '科创50', '家用电器',
     # other
-    '十年期国债'
+    '美国房地产', '十年期国债', '10年期国债（A股）', '10年期国债（美股）'
 ]
 
 
@@ -80,26 +80,35 @@ def parse_170919(file: str) -> list:
             dic = {}
             i += 1
             while True:
-                while lines[i] not in indexes and not lines[i].startswith('中概互联（'):
+                while lines[i] not in indexes and not lines[i].startswith('中概互联') \
+                        and not lines[i].startswith('恒生科技'):
                     if lines[i].startswith('注'):
                         i += 1
                         break
                     i += 1
                 else:
-                    key = '中概互联' if lines[i].startswith('中概互联（') else lines[i]
+                    if lines[i].startswith('中概互联'):
+                        key = '中概互联'
+                    elif lines[i].startswith('恒生科技'):
+                        key = '恒生科技'
+                    else:
+                        key = lines[i]
                     if key == '中概互联':
                         if lines[i + 1] == '513050':            # there is no value
                             i += 2
                             continue
-                        if lines[i + 1] == '市销率）':
+                        if lines[i + 1].startswith('市销率'):
                             i += 1
-                    value = lines[i + 1]
+                    elif key == '十年期国债':
+                        key = '10年期国债（A股）'
+                    value = float(re.search(r'[\d.]+', lines[i + 1]).group(0))
                     i += 2
                     # print(key, value)
-                    dic[key] = float(value.rstrip('%％'))
+                    dic[key] = value
                     continue
                 break               # break out of multiple loops as encountered '注：'
             result.append((date, dic))
+            # result.append((date, len(dic)))
     except IndexError:
         pass
     return result
