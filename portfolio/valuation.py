@@ -3,6 +3,9 @@ import re
 import sys
 from pprint import pprint
 
+import pandas as pd
+from mongo import Mongo
+
 INDEXES = [
     # PB
     '银行行业', '地产行业', '证券行业', '军工行业', '环保行业', '基建行业', '建筑材料',
@@ -38,7 +41,7 @@ def parse(file: str) -> list:
                 i += 1
             date = reg_date.search(lines[i]).group()
             # print(date)
-            dic = {}
+            dic = {'_id': date}
             i += 1
             while True:
                 while lines[i] not in INDEXES and not lines[i].startswith('中概互联') \
@@ -75,16 +78,16 @@ def parse(file: str) -> list:
                     dic[key] = value
                     continue
                 break               # break out of multiple loops as encountered '注：'
-            result.append((date, dic))
-            # result.append((date, len(dic)))
+            result.append(dic)
     except IndexError:
         pass
     return result
 
 
 def check(valuations: list):
-    cur = set()
-    for date, valuation in valuations:
+    cur = {'_id'}
+    for valuation in valuations:
+        date = valuation['_id']
         s = set(valuation.keys())
         if cur == s:
             continue
@@ -103,14 +106,18 @@ def main():
         print('       {} txt xlsx'.format(sys.argv[0]))
         sys.exit(1)
     valuations = parse(sys.argv[1])
-    pprint(valuations)
+    # pprint(valuations)
     print(len(valuations))
+    df = pd.DataFrame(valuations)
+    df['_id'] = pd.to_datetime(df['_id'])
+    print(df)
 
+    mongo = Mongo()
+    mongo.save('screw', df)
     # check(valuations)
     # for date, valuation in valuations:
     #     if '300价值' in valuation:
     #         print(date, valuation['300价值'])
-
 
 
 if __name__ == "__main__":
