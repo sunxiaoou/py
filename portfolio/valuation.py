@@ -19,46 +19,7 @@ indexes = [
 ]
 
 
-def parse_170627(file: str) -> list:
-    with open(file) as fp:
-        lines = [line.rstrip('\n') for line in fp.readlines()]
-
-    reg_date = re.compile(r'20\d{6}')
-    result = []
-    try:
-        i = 0
-        while True:
-            while reg_date.search(lines[i]) is None:
-                i += 1
-            date = reg_date.search(lines[i]).group()
-            # print(date)
-            dic = {}
-            i += 1
-            while not lines[i].startswith('永续A收益'):
-                l = lines[i]
-                i += 1
-                while ' ' not in l and re.search(r'[^\d%.\s]+', l):         # should not be digital str
-                    l += lines[i]
-                    i += 1
-                if re.search(r'[^\d%.\s]+', l):
-                    e = l.split()
-                    key = e[0].strip('*')
-                    value = ''
-                    for j in range(1, len(e)):
-                        if e[j] != '*':
-                            value = e[j]
-                            break
-                    if key not in '盈利收益率 市盈率 市净率股息率 ROE 场内基金 场外基金':
-                        # print(key, float(value.rstrip('%')))
-                        assert(key in indexes), print('{} is not a index'.format(key))
-                        dic[key] = float(value.rstrip('%'))
-            result.append((date, dic))
-    except IndexError:
-        pass
-    return result
-
-
-def parse_170919(file: str) -> list:
+def parse(file: str) -> list:
     with open(file) as f:
         lines = []
         for l in f.readlines():
@@ -82,7 +43,7 @@ def parse_170919(file: str) -> list:
             while True:
                 while lines[i] not in indexes and not lines[i].startswith('中概互联') \
                         and not lines[i].startswith('恒生科技'):
-                    if lines[i].startswith('注'):
+                    if lines[i].startswith('永续A') or lines[i].startswith('注'):
                         i += 1
                         break
                     i += 1
@@ -101,8 +62,11 @@ def parse_170919(file: str) -> list:
                             i += 1
                     elif key == '十年期国债':
                         key = '10年期国债（A股）'
-                    value = float(re.search(r'[\d.]+', lines[i + 1]).group(0))
-                    i += 2
+                    i += 1
+                    while lines[i] == '*':
+                        i += 1
+                    value = float(re.search(r'[\d.]+', lines[i]).group(0))
+                    i += 1
                     # print(key, value)
                     dic[key] = value
                     continue
@@ -119,8 +83,7 @@ def main():
         print('Usage: {} txt'.format(sys.argv[0]))
         print('       {} txt xlsx'.format(sys.argv[0]))
         sys.exit(1)
-    # pprint(parse_170627(sys.argv[1]))
-    result = parse_170919(sys.argv[1])
+    result = parse(sys.argv[1])
     pprint(result)
     print(len(result))
 
