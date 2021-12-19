@@ -18,13 +18,17 @@ def get_close_price(code: str, begin: date) -> tuple:
     mongo = Mongo()
     name = mongo.load_info(code)['name']
     name = '{}({})'.format(name if len(name) <= 10 else name[: 8] + '..', code)
-    base = mongo.load_close_price('sh510310')[['date']]         # use '沪深300ETF' as base
+    base = mongo.load_close_price('sh000985')               # use '中证全指' as base
     base['date'] = pd.to_datetime(base['date'])
-    base = base[base['date'] > begin]
+    base = base.rename({'close': 'sh000985'}, axis=1)
+
     df = mongo.load_close_price(code)
     df = pd.merge(base, df, on='date', how='outer')
-    df.fillna(method='ffill', inplace=True)                     # fill NaN with previous value
-    df.fillna({'close': 1.0}, inplace=True)                     # no previous value, fill with 1.0
+    df.fillna(method='ffill', inplace=True)                 # fill NaN with previous value
+    df.fillna({'close': 1.0}, inplace=True)                 # no previous value, fill with 1.0
+    weekday = 1                                             # choose Tuesday, Mon: 0, Tue: 1, ... Sun: 6
+    df = df[(df['date'] > begin) & (df['date'].dt.dayofweek == weekday)]
+    # print(df)
     return name, df
 
 
@@ -49,25 +53,25 @@ def xirr(df: pd.DataFrame, date_column: str, amount_column: str) -> float:
     return guess - 1
 
 
-def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
-    try:
-        wb = load_workbook(xlsx)
-    except FileNotFoundError:
-        wb = openpyxl.Workbook()
-
-    writer = pd.ExcelWriter(xlsx, engine='openpyxl')
-    writer.book = wb
-    writer.sheets = {worksheet.title: worksheet for worksheet in wb.worksheets}
-    df.to_excel(writer, sheet_name=sheet, index=False)
-    writer.save()
-
-
 def loop_back(code: str, begin: date) -> tuple:
     name, df = get_close_price(code, begin)
     weekday = 1                                 # choose Tuesday, Mon: 0, Tue: 1, ... Sun: 6
     df = df[(df['date'] > begin) & (df['date'].dt.dayofweek == weekday)]
 
-    df['每期定投金额'] = 1000
+    star = 4
+    base = 1000
+    exp = 1
+
+    def cal(row: pd.Series) -> float:
+        if not exp:
+            return base
+        a = 1657.7                       # threshold of 5 stars at 2011-01
+        year, month = row['date'].year, row['date'].month
+        thr = a * 1.1 ** (year - 2011) * (1 + (month - 1) / 120) / 0.8 ** (5 - star)
+        return base * (thr / row['sh000985']) ** exp
+
+    df['每期定投金额'] = df.apply(cal, axis=1)
+    # print(df)
     df['累计定投金额'] = df['每期定投金额'].cumsum()
     fee_rate = 0.001
     df['每期持仓数量'] = df['每期定投金额'] / df['close'] * (1 - fee_rate)
@@ -117,11 +121,11 @@ def main():
         sys.exit(1)
 
     begin = datetime.strptime(sys.argv[2], '%Y%m%d')    # .date()
-    # comparision('宽基指数', ["sh502000", "sh510310", "sh510710", "f050025", "f040046", "f000071"], begin)
+    comparision('宽基指数', ["sh502000", "sh510310", "sh510710", "f050025", "f040046", "f000071"], begin)
     # comparision('宽基指数', ["sz161039", "sh501050", "f006341", "f003318", "f090010", "f519671"], begin)
     # comparision('行业指数', ["f000248", "f162412", "f501009", "sz164906", "sh512000", "sh512800"], begin)
     # comparision('主动基金', ["f001643", "f001717", "f001810", "f005267", "f161005", "f163406"], begin)
-    comparision('主动基金', ["f000595", "f001766", "f001974", "f005267", "f377240", "f540003"], begin)
+    # comparision('主动基金', ["f000595", "f001766", "f001974", "f005267", "f377240", "f540003"], begin)
 
 
 if __name__ == "__main__":

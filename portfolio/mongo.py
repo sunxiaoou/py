@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from pymongo import MongoClient
 
-# pd.set_option('display.max_rows', 1000)
+pd.set_option('display.max_rows', 1000)
 # pd.set_option('display.max_columns', 6)
 
 
@@ -20,15 +20,15 @@ class Mongo:
         self.db = client.get_database(database)
 
     @staticmethod
-    def indexes_info() -> dict:
+    def indexes_info() -> pd.DataFrame:
         df = ak.index_stock_info()
         df = df.rename({'index_code': '_id', 'display_name': 'name'}, axis=1)
         df['_id'] = df['_id'].apply(lambda x: int(x))
         print(df)
-        return json.loads(df.T.to_json())
+        return df
 
     @staticmethod
-    def on_market_info() -> dict:
+    def on_market_info() -> pd.DataFrame:
         df = ak.fund_etf_category_sina(symbol='ETF基金')[['代码', '名称']]
         # print(df)
         df2 = ak.fund_etf_category_sina(symbol='LOF基金')[['代码', '名称']]
@@ -37,10 +37,10 @@ class Mongo:
         df = df.rename({'代码': 'code', '名称': 'name'}, axis=1)
         df['_id'] = df['code'].apply(lambda x: int(x[2:]))
         print(df)
-        return json.loads(df.T.to_json())
+        return df
 
     @staticmethod
-    def index_price_daily(code: str, source: str = None) -> dict:
+    def index_price_daily(code: str, source: str = None) -> pd.DataFrame:
         if source == 'tx':
             df = ak.stock_zh_index_daily_tx(symbol=code)
         elif source == 'em':
@@ -50,10 +50,10 @@ class Mongo:
         df['date'] = pd.to_datetime(df['date'])
         df = df.rename({'date': '_id'}, axis=1)
         print(df)
-        return json.loads(df.T.to_json())      # use default date_format='epoch' instead of 'iso'
+        return df
 
     @staticmethod
-    def funds_info() -> dict:
+    def funds_info() -> pd.DataFrame:
         df = ak.fund_em_fund_name()
         df = df.rename({'基金代码': '_id', '基金简称': 'name', '基金类型': 'type'}, axis=1)
         df['_id'] = df['_id'].apply(lambda x: int(x))
@@ -61,10 +61,17 @@ class Mongo:
         df['type'] = df['type'].apply(lambda x: x.split('-')[0])
         df = df[['_id', 'name', 'type', 'typ2']]
         print(df)
-        return json.loads(df.T.to_json())
+        return df
 
     @staticmethod
-    def fund_nav_daily(code: str) -> dict:
+    def index_pe_daily(name: str):
+        # df = ak.index_value_name_funddb()
+
+        df = ak.index_value_hist_funddb(symbol=name, indicator="市盈率")
+        print(df)
+
+    @staticmethod
+    def fund_nav_daily(code: str) -> pd.DataFrame:
         assert code[0] == 'f'
         code = code[1:]
         df = ak.fund_em_open_fund_info(code, indicator="单位净值走势")
@@ -83,9 +90,10 @@ class Mongo:
             df['cum_nav'] = df['cum_nav'].apply(lambda x: None if x is None else float(x))
         df['_id'] = pd.to_datetime(df['_id'])
         print(df)
-        return json.loads(df.T.to_json())
+        return df
 
-    def save(self, collection: str, dic: dict):
+    def save(self, collection: str, df: pd.DataFrame):
+        dic = json.loads(df.T.to_json())        # use default date_format='epoch' instead of 'iso'
         collection = self.db[collection]
         collection.insert(dic.values())
 
@@ -95,14 +103,14 @@ class Mongo:
                 print(code + ' is already in')
                 continue
             print(code)
-            dic = {}
+            df = pd.DataFrame()
             if re.match(r'(sh|sz)\d{6}', code) is not None:
-                dic = Mongo.index_price_daily(code)
+                df = Mongo.index_price_daily(code)
             elif re.match(r'f\d{6}', code) is not None:
-                dic = Mongo.fund_nav_daily(code)
+                df = Mongo.fund_nav_daily(code)
             else:
                 assert True, print('code is not valid')
-            self.save(code, dic)
+            self.save(code, df)
             time.sleep(1)
 
     def load_info(self, code: str) -> dict:
@@ -141,6 +149,8 @@ def main():
     #     print('Usage: {} code'.format(sys.argv[0]))
     #     sys.exit(1)
 
+    Mongo.index_pe_daily('上证50')
+    exit()
     # Mongo.indexes_info()
     # Mongo.on_market_info()
 
