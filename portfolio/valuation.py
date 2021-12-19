@@ -65,7 +65,11 @@ def parse(file: str) -> list:
                     i += 1
                     while lines[i] == '*':
                         i += 1
-                    value = float(re.search(r'[\d.]+', lines[i]).group(0))
+                    value = re.search(r'[\d.]+', lines[i]).group(0)
+                    if key == '300价值' and value == lines[i]:
+                        value = round(100 / float(value), 2)        # as 300价值 used PE before 20100225
+                    else:
+                        value = float(value)
                     i += 1
                     # print(key, value)
                     dic[key] = value
@@ -99,9 +103,14 @@ def main():
         print('       {} txt xlsx'.format(sys.argv[0]))
         sys.exit(1)
     valuations = parse(sys.argv[1])
-    check(valuations)
-    # pprint(valuations)
+    pprint(valuations)
     print(len(valuations))
+
+    # check(valuations)
+    # for date, valuation in valuations:
+    #     if '300价值' in valuation:
+    #         print(date, valuation['300价值'])
+
 
 
 if __name__ == "__main__":
