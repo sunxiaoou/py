@@ -3,7 +3,7 @@ import re
 import sys
 from pprint import pprint
 
-indexes = [
+INDEXES = [
     # PB
     '银行行业', '地产行业', '证券行业', '军工行业', '环保行业', '基建行业', '建筑材料',
     # EP
@@ -41,7 +41,7 @@ def parse(file: str) -> list:
             dic = {}
             i += 1
             while True:
-                while lines[i] not in indexes and not lines[i].startswith('中概互联') \
+                while lines[i] not in INDEXES and not lines[i].startswith('中概互联') \
                         and not lines[i].startswith('恒生科技'):
                     if lines[i].startswith('永续A') or lines[i].startswith('注'):
                         i += 1
@@ -78,14 +78,30 @@ def parse(file: str) -> list:
     return result
 
 
+def check(valuations: list):
+    cur = set()
+    for date, valuation in valuations:
+        s = set(valuation.keys())
+        if cur == s:
+            continue
+        a = s - cur
+        if a:
+            print("{} add {}".format(date, a))
+            cur |= a
+        d = cur - s
+        if d:
+            print("{} missing {}".format(date, d))
+
+
 def main():
     if len(sys.argv) < 2:
         print('Usage: {} txt'.format(sys.argv[0]))
         print('       {} txt xlsx'.format(sys.argv[0]))
         sys.exit(1)
-    result = parse(sys.argv[1])
-    pprint(result)
-    print(len(result))
+    valuations = parse(sys.argv[1])
+    check(valuations)
+    # pprint(valuations)
+    print(len(valuations))
 
 
 if __name__ == "__main__":
