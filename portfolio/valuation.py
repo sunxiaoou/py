@@ -4,7 +4,7 @@ import sys
 from pprint import pprint
 
 import pandas as pd
-from mongo import Mongo
+from mongo import Mongo, columns, thresholds
 
 INDEXES = [
     # PB
@@ -100,11 +100,79 @@ def check(valuations: list):
             print("{} missing {}".format(date, d))
 
 
+def parse2(file: str) -> list:
+    with open(file) as f:
+        lines = []
+        for l in f.readlines():
+            lines += l.rstrip('\n').split()
+
+    # with open('tmp.txt', 'w') as f:
+    #     for l in lines:
+    #         f.write(l + '\n')
+
+    reg_date = re.compile(r'20\d{6}')
+    result = []
+    try:
+        i = 0
+        # while True:
+        while reg_date.search(lines[i]) is None:
+            i += 1
+        date = reg_date.search(lines[i]).group()
+        # print(date)
+        i += 1
+        while True:
+            while lines[i] not in INDEXES and not lines[i].startswith('中概互联') \
+                    and not lines[i].startswith('恒生科技'):
+                if lines[i].startswith('永续A') or lines[i].startswith('注'):
+                    i += 1
+                    break
+                i += 1
+            else:
+                if lines[i].startswith('中概互联'):
+                    key = '中概互联'
+                elif lines[i].startswith('恒生科技'):
+                    key = '恒生科技'
+                else:
+                    key = lines[i]
+                if key == '中概互联':
+                    if lines[i + 1] == '513050':            # there is no value
+                        i += 2
+                        continue
+                    if lines[i + 1].startswith('市销率'):
+                        i += 1
+                elif key == '十年期国债':
+                    key = '10年期国债（A股）'
+                i += 1
+                while re.search(r'\d{6}', lines[i]) is None:
+                    i += 1
+                on, off = lines[i], None
+                i += 1
+                if re.search(r'\d{6}', lines[i]):
+                    off = (lines[i])
+                    i += 1
+                elif key not in ['上证红利', '科创50']:
+                    off, on = on, None
+                # print(key, on, off)
+                result.append((key, on, off))
+    except IndexError:
+        pass
+    return result
+
+
 def main():
     if len(sys.argv) < 2:
         print('Usage: {} txt'.format(sys.argv[0]))
-        print('       {} txt xlsx'.format(sys.argv[0]))
         sys.exit(1)
+    # pprint(parse2(sys.argv[1]))
+    df = pd.DataFrame(thresholds, columns=columns)
+    df2 = pd.DataFrame(parse2(sys.argv[1]), columns=['_id', '场内代码', '场外代码'])
+    df = pd.merge(df, df2, on='_id')
+    # df = pd.merge(df, df2, on='_id', how='outer')
+    print(df)
+    mongo = Mongo()
+    mongo.save('threshold', df)
+
+    exit()
     valuations = parse(sys.argv[1])
     # pprint(valuations)
     print(len(valuations))
@@ -112,8 +180,8 @@ def main():
     df['_id'] = pd.to_datetime(df['_id'])
     print(df)
 
-    mongo = Mongo()
-    mongo.save('screw', df)
+    # mongo = Mongo()
+    # mongo.save('screw', df)
     # check(valuations)
     # for date, valuation in valuations:
     #     if '300价值' in valuation:

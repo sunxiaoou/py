@@ -1,7 +1,8 @@
 #! /usr/bin/python3
 import re
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
+from pprint import pprint
 
 import jqdatasdk as jq
 import numpy as np
@@ -98,17 +99,29 @@ class JqData:
         return df
 
     @staticmethod
-    def get_updated_navs(codes: list, info, start, end=None) -> pd.DataFrame:
+    def get_new_nav(codes: list, start, end=None) -> list:
         if end is None:
-            end = datetime.today().strftime('%Y-%m-%d')
+            end = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')   # yesterday
         securities = [s + '.OF' for s in codes]
-        df = jq.get_extras(info, securities, start_date=start, end_date=end, df=True)
-        print(df)
-        return df
+        df = jq.get_extras('unit_net_value', securities, start_date=start, end_date=end)
+        df['_id'] = df.index
+        df2 = jq.get_extras('acc_net_value', securities, start_date=start, end_date=end)
+        df2['_id'] = df2.index
+        df3 = jq.get_extras('adj_net_value', securities, start_date=start, end_date=end)
+        df3['_id'] = df3.index
+        result = []
+        for sec in securities:
+            d = df[['_id', sec]].rename({sec: 'nav'}, axis=1)
+            d2 = df2[['_id', sec]].rename({sec: 'cum_nav'}, axis=1)
+            d3 = df3[['_id', sec]].rename({sec: 'refactor_nav'}, axis=1)
+            d = pd.merge(pd.merge(d, d2, on='_id'), d3, on='_id')
+            result.append((sec.rstrip('.OF'), d))
+        return result
 
 
-def save_fund_nav(codes: list):
-    mongo = Mongo()
+def save_fund_nav(codes: list, mongo=None):
+    if not mongo:
+        mongo = Mongo()
     for code in codes:
         collection = 'otc_' + code
         if collection in mongo.db.list_collection_names():
@@ -121,10 +134,32 @@ def save_fund_nav(codes: list):
             time.sleep(1)
 
 
+def update_fund_nav(codes: list, mongo=None):
+    if not mongo:
+        mongo = Mongo()
+    ms = mongo.get_min_last_id('otc')
+    start = datetime.fromtimestamp(ms / 1000.0).strftime('%Y-%m-%d')
+    JqData.get_new_nav(codes, start)
+
+
+def save_screw_otc():
+    mongo = Mongo()
+    dics = mongo.find('threshold', {}, {'场外代码': True})
+    funds = [dic['场外代码'] for dic in dics if dic['场外代码']]
+    save_fund_nav(funds, mongo)
+
+
 def main():
     funds = ['000595', "001766", "001974", "005267", "377240", "540003"]
-    save_fund_nav(otc_funds)
-    # df = JqData.get_updated_navs(funds, 'adj_net_value', '2021-12-13')
+    # save_fund_nav(otc_funds)
+    ms = Mongo().get_min_last_id('otc')
+    start = datetime.fromtimestamp(ms / 1000.0).strftime('%Y-%m-%d')
+    dfs = JqData.get_new_nav(funds, start)
+    for sec, df in dfs:
+        print(sec)
+        print(df)
+    # print(df)
+    # save_screw_otc()
 
 
 if __name__ == "__main__":
