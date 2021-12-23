@@ -1,9 +1,12 @@
 #! /usr/bin/python3
 import re
 import sys
+from datetime import datetime
 from pprint import pprint
 
 import pandas as pd
+from openpyxl import load_workbook
+
 from mongo import Mongo
 
 INDEXES = [
@@ -151,7 +154,7 @@ def save_thresholds(file: str):
     # Mongo().save('threshold', df)
 
 
-def parse_valuation(file: str) -> list:
+def parse_valuations(file: str) -> list:
     with open(file) as f:
         lines = []
         for l in f.readlines():
@@ -230,7 +233,7 @@ def check(valuations: list):
 
 
 def save_valuations(file: str):
-    valuations = parse_valuation(file)
+    valuations = parse_valuations(file)
     check(valuations)
     # pprint(valuations)
     # for date, valuation in valuations:
@@ -241,7 +244,34 @@ def save_valuations(file: str):
     df = pd.DataFrame(valuations)
     df['_id'] = pd.to_datetime(df['_id'])
     print(df)
-    # Mongo().save('screw', df)
+    # Mongo().save('valuation', df)
+
+
+def update_valuations(xlsx: str):
+    mongo = Mongo()
+    ms = mongo.find_last('valuation')['_id']
+    start = datetime.fromtimestamp(ms / 1000.0).strftime('%Y%m%d')
+
+    wb = load_workbook(xlsx)
+    wss = [ws.title for ws in wb.worksheets]
+    excel = pd.ExcelFile(xlsx)
+    valuations = []
+    for ws in wss:
+        if not re.search(r'20\d{6}$', ws) or ws <= start:
+            continue
+        df = pd.read_excel(excel, ws)
+        dic = dict(zip(df['名称'].tolist(), df[ws].tolist()))
+        dic['_id'] = ws
+        valuations.append(dic)
+
+    print(len(valuations))
+    if not valuations:
+        return
+    # the valuation hasn't ('中证500', '美国房地产', '10年期国债（美股）', '10年期国债（A股）', '消费50')
+    df = pd.DataFrame(valuations)
+    df['_id'] = pd.to_datetime(df['_id'])
+    print(df)
+    mongo.save('valuation', df)
 
 
 def main():
@@ -250,7 +280,9 @@ def main():
         sys.exit(1)
 
     # save_thresholds(sys.argv[1])
-    save_valuations(sys.argv[1])
+    # save_valuations(sys.argv[1])
+    if sys.argv[1].endswith('.xlsx'):
+        update_valuations(sys.argv[1])
 
 
 if __name__ == "__main__":
