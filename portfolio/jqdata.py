@@ -78,14 +78,15 @@ class JqData:
         return df
 
     @staticmethod
-    def fund_nav_daily(code: str) -> pd.DataFrame:
+    def fund_nav_daily(code: str, start=None) -> pd.DataFrame:
         fields = (finance.FUND_NET_VALUE.day, finance.FUND_NET_VALUE.net_value,
                   finance.FUND_NET_VALUE.sum_value, finance.FUND_NET_VALUE.refactor_net_value)
         # q = query(*fields).filter(finance.FUND_NET_VALUE.code == code).\
         #     order_by(finance.FUND_NET_VALUE.day.desc()).limit(5)
         q = query(*fields).filter(finance.FUND_NET_VALUE.code == code)
+        if start is not None:
+            q = q.filter(finance.FUND_NET_VALUE.day > start)
         df = finance.run_query(q)
-
         df = df.rename({'day': '_id', 'net_value': 'nav', 'sum_value': 'cum_nav',
                         'refactor_net_value': 'refactor_nav'}, axis=1)
         df['_id'] = pd.to_datetime(df['_id'])
@@ -95,28 +96,8 @@ class JqData:
             df['cum_nav'] = df['cum_nav'].apply(lambda x: None if x is None else float(x))
         if df.dtypes['refactor_nav'] != np.dtype('float64'):
             df['refactor_nav'] = df['refactor_nav'].apply(lambda x: None if x is None else float(x))
-        print(df)
+        # print(df)
         return df
-
-    @staticmethod
-    def get_new_nav(codes: list, start, end=None) -> list:
-        if end is None:
-            end = (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')   # yesterday
-        securities = [s + '.OF' for s in codes]
-        df = jq.get_extras('unit_net_value', securities, start_date=start, end_date=end)
-        df['_id'] = df.index
-        df2 = jq.get_extras('acc_net_value', securities, start_date=start, end_date=end)
-        df2['_id'] = df2.index
-        df3 = jq.get_extras('adj_net_value', securities, start_date=start, end_date=end)
-        df3['_id'] = df3.index
-        result = []
-        for sec in securities:
-            d = df[['_id', sec]].rename({sec: 'nav'}, axis=1)
-            d2 = df2[['_id', sec]].rename({sec: 'cum_nav'}, axis=1)
-            d3 = df3[['_id', sec]].rename({sec: 'refactor_nav'}, axis=1)
-            d = pd.merge(pd.merge(d, d2, on='_id'), d3, on='_id')
-            result.append((sec.rstrip('.OF'), d))
-        return result
 
 
 def save_fund_nav(codes: list, mongo=None):
@@ -134,12 +115,21 @@ def save_fund_nav(codes: list, mongo=None):
             time.sleep(1)
 
 
-def update_fund_nav(codes: list, mongo=None):
+def update_fund_nav(prefix: str, mongo=None):
     if not mongo:
         mongo = Mongo()
-    ms = mongo.get_min_last_id('otc')
-    start = datetime.fromtimestamp(ms / 1000.0).strftime('%Y-%m-%d')
-    JqData.get_new_nav(codes, start)
+
+    for otc in mongo.get_list(prefix):
+        ms = mongo.find_last(otc)['_id']
+        start = datetime.fromtimestamp(ms / 1000.0).strftime('%Y-%m-%d')
+        print(otc, start)
+        df = JqData.fund_nav_daily(otc.lstrip(prefix), start)
+        if df.empty:
+            print('empty')
+            continue
+        print(df)
+        print()
+        mongo.save(otc, df)
 
 
 def save_screw_otc():
@@ -150,16 +140,15 @@ def save_screw_otc():
 
 
 def main():
-    funds = ['000595', "001766", "001974", "005267", "377240", "540003"]
-    # save_fund_nav(otc_funds)
-    ms = Mongo().get_min_last_id('otc')
-    start = datetime.fromtimestamp(ms / 1000.0).strftime('%Y-%m-%d')
-    dfs = JqData.get_new_nav(funds, start)
-    for sec, df in dfs:
-        print(sec)
-        print(df)
-    # print(df)
+    funds = ['008276', "006567", "007130", "001975", "260112", '519712',
+             '110013', '519068', '001712', '110022', '000083', '007119']
+    funds = ['005827', '260108']
+    save_fund_nav(funds)
     # save_screw_otc()
+    # df = JqData.fund_nav_daily('012348')
+    # df = JqData.fund_nav_daily('377240', '2021-12-16')
+    # print(df)
+    # update_fund_nav('otc_')
 
 
 if __name__ == "__main__":

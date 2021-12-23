@@ -89,14 +89,11 @@ class Mongo:
         print('Found {} documents'.format(num))
         return list(cursor)
 
+    def find_last(self, collection: str) -> dict:
+        return self.db.get_collection(collection).find_one({'$query': {}, '$orderby': {'_id': -1}})
+
     def get_list(self, prefix: str) -> list:
         return [name for name in self.db.list_collection_names() if name.startswith(prefix)]
-
-    def get_min_last_id(self, prefix: str) -> int:
-        return min([
-            self.db.get_collection(name).find_one({'$query': {}, '$orderby': {'_id': -1}})['_id']
-            for name in self.get_list(prefix)
-        ])
 
     @staticmethod
     def indexes_info() -> pd.DataFrame:
@@ -245,9 +242,8 @@ def main():
     # otc_lst = Mongo().get_list('otc_')
     # pprint(otc_lst)
     # print(len(otc_lst))
-
-    ms = Mongo().get_min_last_id('otc_')
-    print(datetime.fromtimestamp(ms/1000.0))
+    ms = Mongo().find_last('otc_519688')['_id']
+    print(datetime.fromtimestamp(ms / 1000.0).strftime('%Y-%m-%d'))
 
     # mongo.save('on_market_info', Mongo.on_market_info())
     # code = 'sh000985'
