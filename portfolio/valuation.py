@@ -4,7 +4,7 @@ import sys
 from pprint import pprint
 
 import pandas as pd
-from mongo import Mongo, columns, thresholds
+from mongo import Mongo
 
 INDEXES = [
     # PB
@@ -21,8 +21,137 @@ INDEXES = [
     '美国房地产', '十年期国债', '10年期国债（A股）', '10年期国债（美股）'
 ]
 
+COLUMNS = ['代码', '_id', '参考指标', '最低', '低估', '高估', '最高']
+THRESHOLDS = [
+    ('000015', '上证红利', '盈利收益率', 17.5, 10, 6.4, 2.27),
+    ('950090', '50AH优选', '盈利收益率', 16.6, 10, 6.4, 2.22),
+    ('000925', '基本面50', '盈利收益率', 16.6, 10, 6.4, 2.22),
+    ('399550', '央视50', '盈利收益率', 16.6, 10, 6.4, 2.5),
+    ('000922', '中证红利', '盈利收益率', 16.6, 10, 6.4, 1.6),
+    ('000919', '300价值', '盈利收益率', 16.6, 10, 6.4, 2.22),
+    ('000016', '上证50', '盈利收益率', 14.5, 10, 6.4, 2.22),
+    ('000010', '上证180', '盈利收益率', 13.9, 10, 6.4, 2.17),
+    ('HSCEI', 'H股指数', '盈利收益率', 17.5, 10, 6.4, 3.45),
+    ('HSI', '恒生指数', '盈利收益率', 14.5, 10, 6.4, 4.76),
 
-def parse(file: str) -> list:
+    ('399986', '银行行业', '市净率', 0.75, 0.9, 1.15, 1.4),
+    ('399393', '地产行业', '市净率', 1.2, 1.6, 2.2, 4),
+    ('399975', '证券行业', '市净率', 1.05, 1.6, 2.2, 4.8),
+    ('399967', '军工行业', '市净率', 2.1, 2.6, 4, 9.2),
+    ('000827', '环保行业', '市净率', 1.82, 2.3, 3, 5.9),
+    ('399995', '基建行业', '市净率', 0.92, 1.1, 1.8, 3.6),
+    ('931009', '建筑材料', '市净率', 1.4, 1.8, 2.1, 3.1),
+
+    # ('000985', '中证全指', '市盈率', 11, 14, 21, 54),
+    ('000903', '中证100', '市盈率', 7, 11, 15, 45),
+    ('000300', '沪深300', '市盈率', 8, 11, 17, 49),
+    ('930782', '500低波动', '市盈率', 17, 24, 30, 60),
+    ('000905', '500增强', '市盈率', 17, 25, 40, 93),
+    ('000852', '中证1000', '市盈率', 19, 35, 48, 145),
+    ('CSPSADRP', '红利机会', '市盈率', 8, 13, 20, 30),
+    ('399812', '中证养老', '市盈率', 17, 21, 27, 36),
+    ('399006', '创业板', '市盈率', 27, 25, 45, 138),
+    ('399330', '深证100', '市盈率', 12, 18, 24, 64),
+    ('000978', '医药100', '市盈率', 23, 28, 36, 63),
+    ('399989', '中证医疗', '市盈率', 32, 55, 75, 140),
+    ('930743', '生物科技', '市盈率', 33, 57, 81, 135),
+    # ('931152', '创新药', '市盈率', 29, 50, 70, 130),
+    ('931187', '科技100', '市盈率', 18, 26, 40, 56),
+    ('000932', '中证消费', '市盈率', 17, 30, 40, 53),
+    ('399997', '中证白酒', '市盈率', 15, 30, 40, 71),
+    ('930653', '食品饮料', '市盈率', 18, 30, 40, 65),
+    ('000989', '可选消费', '市盈率', 15, 18, 26, 45),
+    # ('686000', '可选消费', '市净率', 1.7, 2.2, 4, 5.3),
+    ('H30094', '消费红利', '市盈率', 11, 25, 33, 45),
+    ('931068', '消费龙头', '市盈率', 16, 24, 32, 45),
+    ('931357', '沪港深消费50', '市盈率', 25, 33, 42, 56),
+    ('399001', '深证成指', '市盈率', 11, 15, 30, 62),
+    ('399701', '基本面60', '市盈率', 12, 17, 20, 60),
+    ('399702', '基本面120', '市盈率', 13, 18, 22, 60),
+    ('399324', '深红利', '市盈率', 11, 15, 22, 44),
+    ('NDX', '纳斯达克100', '市盈率', 15, 20, 30, 85),
+    ('SPX', '标普500', '市盈率', 5.8, 15, 25, 44),
+    ('S5INFT', '标普科技', '市盈率', 15, 21, 30, 90),
+    ('IXY', '美股消费', '市盈率', 15, 21, 30, 45),
+    ('SPG120035', '全球医疗', '市盈率', 15, 21, 30, 45),
+    ('SPHCMSHP', '香港中小', '市盈率', 8.4, 12, 17, 20),
+    ('H30533', '中概互联', '市销率', 3.74, 5.6, 8, 12.8),
+    ('HSTECH', '恒生科技', '市销率', 3.2, 4, 5.6, 9),
+    ('HSCAIT', 'A股龙头', '市盈率', 8, 11, 13, 15),
+    ('931142', '竞争力指数', '市盈率', 10, 13, 18, 23),
+    ('707717', 'MSCI质量', '市盈率', 17, 26, 38, 55),
+    ('000688', '科创50', '市盈率', 55, 50, 80, 100),
+    ('930697', '家用电器', '市盈率', 12, 17, 20, 28)]
+
+
+def parse_fund_code(file: str) -> list:
+    with open(file) as f:
+        lines = []
+        for l in f.readlines():
+            lines += l.rstrip('\n').split()
+
+    # with open('tmp.txt', 'w') as f:
+    #     for l in lines:
+    #         f.write(l + '\n')
+
+    reg_date = re.compile(r'20\d{6}')
+    result = []
+    try:
+        i = 0
+        # while True:
+        while reg_date.search(lines[i]) is None:
+            i += 1
+        date = reg_date.search(lines[i]).group()
+        # print(date)
+        i += 1
+        while True:
+            while lines[i] not in INDEXES and not lines[i].startswith('中概互联') \
+                    and not lines[i].startswith('恒生科技'):
+                if lines[i].startswith('永续A') or lines[i].startswith('注'):
+                    i += 1
+                    break
+                i += 1
+            else:
+                if lines[i].startswith('中概互联'):
+                    key = '中概互联'
+                elif lines[i].startswith('恒生科技'):
+                    key = '恒生科技'
+                else:
+                    key = lines[i]
+                if key == '中概互联':
+                    if lines[i + 1] == '513050':            # there is no value
+                        i += 2
+                        continue
+                    if lines[i + 1].startswith('市销率'):
+                        i += 1
+                elif key == '十年期国债':
+                    key = '10年期国债（A股）'
+                i += 1
+                while re.search(r'\d{6}', lines[i]) is None:
+                    i += 1
+                on, off = lines[i], None
+                i += 1
+                if re.search(r'\d{6}', lines[i]):
+                    off = (lines[i])
+                    i += 1
+                elif key not in ['上证红利', '科创50']:
+                    off, on = on, None
+                # print(key, on, off)
+                result.append((key, on, off))
+    except IndexError:
+        pass
+    return result
+
+
+def save_thresholds(file: str):
+    df = pd.DataFrame(THRESHOLDS, columns=COLUMNS)
+    df2 = pd.DataFrame(parse_fund_code(file), columns=['_id', '场内代码', '场外代码'])
+    df = pd.merge(df, df2, on='_id')
+    print(df)
+    # Mongo().save('threshold', df)
+
+
+def parse_valuation(file: str) -> list:
     with open(file) as f:
         lines = []
         for l in f.readlines():
@@ -100,92 +229,28 @@ def check(valuations: list):
             print("{} missing {}".format(date, d))
 
 
-def parse2(file: str) -> list:
-    with open(file) as f:
-        lines = []
-        for l in f.readlines():
-            lines += l.rstrip('\n').split()
+def save_valuations(file: str):
+    valuations = parse_valuation(file)
+    check(valuations)
+    # pprint(valuations)
+    # for date, valuation in valuations:
+    #     if '300价值' in valuation:
+    #         print(date, valuation['300价值'])
 
-    # with open('tmp.txt', 'w') as f:
-    #     for l in lines:
-    #         f.write(l + '\n')
-
-    reg_date = re.compile(r'20\d{6}')
-    result = []
-    try:
-        i = 0
-        # while True:
-        while reg_date.search(lines[i]) is None:
-            i += 1
-        date = reg_date.search(lines[i]).group()
-        # print(date)
-        i += 1
-        while True:
-            while lines[i] not in INDEXES and not lines[i].startswith('中概互联') \
-                    and not lines[i].startswith('恒生科技'):
-                if lines[i].startswith('永续A') or lines[i].startswith('注'):
-                    i += 1
-                    break
-                i += 1
-            else:
-                if lines[i].startswith('中概互联'):
-                    key = '中概互联'
-                elif lines[i].startswith('恒生科技'):
-                    key = '恒生科技'
-                else:
-                    key = lines[i]
-                if key == '中概互联':
-                    if lines[i + 1] == '513050':            # there is no value
-                        i += 2
-                        continue
-                    if lines[i + 1].startswith('市销率'):
-                        i += 1
-                elif key == '十年期国债':
-                    key = '10年期国债（A股）'
-                i += 1
-                while re.search(r'\d{6}', lines[i]) is None:
-                    i += 1
-                on, off = lines[i], None
-                i += 1
-                if re.search(r'\d{6}', lines[i]):
-                    off = (lines[i])
-                    i += 1
-                elif key not in ['上证红利', '科创50']:
-                    off, on = on, None
-                # print(key, on, off)
-                result.append((key, on, off))
-    except IndexError:
-        pass
-    return result
+    print(len(valuations))
+    df = pd.DataFrame(valuations)
+    df['_id'] = pd.to_datetime(df['_id'])
+    print(df)
+    # Mongo().save('screw', df)
 
 
 def main():
     if len(sys.argv) < 2:
         print('Usage: {} txt'.format(sys.argv[0]))
         sys.exit(1)
-    # pprint(parse2(sys.argv[1]))
-    df = pd.DataFrame(thresholds, columns=columns)
-    df2 = pd.DataFrame(parse2(sys.argv[1]), columns=['_id', '场内代码', '场外代码'])
-    df = pd.merge(df, df2, on='_id')
-    # df = pd.merge(df, df2, on='_id', how='outer')
-    print(df)
-    mongo = Mongo()
-    mongo.save('threshold', df)
 
-    exit()
-    valuations = parse(sys.argv[1])
-    # pprint(valuations)
-    print(len(valuations))
-    df = pd.DataFrame(valuations)
-    df['_id'] = pd.to_datetime(df['_id'])
-    print(df)
-
-    # mongo = Mongo()
-    # mongo.save('screw', df)
-    # check(valuations)
-    # for date, valuation in valuations:
-    #     if '300价值' in valuation:
-    #         print(date, valuation['300价值'])
+    # save_thresholds(sys.argv[1])
+    save_valuations(sys.argv[1])
 
 
 if __name__ == "__main__":
