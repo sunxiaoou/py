@@ -4,9 +4,7 @@ from datetime import date
 from datetime import datetime
 
 import matplotlib.pyplot as plt
-import openpyxl
 import pandas as pd
-from openpyxl import load_workbook
 
 from mongo import Mongo
 
@@ -60,7 +58,7 @@ def loop_back(code: str, begin: date) -> tuple:
 
     star = 4
     base = 1000
-    exp = 1
+    exp = 0
 
     def cal(row: pd.Series) -> float:
         if not exp:
@@ -99,6 +97,7 @@ def comparision(typ: str, codes: list, begin: date):
     df[columns[3]] = df[columns[3]].apply(lambda x: round(x / 10000))
     df[columns[4]] = df[columns[4]].apply(lambda x: round(x * 100))
     df.set_index('name', inplace=True)
+    df = df.sort_values('内部收益率(%)')
     df.index.name = None
     print(df)
     df2 = pd.concat([r[1] for r in results], axis=1)
@@ -115,17 +114,53 @@ def comparision(typ: str, codes: list, begin: date):
     plt.show()
 
 
+def get_scale(code: str) -> tuple:
+    mongo = Mongo()
+    name = mongo.load_info(code)['name']
+    scale = mongo.load_indicator(code)['total_tna']
+    return name, scale
+
+
+def show_scales(funds: dict):
+    for key in funds.keys():
+        print(key)
+        for code in funds[key]:
+            print(code[4:], get_scale(code))
+
+
+FUNDS = {
+    '深度价值': ["otc_001810", "otc_007130", "otc_006567", 'otc_004350', "otc_260112"],
+    '成长价值': ["otc_005827", "otc_005267", "otc_169101", "otc_001712", "otc_519712", "otc_270002"],
+    '成长风格': ["otc_260108", "otc_001975", "otc_161005", "otc_007119", "otc_110013", "otc_519068"],
+    '均衡风格': ["otc_004868", "otc_519688", "otc_163406", "otc_163415", "otc_008276", "otc_166002"],
+    '医疗&消费': ["otc_001717", "otc_003095", "otc_001766", "otc_000083", "otc_110022", "otc_000248"],
+    '主动医药': ["otc_001717", 'otc_006002', "otc_003095", "otc_004851", "otc_001766"],
+    '主动其它': ["otc_000595", "otc_001974", 'otc_005259', "otc_377240", "otc_540003", 'otc_110011']
+}
+
+INDEXES = {
+    '大盘指数': ["otc_501050", "otc_160716", "otc_217027", "otc_110003", "otc_540012", 'otc_110020'],
+    '策略指数': ["otc_519671", "otc_003318", "otc_090010", "otc_501029", "otc_007657", "otc_006341"],
+    '医药指数': ["otc_001550", "otc_162412", "otc_501009", "otc_000369", "otc_000968", "otc_001717"],
+    '消费指数': ["otc_501090", "otc_001133", "otc_008928", "otc_000248", 'otc_001631', 'otc_161725']
+}
+
+
 def main():
-    if len(sys.argv) < 3:
-        print('Usage: {} code YYYYmmdd'.format(sys.argv[0]))
+    if len(sys.argv) < 2:
+        print('Usage: {} YYYYmmdd'.format(sys.argv[0]))
         sys.exit(1)
 
-    begin = datetime.strptime(sys.argv[2], '%Y%m%d')    # .date()
-    comparision('宽基指数', ["sh502000", "sh510310", "sh510710", "f050025", "f040046", "f000071"], begin)
+    begin = datetime.strptime(sys.argv[1], '%Y%m%d')    # .date()
+    # comparision('宽基指数', ["sh502000", "sh510310", "sh510710", "f050025", "f040046", "f000071"], begin)
     # comparision('宽基指数', ["sz161039", "sh501050", "f006341", "f003318", "f090010", "f519671"], begin)
     # comparision('行业指数', ["f000248", "f162412", "f501009", "sz164906", "sh512000", "sh512800"], begin)
-    # comparision('主动基金', ["f001643", "f001717", "f001810", "f005267", "f161005", "f163406"], begin)
+    # comparision('主动基金', ["otc_001643", "otc_001717", "otc_001810", "otc_005267", "otc_161005", "otc_163402"], begin)
     # comparision('主动基金', ["f000595", "f001766", "f001974", "f005267", "f377240", "f540003"], begin)
+
+    show_scales(FUNDS)
+    key = '主动其它'
+    comparision(key, FUNDS[key], begin)
 
 
 if __name__ == "__main__":

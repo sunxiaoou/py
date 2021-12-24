@@ -141,6 +141,14 @@ class Mongo:
             assert True, print('code is not valid')
         return dic
 
+    def load_indicator(self, code: str) -> dict:
+        dic = {}
+        if re.match(r'otc_\d{6}', code):
+            dic = self.db['funds_indicator'].find_one({'_id': int(code[4:])})
+        else:
+            assert True, print('code is not valid')
+        return dic
+
     def load_close_price(self, code: str) -> pd.DataFrame:
         assert code in self.db.list_collection_names()
         fields = {}
