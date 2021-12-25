@@ -2,6 +2,7 @@
 import sys
 from datetime import date
 from datetime import datetime
+from pprint import pprint
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -15,7 +16,8 @@ from mongo import Mongo
 def get_close_price(code: str, begin: date) -> tuple:
     mongo = Mongo()
     name = mongo.load_info(code)['name']
-    name = '{}({})'.format(name if len(name) <= 10 else name[: 8] + '..', code)
+    # name = name if len(name) <= 10 else name[: 8] + '..'
+    name = '{}({})'.format(name if len(name) <= 10 else name[: 8] + '..', code[4:])
     base = mongo.load_close_price('sh000985')               # use '中证全指' as base
     base['date'] = pd.to_datetime(base['date'])
     base = base.rename({'close': 'sh000985'}, axis=1)
@@ -114,28 +116,55 @@ def comparision(typ: str, codes: list, begin: date):
     plt.show()
 
 
-def get_scale(code: str) -> tuple:
-    mongo = Mongo()
+def get_scale(code: str, mongo=None) -> tuple:
+    if not mongo:
+        mongo = Mongo()
     name = mongo.load_info(code)['name']
     scale = mongo.load_indicator(code)['total_tna']
     return name, scale
 
 
 def show_scales(funds: dict):
+    mongo = Mongo()
     for key in funds.keys():
         print(key)
         for code in funds[key]:
-            print(code[4:], get_scale(code))
+            print(code[4:], get_scale(code, mongo))
+
+
+def get_manager(code: str, mongo=None) -> str:
+    if not Mongo:
+        mongo = Mongo()
+    return ','.join(mongo.get_manager(code))
+
+
+def sort(funds: dict, begin: date):
+    mongo = Mongo()
+    lst = []
+    for key in funds.keys():
+        for code in funds[key]:
+            r = loop_back(code, begin)
+            name, rate = r[0][0], round(r[0][-1] * 100, 2)
+            scale = get_scale(code, mongo)[1]
+            manager = get_manager(code, mongo)
+            lst.append((name, manager, key, rate, scale))
+    df = pd.DataFrame(lst, columns=['名称(代码)', '基金经理', '类型', '年化(%)', '规模(亿元)'])
+    df = df.sort_values('年化(%)', ascending=False).reset_index(drop=True)
+    print(df)
+    # df.to_excel('funds.xlsx', index=False)
 
 
 FUNDS = {
     '深度价值': ["otc_001810", "otc_007130", "otc_006567", 'otc_004350', "otc_260112"],
     '成长价值': ["otc_005827", "otc_005267", "otc_169101", "otc_001712", "otc_519712", "otc_270002"],
-    '成长风格': ["otc_260108", "otc_001975", "otc_161005", "otc_007119", "otc_110013", "otc_519068"],
-    '均衡风格': ["otc_004868", "otc_519688", "otc_163406", "otc_163415", "otc_008276", "otc_166002"],
-    '医疗&消费': ["otc_001717", "otc_003095", "otc_001766", "otc_000083", "otc_110022", "otc_000248"],
+    '成长': ["otc_260108", "otc_001975", "otc_161005", 'otc_519035', "otc_110013", 'otc_005354', "otc_007119", "otc_519068"],
+    # "otc_007119", "otc_519068"
+    '均衡': ["otc_004868", "otc_519688", "otc_163406", "otc_163415", "otc_163402", "otc_166002", 'otc_008276'],
+    # 'otc_008276'
     '主动医药': ["otc_001717", 'otc_006002', "otc_003095", "otc_004851", "otc_001766"],
-    '主动其它': ["otc_000595", "otc_001974", 'otc_005259', "otc_377240", "otc_540003", 'otc_110011']
+    '主动消费': ["otc_000083", "otc_110022"],
+    # '医疗&消费': ["otc_001717", "otc_003095", "otc_001766", "otc_000083", "otc_110022", "otc_000248"],
+    '其它': ["otc_000595", "otc_001974", 'otc_005259', "otc_377240", "otc_540003", 'otc_110011']
 }
 
 INDEXES = {
@@ -158,9 +187,10 @@ def main():
     # comparision('主动基金', ["otc_001643", "otc_001717", "otc_001810", "otc_005267", "otc_161005", "otc_163402"], begin)
     # comparision('主动基金', ["f000595", "f001766", "f001974", "f005267", "f377240", "f540003"], begin)
 
-    show_scales(FUNDS)
-    key = '主动其它'
-    comparision(key, FUNDS[key], begin)
+    # show_scales(FUNDS)
+    # key = '均衡风格'
+    # comparision(key, FUNDS[key], begin)
+    sort(FUNDS, begin)
 
 
 if __name__ == "__main__":

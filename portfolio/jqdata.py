@@ -16,56 +16,6 @@ jq.auth('13501071402', 'xuFengz2')
 pd.set_option('display.max_columns', 100)
 
 
-otc_funds = [
-    '000071',      # "华夏恒生ETF联接",
-    '000248',      # "汇添富中证消费ETF联接",
-    '001556',      # "天弘中证500A",
-    '001594',      # "天弘中证银行A",
-    '003318',      # "景顺500低波",
-    '004069',      # "南方中证全指证券",
-    '006327',      # "易方达中证海外50ETF联接",
-    '006341',      # "中金MSCI中国质量指数A",
-    '040046',      # "华安纳斯达克100指数",
-    '050025',      # "博时标普50ETF联接",'
-    '090010',      # "大成中证红利",
-    '110003',      # "易方达上证50指数A",
-    '162412',      # "华宝医疗ETF联接A",
-    '163407',      # "兴全沪深300A",
-    '164906',      # "交银中证海外中国互联网",
-    '501009',      # "汇添富中证生物科技",
-    '501050',      # "华夏上证50AH",
-    '501090',      # "华宝中证消费龙头",
-    '519671',      # "银河300价值",
-    '540012',      # "汇丰晋信A股龙头",
-
-    '001643',      # "汇丰晋信智造先锋",
-    '001717',      # "工银前沿医疗",
-    '004350',      # "汇丰晋信价值先锋",
-    '004868',      # "交银股息优化",
-    '000595',      # "嘉实泰和",
-    '001766',      # "上投摩根医疗健康",
-    '001810',      # "中欧潜力价值",
-    '001974',      # "景顺长城量化新动力",
-    '003095',      # "中欧医疗健康A",
-    '005259',      # "建信龙头企业",
-    '005267',      # "嘉实价值精选",
-    '005354',      # "富国沪港深行业精选A",
-    '006228',      # "中欧医疗创新A",
-    '110011',      # "易方达优质精选",
-    '161005',      # "富国天惠成长",
-    '163402',      # "兴全趋势投资",
-    '163406',      # "兴全合润",
-    '163415',      # "兴全商业模式优选",
-    '166002',      # "中欧新蓝筹A",
-    '169101',      # "东方红睿丰",
-    '270002',      # "广发稳健增长混合A",
-    '377240',      # "上投摩根新兴动力",
-    '519035',      # "富国天博创新",
-    '519688',      # "交银精选",
-    '540003',      # "汇丰晋信动态策略A"
-]
-
-
 class JqData:
     @staticmethod
     def get_single_price(code: str, freq: str, start=None, end=None) -> pd.DataFrame:
@@ -99,6 +49,13 @@ class JqData:
         # print(df)
         return df
 
+    @staticmethod
+    def get_scale(code: str) -> tuple:
+        fields = (finance.FUND_FIN_INDICATOR.period_end, finance.FUND_FIN_INDICATOR.total_tna)
+        df = finance.run_query(query(*fields).filter(finance.FUND_FIN_INDICATOR.code == code).
+                               order_by(finance.FUND_FIN_INDICATOR.pub_date.desc()).limit(1))
+        return df.loc[0, 'period_end'], df.loc[0, 'total_tna']
+
 
 def save_fund_nav(codes: list, mongo=None):
     if not mongo:
@@ -119,17 +76,17 @@ def update_fund_nav(prefix: str, mongo=None):
     if not mongo:
         mongo = Mongo()
 
-    for otc in mongo.get_list(prefix):
-        ms = mongo.find_last(otc)['_id']
+    for code in mongo.get_list(prefix):
+        ms = mongo.find_last(code)['_id']
         start = datetime.fromtimestamp(ms / 1000.0).strftime('%Y-%m-%d')
-        print(otc, start)
-        df = JqData.fund_nav_daily(otc.lstrip(prefix), start)
+        print(code, start)
+        df = JqData.fund_nav_daily(code.lstrip(prefix), start)
         if df.empty:
             print('empty')
             continue
         print(df)
         print()
-        mongo.save(otc, df)
+        mongo.save(code, df)
 
 
 def save_screw_otc():
@@ -139,16 +96,35 @@ def save_screw_otc():
     save_fund_nav(funds, mongo)
 
 
+def save_scales(prefix: str, codes=None, mongo=None):
+    if not mongo:
+        mongo = Mongo()
+    result = []
+    lst = codes if codes else mongo.get_list(prefix)
+    for code in lst:
+        code = code.lstrip(prefix)
+        dic = {'_id': code}
+        dic['period_end'], dic['total_tna'] = JqData.get_scale(code)
+        result.append(dic)
+    df = pd.DataFrame(result)
+    df['_id'] = df['_id'].apply(lambda x: int(x))
+    df['total_tna'] = df['total_tna'].apply(lambda x: round(float(x / 100000000), 2))
+    df = df.sort_values('_id')
+    print(df)
+    mongo.save('funds_indicator', df)
+
+
 def main():
     funds = ['008276', "006567", "007130", "001975", "260112", '519712',
              '110013', '519068', '001712', '110022', '000083', '007119']
-    funds = ['005827', '260108']
-    save_fund_nav(funds)
+    funds = ['005827', '260108', '006002', "004851"]
+    # save_fund_nav(funds)
     # save_screw_otc()
     # df = JqData.fund_nav_daily('012348')
     # df = JqData.fund_nav_daily('377240', '2021-12-16')
     # print(df)
     # update_fund_nav('otc_')
+    save_scales('otc_', ['otc_006002', 'otc_004851'])
 
 
 if __name__ == "__main__":
