@@ -98,8 +98,10 @@ class Mongo:
         assert re.match(r'otc_\d{6}', code)
         fund = self.load_info(code)['name']
         # print(fund)
-        cursor = self.db.get_collection('manager').find({'fund_name': fund}, {'_id': 0, 'name': 1})
-        return [x['name'] for x in list(cursor)]
+        fields = {'_id': 0, 'name': 1, 'working_days': 1, 'total_scale': 1}
+        cursor = self.db.get_collection('manager').find({'fund_name': fund}, fields)
+        # return [x['name'] for x in list(cursor)]
+        return list(cursor)
 
 
 def main():

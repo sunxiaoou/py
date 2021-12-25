@@ -6,6 +6,8 @@ import pandas as pd
 
 from mongo import Mongo
 
+# pd.set_option('display.max_rows', 1000)
+pd.set_option('display.max_columns', 6)
 
 class AkData:
     @staticmethod
@@ -76,8 +78,10 @@ class AkData:
 
     @staticmethod
     def managers() -> pd.DataFrame:
-        df = ak.fund_manager(explode=True)[['姓名', '现任基金', '累计从业时间']]
-        return df.rename({'姓名': 'name', '现任基金': 'fund_name', '累计从业时间': 'work_days'}, axis=1)
+        df = ak.fund_manager(explode=True)
+        df = df.rename({'姓名': 'name', '现任基金': 'fund_name', '累计从业时间': 'working_days',
+                        '现任基金资产总规模': 'total_scale', '现任基金最佳回报': 'best_return'}, axis=1)
+        return df.drop(columns=['序号'])
 
 
 def main():

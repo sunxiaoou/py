@@ -132,10 +132,17 @@ def show_scales(funds: dict):
             print(code[4:], get_scale(code, mongo))
 
 
-def get_manager(code: str, mongo=None) -> str:
+def get_manager(code: str, mongo=None) -> tuple:
     if not Mongo:
         mongo = Mongo()
-    return ','.join(mongo.get_manager(code))
+    managers = mongo.get_manager(code)
+    if len(managers) == 1:
+        name = managers[0]['name']
+        total_scale = managers[0]['total_scale']
+    else:
+        name = ', '.join([x['name'] for x in managers])
+        total_scale = ', '.join([str(x['total_scale']) for x in managers])
+    return name, total_scale
 
 
 def sort(funds: dict, begin: date):
@@ -146,25 +153,26 @@ def sort(funds: dict, begin: date):
             r = loop_back(code, begin)
             name, rate = r[0][0], round(r[0][-1] * 100, 2)
             scale = get_scale(code, mongo)[1]
-            manager = get_manager(code, mongo)
-            lst.append((name, manager, key, rate, scale))
-    df = pd.DataFrame(lst, columns=['名称(代码)', '基金经理', '类型', '年化(%)', '规模(亿元)'])
+            manager, total_scale = get_manager(code, mongo)
+            lst.append((name, manager, key, rate, scale, total_scale))
+    df = pd.DataFrame(lst, columns=['名称(代码)', '基金经理', '类型', '年化(%)', '规模(亿元)', '总规模(亿元)'])
     df = df.sort_values('年化(%)', ascending=False).reset_index(drop=True)
     print(df)
-    # df.to_excel('funds.xlsx', index=False)
+    df.to_excel('screw_funds.xlsx', index=False)
 
 
 FUNDS = {
     '深度价值': ["otc_001810", "otc_007130", "otc_006567", 'otc_004350', "otc_260112"],
-    '成长价值': ["otc_005827", "otc_005267", "otc_169101", "otc_001712", "otc_519712", "otc_270002"],
-    '成长': ["otc_260108", "otc_001975", "otc_161005", 'otc_519035', "otc_110013", 'otc_005354', "otc_007119", "otc_519068"],
+    '成长价值': ["otc_005827", "otc_005267", "otc_169101", "otc_001712", "otc_519712", "otc_270002", 'otc_110011'],
+    '成长': ["otc_260108", "otc_001975", "otc_161005", 'otc_519035', "otc_110013", 'otc_005354', "otc_007119",
+           "otc_519068", "otc_377240", "otc_000595"],
     # "otc_007119", "otc_519068"
     '均衡': ["otc_004868", "otc_519688", "otc_163406", "otc_163415", "otc_163402", "otc_166002", 'otc_008276'],
     # 'otc_008276'
     '主动医药': ["otc_001717", 'otc_006002', "otc_003095", "otc_004851", "otc_001766"],
     '主动消费': ["otc_000083", "otc_110022"],
     # '医疗&消费': ["otc_001717", "otc_003095", "otc_001766", "otc_000083", "otc_110022", "otc_000248"],
-    '其它': ["otc_000595", "otc_001974", 'otc_005259', "otc_377240", "otc_540003", 'otc_110011']
+    '其它': ["otc_001974", 'otc_005259', "otc_540003"]
 }
 
 INDEXES = {
