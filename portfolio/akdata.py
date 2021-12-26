@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+from datetime import datetime
 
 import akshare as ak
 import numpy as np
@@ -8,6 +9,7 @@ from mongo import Mongo
 
 # pd.set_option('display.max_rows', 1000)
 pd.set_option('display.max_columns', 6)
+
 
 class AkData:
     @staticmethod
@@ -84,10 +86,23 @@ class AkData:
         return df.drop(columns=['序号'])
 
 
+def save_index(code: str, mongo=None):
+    if not mongo:
+        mongo = Mongo()
+    if code == 'sh000985':
+        df = AkData.index_price_daily(code, 'em')
+    else:
+        df = ak.stock_zh_index_daily(code)
+    if mongo.has_collection(code):
+        mongo.drop(code)
+    mongo.save(code, df)
+
+
 def main():
-    df = AkData.managers()
-    print(df)
-    Mongo().save('manager', df)
+    # df = AkData.managers()
+    # print(df)
+    # Mongo().save('manager', df)
+    save_index('sh000985')
 
 
 if __name__ == "__main__":

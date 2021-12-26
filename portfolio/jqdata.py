@@ -62,7 +62,7 @@ def save_fund_nav(codes: list, mongo=None):
         mongo = Mongo()
     for code in codes:
         collection = 'otc_' + code
-        if collection in mongo.db.list_collection_names():
+        if mongo.has_collection(collection):
             print(collection + ' is already in')
             continue
         print(collection)
@@ -124,7 +124,7 @@ def main():
     # df = JqData.fund_nav_daily('377240', '2021-12-16')
     # print(df)
     # update_fund_nav('otc_')
-    save_scales('otc_', ['otc_006002', 'otc_004851'])
+    # save_scales('otc_', ['otc_006002', 'otc_004851'])
 
 
 if __name__ == "__main__":

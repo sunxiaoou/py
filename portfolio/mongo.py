@@ -103,6 +103,12 @@ class Mongo:
         # return [x['name'] for x in list(cursor)]
         return list(cursor)
 
+    def has_collection(self, code: str) -> bool:
+        return code in self.db.list_collection_names()
+
+    def drop(self, code: str):
+        self.db.get_collection(code).drop()
+
 
 def main():
     # otc_lst = Mongo().get_list('otc_')
