@@ -103,6 +103,10 @@ class Mongo:
         # return [x['name'] for x in list(cursor)]
         return list(cursor)
 
+    def get_otc_indexes(self) -> list:
+        cursor = self.db.get_collection('threshold').find({}, {'_id': 0, '场外代码': 1})
+        return ['otc_' + x['场外代码'] for x in list(cursor) if x['场外代码']]
+
     def has_collection(self, code: str) -> bool:
         return code in self.db.list_collection_names()
 
@@ -114,14 +118,14 @@ def main():
     # otc_lst = Mongo().get_list('otc_')
     # pprint(otc_lst)
     # print(len(otc_lst))
-    # ms = Mongo().find_last('otc_519688')['_id']
-    # print(datetime.fromtimestamp(ms / 1000.0).strftime('%Y-%m-%d'))
 
-    # code = 'sh000985'
+    code = 'sh000985'
     # print(mongo.load_info(code))
+    # ms = Mongo().find_last(code)['_id']
+    # print(datetime.fromtimestamp(ms / 1000.0).strftime('%Y-%m-%d'))
     # print(mongo.load_close_price(code))
-
-    print(Mongo().get_manager('otc_166002'))
+    # print(Mongo().get_manager('otc_166002'))
+    print(Mongo().get_otc_indexes())
 
 
 if __name__ == "__main__":

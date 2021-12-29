@@ -10,7 +10,7 @@ import pandas as pd
 from mongo import Mongo
 
 # pd.set_option('display.max_rows', 1000)
-# pd.set_option('display.max_columns', 6)
+pd.set_option('display.max_columns', 6)
 
 
 def get_close_price(code: str, begin: date) -> tuple:
@@ -58,9 +58,9 @@ def loop_back(code: str, begin: date) -> tuple:
     weekday = 1                                 # choose Tuesday, Mon: 0, Tue: 1, ... Sun: 6
     df = df[(df['date'] > begin) & (df['date'].dt.dayofweek == weekday)]
 
-    star = 4
+    star = 3.5
     base = 1000
-    exp = 0
+    exp = 1
 
     def cal(row: pd.Series) -> float:
         if not exp:
@@ -68,6 +68,8 @@ def loop_back(code: str, begin: date) -> tuple:
         a = 1657.7                       # threshold of 5 stars at 2011-01
         year, month = row['date'].year, row['date'].month
         thr = a * 1.1 ** (year - 2011) * (1 + (month - 1) / 120) / 0.8 ** (5 - star)
+        if row['sh000985'] > thr:
+            return 0
         return base * (thr / row['sh000985']) ** exp
 
     df['每期定投金额'] = df.apply(cal, axis=1)
@@ -106,6 +108,8 @@ def comparision(typ: str, codes: list, begin: date):
     df2 = df2.loc[:, ~df2.columns.duplicated()]        # remove duplicated '累计定投金额'
     print(df2)
 
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    plt.rcParams['axes.unicode_minus'] = False
     _, axes = plt.subplots(nrows=2, ncols=1)
     title = typ + '定投回测：累计持仓曲线及收益率'
     df2.plot(ax=axes[0], figsize=(12, 8), grid=True, rot=0, title=title)
@@ -158,28 +162,54 @@ def sort(funds: dict, begin: date):
     df = pd.DataFrame(lst, columns=['名称(代码)', '基金经理', '类型', '年化(%)', '规模(亿元)', '总规模(亿元)'])
     df = df.sort_values('年化(%)', ascending=False).reset_index(drop=True)
     print(df)
-    df.to_excel('screw_funds.xlsx', index=False)
+    # df.to_excel('screw.xlsx', 'indexes', index=False)
+
+
+def sort_indexes(begin: date):
+    mongo = Mongo()
+    lst = []
+    for code in mongo.get_otc_indexes():
+        r = loop_back(code, begin)
+        name, rate = r[0][0], round(r[0][-1] * 100, 2)
+        scale = get_scale(code, mongo)[1]
+        manager, total_scale = get_manager(code, mongo)
+        lst.append((name, manager, rate, scale, total_scale))
+    df = pd.DataFrame(lst, columns=['名称(代码)', '基金经理', '年化(%)', '规模(亿元)', '总规模(亿元)'])
+    df = df.sort_values('年化(%)', ascending=False).reset_index(drop=True)
+    print(df)
 
 
 FUNDS = {
-    '深度价值': ["otc_001810", "otc_007130", "otc_006567", 'otc_004350', "otc_260112"],
-    '成长价值': ["otc_005827", "otc_005267", "otc_169101", "otc_001712", "otc_519712", "otc_270002", 'otc_110011'],
-    '成长': ["otc_260108", "otc_001975", "otc_161005", 'otc_519035', "otc_110013", 'otc_005354', "otc_007119",
-           "otc_519068", "otc_377240", "otc_000595"],
-    # "otc_007119", "otc_519068"
-    '均衡': ["otc_004868", "otc_519688", "otc_163406", "otc_163415", "otc_163402", "otc_166002", 'otc_008276'],
-    # 'otc_008276'
-    '主动医药': ["otc_001717", 'otc_006002', "otc_003095", "otc_004851", "otc_001766"],
+    '深度价值': ['otc_001810', "otc_007130", "otc_006567", "otc_260112", 'otc_000480', 'otc_004350'],
+    # otc_006551'
+    '成长价值': ["otc_005827", 'otc_110011', "otc_005267", 'otc_169101', "otc_001712", "otc_519712", "otc_270002"],
+    # 'otc_001112', 'otc_003396', 'otc_519697',
+    '成长': ["otc_260108", "otc_161005", 'otc_519035', "otc_110013", 'otc_005354', "otc_007119",
+           "otc_519068", "otc_377240", "otc_000595", 'otc_001975'],
+    # "otc_260101",
+    '均衡': ["otc_004868", "otc_163406", "otc_163415", "otc_163402", "otc_166002", 'otc_008276', "otc_519688"],
+    # 'otc_519736',
+    '主动医药': ['otc_006002', "otc_003095", "otc_004851", "otc_001766", "otc_001717"],
+    # 'otc_000831',
     '主动消费': ["otc_000083", "otc_110022"],
+    '新能源': ['otc_005669', "otc_540003"],
     # '医疗&消费': ["otc_001717", "otc_003095", "otc_001766", "otc_000083", "otc_110022", "otc_000248"],
-    '其它': ["otc_001974", 'otc_005259', "otc_540003"]
+    '其它': ["otc_001974", 'otc_005259', 'otc_001668', 'otc_001487', 'otc_001877']
 }
 
 INDEXES = {
-    '大盘指数': ["otc_501050", "otc_160716", "otc_217027", "otc_110003", "otc_540012", 'otc_110020'],
-    '策略指数': ["otc_519671", "otc_003318", "otc_090010", "otc_501029", "otc_007657", "otc_006341"],
-    '医药指数': ["otc_001550", "otc_162412", "otc_501009", "otc_000369", "otc_000968", "otc_001717"],
-    '消费指数': ["otc_501090", "otc_001133", "otc_008928", "otc_000248", 'otc_001631', 'otc_161725']
+    '大盘': ["otc_217027", "otc_110003", "otc_540012", 'otc_110020', 'otc_161227', 'otc_213010', 'otc_163109',
+           'otc_530015', 'otc_070023', 'otc_040180'],
+    '中小盘': ['otc_161039', 'otc_161022', 'otc_161017'],
+    '策略': ["otc_519671", "otc_003318", "otc_007657", "otc_006341", 'otc_160716'],
+    '红利': ['otc_501029', 'otc_481012', 'otc_090010'],
+    '医药': ["otc_001550", "otc_162412", "otc_501009", "otc_000968"],
+    '消费': ["otc_501090", "otc_001133", "otc_000248", 'otc_008928', 'otc_001631', 'otc_161725', 'otc_005063',
+           'otc_008519'],
+    '行业': ['otc_001064', 'otc_161024', 'otc_004856', 'otc_004069', 'otc_005223', 'otc_001594', 'otc_160218'],
+    'QDII': ['otc_161128', 'otc_040046', 'otc_162415', 'otc_050025', 'otc_000369', 'otc_006327'],
+    '港股': ["otc_501050", 'otc_000071', 'otc_110031', 'otc_501021', 'otc_012348'],
+    '科技': ['otc_010202']
 }
 
 
@@ -189,16 +219,14 @@ def main():
         sys.exit(1)
 
     begin = datetime.strptime(sys.argv[1], '%Y%m%d')    # .date()
-    # comparision('宽基指数', ["sh502000", "sh510310", "sh510710", "f050025", "f040046", "f000071"], begin)
-    # comparision('宽基指数', ["sz161039", "sh501050", "f006341", "f003318", "f090010", "f519671"], begin)
-    # comparision('行业指数', ["f000248", "f162412", "f501009", "sz164906", "sh512000", "sh512800"], begin)
-    # comparision('主动基金', ["otc_001643", "otc_001717", "otc_001810", "otc_005267", "otc_161005", "otc_163402"], begin)
-    # comparision('主动基金', ["f000595", "f001766", "f001974", "f005267", "f377240", "f540003"], begin)
-
     # show_scales(FUNDS)
-    # key = '均衡风格'
-    # comparision(key, FUNDS[key], begin)
-    sort(FUNDS, begin)
+    key = '深度价值'
+    comparision(key, FUNDS[key], begin)
+    # key = '大盘指数'
+    # comparision(key, INDEXES[key], begin)
+    # sort(INDEXES, begin)
+    # sort(FUNDS, begin)
+    # sort_indexes(begin)
 
 
 if __name__ == "__main__":
