@@ -94,6 +94,14 @@ class Mongo:
         # print(df)
         return df
 
+    def load_valuation(self, index: str) -> pd.DataFrame:
+        cursor = self.db.get_collection('valuation').find({}, {index: 1})
+        df = pd.DataFrame(list(cursor))
+        df['_id'] = pd.to_datetime(df['_id'], unit='ms')
+        df = df.rename({'_id': 'date', index: 'valuation'}, axis=1)
+        # print(df)
+        return df
+
     def get_manager(self, code: str) -> list:
         assert re.match(r'otc_\d{6}', code)
         fund = self.load_info(code)['name']
@@ -102,6 +110,11 @@ class Mongo:
         cursor = self.db.get_collection('manager').find({'fund_name': fund}, fields)
         # return [x['name'] for x in list(cursor)]
         return list(cursor)
+
+    def get_threshold(self, code: str) -> dict:
+        assert re.match(r'\d{6}', code)
+        fields = {'参考指标': 1, '低估': 1}
+        return self.db.get_collection('threshold').find_one({'场外代码': code}, fields)
 
     def get_otc_indexes(self) -> list:
         cursor = self.db.get_collection('threshold').find({}, {'_id': 0, '场外代码': 1})

@@ -13,25 +13,6 @@ from mongo import Mongo
 pd.set_option('display.max_columns', 6)
 
 
-def get_close_price(code: str, begin: date) -> tuple:
-    mongo = Mongo()
-    name = mongo.load_info(code)['name']
-    # name = name if len(name) <= 10 else name[: 8] + '..'
-    name = '{}({})'.format(name if len(name) <= 10 else name[: 8] + '..', code[4:])
-    base = mongo.load_close_price('sh000985')               # use '中证全指' as base
-    base['date'] = pd.to_datetime(base['date'])
-    base = base.rename({'close': 'sh000985'}, axis=1)
-
-    df = mongo.load_close_price(code)
-    df = pd.merge(base, df, on='date', how='outer')
-    df.fillna(method='ffill', inplace=True)                 # fill NaN with previous value
-    df.fillna({'close': 1.0}, inplace=True)                 # no previous value, fill with 1.0
-    weekday = 1                                             # choose Tuesday, Mon: 0, Tue: 1, ... Sun: 6
-    df = df[(df['date'] > begin) & (df['date'].dt.dayofweek == weekday)]
-    # print(df)
-    return name, df
-
-
 def xirr(df: pd.DataFrame, date_column: str, amount_column: str) -> float:
     residual = 1
     step = 0.05
@@ -53,27 +34,50 @@ def xirr(df: pd.DataFrame, date_column: str, amount_column: str) -> float:
     return guess - 1
 
 
-def loop_back(code: str, begin: date) -> tuple:
-    name, df = get_close_price(code, begin)
-    weekday = 1                                 # choose Tuesday, Mon: 0, Tue: 1, ... Sun: 6
-    df = df[(df['date'] > begin) & (df['date'].dt.dayofweek == weekday)]
-
-    star = 3.5
-    base = 1000
-    exp = 1
-
-    def cal(row: pd.Series) -> float:
-        if not exp:
-            return base
-        a = 1657.7                       # threshold of 5 stars at 2011-01
+def increment(row: pd.Series, base: float, exp: int, thr=None, refer=None) -> float:
+    if not exp:
+        return 1000             # return constant amount
+    if not thr:
+        a = 1657.7              # threshold of 5 stars at 2011-01
         year, month = row['date'].year, row['date'].month
+        star = 4                # use 4 star as underestimated level
         thr = a * 1.1 ** (year - 2011) * (1 + (month - 1) / 120) / 0.8 ** (5 - star)
-        if row['sh000985'] > thr:
-            return 0
-        return base * (thr / row['sh000985']) ** exp
+    if refer == '盈利收益率':
+        inc = 0 if row['valuation'] < thr else base * (row['valuation'] / thr) ** exp
+    else:
+        inc = 0 if row['valuation'] > thr else base * (thr / row['valuation']) ** exp
+    return inc
 
-    df['每期定投金额'] = df.apply(cal, axis=1)
+
+def loop_back(code: str, begin: date, parameters=(1000, 0)) -> tuple:
+    mongo = Mongo()
+    dic = mongo.load_info(code)
+    name, typ = dic['name'], dic['type']
+    print(name, typ)
+    name = '{}({})'.format(name if len(name) <= 10 else name[: 8] + '..', code[4:])
+    if typ in ['指数型', 'QDII']:      # and parameters[1]:
+        dic = mongo.get_threshold(code[4:])
+        index, refer, thr = dic['_id'], dic['参考指标'], dic['低估']
+        parameters += (thr, refer)
+        print(parameters)
+        df = mongo.load_valuation(index)
+    else:
+        df = mongo.load_close_price('sh000985')     # use '中证全指' as valuation
+        df = df.rename({'close': 'valuation'}, axis=1)
+
+    df['date'] = pd.to_datetime(df['date'])
+    # print(df[(df['date'] > begin) & (df['date'].dt.dayofweek == 1)])
+    df2 = mongo.load_close_price(code)
+    # print(df2[(df2['date'] > begin) & (df2['date'].dt.dayofweek == 1)])
+    df = pd.merge(df, df2, on='date', how='outer')
+    df = df.sort_values('date')
+    df.fillna(method='ffill', inplace=True)         # fill NaN with previous value
+    df.fillna({'close': 1.0}, inplace=True)         # no previous value, fill with 1.0
+    weekday = 1                                     # choose Tuesday, Mon: 0, Tue: 1, ... Sun: 6
+    df = df[(df['date'] > begin) & (df['date'].dt.dayofweek == weekday)]
     # print(df)
+
+    df['每期定投金额'] = df.apply(lambda x: increment(x, *parameters), axis=1)
     df['累计定投金额'] = df['每期定投金额'].cumsum()
     fee_rate = 0.001
     df['每期持仓数量'] = df['每期定投金额'] / df['close'] * (1 - fee_rate)
@@ -87,13 +91,14 @@ def loop_back(code: str, begin: date) -> tuple:
     df.iloc[m - 1, df.columns.get_loc('现金流')] += cumulative_net
     return_rate = xirr(df, 'date', '现金流')
     df = df.rename({'累计持仓净值': name}, axis=1).set_index('date')
+    df = df.sort_index()
     df.index.name = None
     # print(df)
     return (name, cumulative_amount, cumulative_net, hold_gain, return_rate), df[['累计定投金额', name]]
 
 
 def comparision(typ: str, codes: list, begin: date):
-    results = [loop_back(i, begin) for i in codes]
+    results = [loop_back(i, begin, (1000, 0)) for i in codes]
     columns = ['name', '累计定投金额(万)', '累计持仓净值(万)', '累计收益(万)', '内部收益率(%)']
     df = pd.DataFrame([r[0] for r in results], columns=columns)
     df[columns[1]] = df[columns[1]].apply(lambda x: round(x / 10000))
@@ -184,9 +189,8 @@ FUNDS = {
     # otc_006551'
     '成长价值': ["otc_005827", 'otc_110011', "otc_005267", 'otc_169101', "otc_001712", "otc_519712", "otc_270002"],
     # 'otc_001112', 'otc_003396', 'otc_519697',
-    '成长': ["otc_260108", "otc_161005", 'otc_519035', "otc_110013", 'otc_005354', "otc_007119",
-           "otc_519068", "otc_377240", "otc_000595", 'otc_001975'],
-    # "otc_260101",
+    '成长': ["otc_000595", 'otc_001975', 'otc_005354', "otc_110013", "otc_377240", 'otc_519035'],
+    # "otc_007119", "otc_519068", "otc_260108", "otc_161005", "otc_260101"
     '均衡': ["otc_004868", "otc_163406", "otc_163415", "otc_163402", "otc_166002", 'otc_008276', "otc_519688"],
     # 'otc_519736',
     '主动医药': ['otc_006002', "otc_003095", "otc_004851", "otc_001766", "otc_001717"],
@@ -213,17 +217,27 @@ INDEXES = {
 }
 
 
+def test(code: str, begin: date):
+    r0, r1 = loop_back(code, begin, (1000, 1))
+    print(r0)
+    print(r1)
+
+
 def main():
     if len(sys.argv) < 2:
         print('Usage: {} YYYYmmdd'.format(sys.argv[0]))
         sys.exit(1)
 
     begin = datetime.strptime(sys.argv[1], '%Y%m%d')    # .date()
+    # test('otc_110003', begin)
     # show_scales(FUNDS)
-    key = '深度价值'
+    key = '成长'
     comparision(key, FUNDS[key], begin)
     # key = '大盘指数'
     # comparision(key, INDEXES[key], begin)
+    # indexes = ['otc_110003', 'otc_110020', 'otc_161017', 'otc_000071', 'otc_050025', 'otc_040046']
+    # comparision('宽基', indexes, begin)
+
     # sort(INDEXES, begin)
     # sort(FUNDS, begin)
     # sort_indexes(begin)
