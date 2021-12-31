@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+import re
 import sys
 from datetime import date
 from datetime import datetime
@@ -49,13 +50,13 @@ def increment(row: pd.Series, base: float, exp: int, thr=None, refer=None) -> fl
     return inc
 
 
-def loop_back(code: str, begin: date, parameters=(1000, 0)) -> tuple:
+def loop_back(code: str, begin: date, parameters: tuple) -> tuple:
     mongo = Mongo()
     dic = mongo.load_info(code)
     name, typ = dic['name'], dic['type']
     print(name, typ)
     name = '{}({})'.format(name if len(name) <= 10 else name[: 8] + '..', code[4:])
-    if typ in ['指数型', 'QDII']:      # and parameters[1]:
+    if typ in ['指数型', 'QDII'] and parameters[1]:        # as exp ≠ 0
         dic = mongo.get_threshold(code[4:])
         index, refer, thr = dic['_id'], dic['参考指标'], dic['低估']
         parameters += (thr, refer)
@@ -97,8 +98,8 @@ def loop_back(code: str, begin: date, parameters=(1000, 0)) -> tuple:
     return (name, cumulative_amount, cumulative_net, hold_gain, return_rate), df[['累计定投金额', name]]
 
 
-def comparision(typ: str, codes: list, begin: date):
-    results = [loop_back(i, begin, (1000, 0)) for i in codes]
+def comparision(title: str, codes: list, begin: date, parameters=(1000, 0)):
+    results = [loop_back(i, begin, parameters) for i in codes]
     columns = ['name', '累计定投金额(万)', '累计持仓净值(万)', '累计收益(万)', '内部收益率(%)']
     df = pd.DataFrame([r[0] for r in results], columns=columns)
     df[columns[1]] = df[columns[1]].apply(lambda x: round(x / 10000))
@@ -106,17 +107,25 @@ def comparision(typ: str, codes: list, begin: date):
     df[columns[3]] = df[columns[3]].apply(lambda x: round(x / 10000))
     df[columns[4]] = df[columns[4]].apply(lambda x: round(x * 100))
     df.set_index('name', inplace=True)
-    df = df.sort_values('内部收益率(%)')
+    # df = df.sort_values('内部收益率(%)')
     df.index.name = None
     print(df)
     df2 = pd.concat([r[1] for r in results], axis=1)
-    df2 = df2.loc[:, ~df2.columns.duplicated()]        # remove duplicated '累计定投金额'
+    if not parameters[1]:
+        df2 = df2.loc[:, ~df2.columns.duplicated()]        # remove duplicated '累计定投金额'
+    else:
+        cols = list(df2.columns)
+        for i in range(len(cols) // 2):
+            name = re.match(r'(.*)\(.*\)', cols[i * 2 + 1]).group(1)
+            cols[i * 2] = name + '-累计定投'
+            cols[i * 2 + 1] = name + '-累计持仓'
+        df2.columns = cols
     print(df2)
 
     plt.rcParams['font.sans-serif'] = ['SimHei']
     plt.rcParams['axes.unicode_minus'] = False
     _, axes = plt.subplots(nrows=2, ncols=1)
-    title = typ + '定投回测：累计持仓曲线及收益率'
+    title = '定投回测 ({}+{}): 累计持仓曲线及收益率'.format(title, '阈值' if parameters[1] else '定额')
     df2.plot(ax=axes[0], figsize=(12, 8), grid=True, rot=0, title=title)
     ax = df.plot.bar(ax=axes[1], figsize=(12, 8), rot=20)
     for i in ax.containers:
@@ -202,18 +211,16 @@ FUNDS = {
 }
 
 INDEXES = {
-    '大盘': ["otc_217027", "otc_110003", "otc_540012", 'otc_110020', 'otc_161227', 'otc_213010', 'otc_163109',
-           'otc_530015', 'otc_070023', 'otc_040180'],
-    '中小盘': ['otc_161039', 'otc_161022', 'otc_161017'],
-    '策略': ["otc_519671", "otc_003318", "otc_007657", "otc_006341", 'otc_160716'],
-    '红利': ['otc_501029', 'otc_481012', 'otc_090010'],
+    '大盘': ["otc_110003", 'otc_110020', "otc_217027", "otc_540012", 'otc_213010', 'otc_163109'],
+    # 'otc_530015', 'otc_040180', 'otc_161227'
+    '中小盘+红利': ['otc_161039', 'otc_161022', 'otc_161017', 'otc_501029', 'otc_481012', 'otc_090010'],
+    '策略': ["otc_519671", "otc_003318", "otc_007657", "otc_006341", 'otc_160716', 'otc_530015'],     # 'otc_070023'
     '医药': ["otc_001550", "otc_162412", "otc_501009", "otc_000968"],
-    '消费': ["otc_501090", "otc_001133", "otc_000248", 'otc_008928', 'otc_001631', 'otc_161725', 'otc_005063',
-           'otc_008519'],
-    '行业': ['otc_001064', 'otc_161024', 'otc_004856', 'otc_004069', 'otc_005223', 'otc_001594', 'otc_160218'],
+    '消费': ["otc_501090", "otc_000248", 'otc_008928', 'otc_001631', 'otc_161725', 'otc_008519'],
+    '金融地产': ['otc_004856', 'otc_004069', 'otc_005223', 'otc_001594', 'otc_160218'],
+    '其它行业': ['otc_001133', 'otc_005063', 'otc_161024', 'otc_001064', 'otc_010202'],
     'QDII': ['otc_161128', 'otc_040046', 'otc_162415', 'otc_050025', 'otc_000369', 'otc_006327'],
-    '港股': ["otc_501050", 'otc_000071', 'otc_110031', 'otc_501021', 'otc_012348'],
-    '科技': ['otc_010202']
+    '港股': ["otc_501050", 'otc_000071', 'otc_110031', 'otc_501021', 'otc_012348', ]
 }
 
 
@@ -231,12 +238,12 @@ def main():
     begin = datetime.strptime(sys.argv[1], '%Y%m%d')    # .date()
     # test('otc_110003', begin)
     # show_scales(FUNDS)
-    key = '成长'
-    comparision(key, FUNDS[key], begin)
-    # key = '大盘指数'
+    # key = '成长'
+    # comparision(key, FUNDS[key], begin)
+    # key = '大盘'
     # comparision(key, INDEXES[key], begin)
-    # indexes = ['otc_110003', 'otc_110020', 'otc_161017', 'otc_000071', 'otc_050025', 'otc_040046']
-    # comparision('宽基', indexes, begin)
+    indexes = ['otc_110003', 'otc_110020', 'otc_161017']
+    comparision('宽基', indexes, begin, (2000, 1))
 
     # sort(INDEXES, begin)
     # sort(FUNDS, begin)
