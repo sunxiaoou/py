@@ -7,30 +7,41 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.utils import column_index_from_string
 
-columns = ['rank', 'code', 'name', 'nav']
+pd.set_option('display.max_rows', 200)
+pd.set_option('display.max_columns', 100)
 
 
-def get_radical_bones(xlsx: str) -> pd.DataFrame:
+def get_bones(xlsx: str) -> pd.DataFrame:
     wb = load_workbook(xlsx, data_only=True)
-    ws = wb['激进轮动可转债']
+    # ws = wb['激进轮动可转债']
+    ws = wb['可转债排名']
     # col = column_index_from_string('J')
-    for col in range(2, 20):
+    for col in range(1, 20):
         c = ws.cell(row=1, column=col)
         if c.value == '转债代码':
             break
     lst = []
     for i in range(2, ws.max_row):
-        c = ws.cell(row=i, column=col + 2)
+        c = ws.cell(row=i, column=col)
         if c.value is None:
             break
-        rank = c.value
-        code = str(ws.cell(row=i, column=col).value)
+        code = str(c.value)
         name = ws.cell(row=i, column=col + 1).value
-        nav = float(ws.cell(row=i, column=col + 3).value)
-        # if nav < 170:
-        lst.append((rank, code, name, nav))
+        rank = ws.cell(row=i, column=col + 2).value
+        rank_170 = ws.cell(row=i, column=col + 3).value
+        rank_130 = ws.cell(row=i, column=col + 4).value
+        nav = ws.cell(row=i, column=col + 5).value
+        quote_change = '{0:.2%}'.format(ws.cell(row=i, column=col + 6).value)
+        if i == 2:
+            print(type(nav), type(quote_change))
+        comment = ws.cell(row=i, column=col + 7).value
+        lst.append((code, name, rank, rank_170, rank_130, nav, quote_change, comment))
+    columns = ['code', 'name', 'rank', 'rank_170', 'rank_130', 'nav', 'quote_change', 'comment']
     df = pd.DataFrame(lst, columns=columns)
-    return df.head(50)
+    # df['rank_130'] = df['rank_130'].apply(lambda x: int(x) if pd.notna(x) else x)
+    # df = df.set_index('rank')
+    # df.index.name = None
+    return df
 
 
 def get_low2_bones(xlsx: str) -> pd.DataFrame:
@@ -73,11 +84,14 @@ def main():
     mine = get_my_list('asset.xlsx')
 
     xlsx = sys.argv[1]
-    print('激进轮动转债榜单')
-    radical = get_radical_bones(xlsx)
+    bones = get_bones(xlsx)
+    print('无阈值排名')
+    radical = bones.head(50)
     print(radical)
-    low2 = get_low2_bones(xlsx)
+
     print('双低轮动转债榜单')
+    low2 = bones[bones['rank_130'].notna()].head(20)
+    # low2['rank_130'] = low2['rank_130'].apply(lambda x: int(x))
     print(low2)
 
     inner = pd.merge(radical, mine, on=['code', 'name'])
