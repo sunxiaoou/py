@@ -61,7 +61,8 @@ def loop_back(code: str, begin: date, parameters: tuple) -> tuple:
         index, refer, thr = dic['_id'], dic['参考指标'], dic['低估']
         parameters += (thr, refer)
         print(parameters)
-        df = mongo.load_valuation(index)
+        df = mongo.load_valuation([index])
+        df = df.rename({index: 'valuation'}, axis=1)
     else:
         df = mongo.load_close_price('sh000985')     # use '中证全指' as valuation
         df = df.rename({'close': 'valuation'}, axis=1)
@@ -230,6 +231,18 @@ def test(code: str, begin: date):
     print(r1)
 
 
+def test2(indexes: list):
+    df = Mongo().load_valuation(indexes)
+    df = df.set_index('date')
+    # df = df.dropna().set_index('date')
+    df.index.name = None
+    print(df)
+    plt.rcParams['font.sans-serif'] = ['SimHei']
+    plt.rcParams['axes.unicode_minus'] = False
+    df.plot(figsize=(12, 8), grid=True)
+    plt.show()
+
+
 def main():
     if len(sys.argv) < 2:
         print('Usage: {} YYYYmmdd'.format(sys.argv[0]))
@@ -240,14 +253,17 @@ def main():
     # show_scales(FUNDS)
     # key = '成长'
     # comparision(key, FUNDS[key], begin)
-    # key = '大盘'
+    # key = 'QDII'
     # comparision(key, INDEXES[key], begin)
-    indexes = ['otc_110003', 'otc_110020', 'otc_161017']
-    comparision('宽基', indexes, begin, (2000, 1))
+    # indexes = ['otc_110003', 'otc_110020', 'otc_161017']
+    # comparision('宽基', indexes, begin, (2000, 1))
+    # indexes = ['otc_000071', 'otc_050025', 'otc_040046']
+    # comparision('港美宽基', indexes, begin, (2000, 0))
 
     # sort(INDEXES, begin)
     # sort(FUNDS, begin)
     # sort_indexes(begin)
+    test2(['深红利'])
 
 
 if __name__ == "__main__":

@@ -115,16 +115,17 @@ def save_scales(prefix: str, codes=None, mongo=None):
 
 
 def main():
-    funds = ['008276', "006567", "007130", "001975", "260112", '519712',
-             '110013', '519068', '001712', '110022', '000083', '007119']
-    funds = ['005827', '260108', '006002', "004851"]
-    # save_fund_nav(funds)
+    # codes = ['001487', '001877']
+    # save_fund_nav(codes)
+    # save_scales('otc_', codes)
+    # for code in ['otc_' + code for code in codes]:
+    #     print(code, Mongo().get_manager(code))
+
     # save_screw_otc()
     # df = JqData.fund_nav_daily('012348')
     # df = JqData.fund_nav_daily('377240', '2021-12-16')
     # print(df)
-    # update_fund_nav('otc_')
-    # save_scales('otc_', ['otc_006002', 'otc_004851'])
+    update_fund_nav('otc_')
 
 
 if __name__ == "__main__":

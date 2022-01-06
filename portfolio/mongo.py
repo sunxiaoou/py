@@ -35,21 +35,21 @@ class Mongo:
         collection = self.db[collection]
         collection.insert(dic.values())
 
-    def save_securities(self, codes: list):
-        for code in codes:
-            if code in self.db.list_collection_names():
-                print(code + ' is already in')
-                continue
-            print(code)
-            df = pd.DataFrame()
-            if re.match(r'(sh|sz)\d{6}', code) is not None:
-                df = Mongo.index_price_daily(code)
-            elif re.match(r'f\d{6}', code) is not None:
-                df = Mongo.fund_nav_daily(code)
-            else:
-                assert True, print('code is not valid')
-            self.save(code, df)
-            time.sleep(1)
+    # def save_securities(self, codes: list):
+    #     for code in codes:
+    #         if code in self.db.list_collection_names():
+    #             print(code + ' is already in')
+    #             continue
+    #         print(code)
+    #         df = pd.DataFrame()
+    #         if re.match(r'(sh|sz)\d{6}', code) is not None:
+    #             df = Mongo.index_price_daily(code)
+    #         elif re.match(r'f\d{6}', code) is not None:
+    #             df = Mongo.fund_nav_daily(code)
+    #         else:
+    #             assert True, print('code is not valid')
+    #         self.save(code, df)
+    #         time.sleep(1)
 
     def load_info(self, code: str) -> dict:
         dic = {}
@@ -94,11 +94,11 @@ class Mongo:
         # print(df)
         return df
 
-    def load_valuation(self, index: str) -> pd.DataFrame:
-        cursor = self.db.get_collection('valuation').find({}, {index: 1})
+    def load_valuation(self, indexes: list) -> pd.DataFrame:
+        cursor = self.db.get_collection('valuation').find({}, {i: 1 for i in indexes})
         df = pd.DataFrame(list(cursor))
         df['_id'] = pd.to_datetime(df['_id'], unit='ms')
-        df = df.rename({'_id': 'date', index: 'valuation'}, axis=1)
+        df = df.rename({'_id': 'date'}, axis=1)
         # print(df)
         return df
 
@@ -138,7 +138,10 @@ def main():
     # print(datetime.fromtimestamp(ms / 1000.0).strftime('%Y-%m-%d'))
     # print(mongo.load_close_price(code))
     # print(Mongo().get_manager('otc_166002'))
-    print(Mongo().get_otc_indexes())
+    # print(Mongo().get_otc_indexes())
+    df = Mongo().load_valuation(['中证医疗', '中概互联'])
+    df = df.dropna()
+    print(df)
 
 
 if __name__ == "__main__":
