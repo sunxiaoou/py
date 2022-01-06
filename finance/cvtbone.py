@@ -32,8 +32,6 @@ def get_bones(xlsx: str) -> pd.DataFrame:
         rank_130 = ws.cell(row=i, column=col + 4).value
         nav = ws.cell(row=i, column=col + 5).value
         quote_change = '{0:.2%}'.format(ws.cell(row=i, column=col + 6).value)
-        if i == 2:
-            print(type(nav), type(quote_change))
         comment = ws.cell(row=i, column=col + 7).value
         lst.append((code, name, rank, rank_170, rank_130, nav, quote_change, comment))
     columns = ['code', 'name', 'rank', 'rank_170', 'rank_130', 'nav', 'quote_change', 'comment']
@@ -42,28 +40,6 @@ def get_bones(xlsx: str) -> pd.DataFrame:
     # df = df.set_index('rank')
     # df.index.name = None
     return df
-
-
-def get_low2_bones(xlsx: str) -> pd.DataFrame:
-    wb = load_workbook(xlsx, data_only=True)
-    ws = wb['轮动可转债']
-    # col = column_index_from_string('K')
-    for col in range(2, 20):
-        c = ws.cell(row=1, column=col)
-        if c.value == '转债代码':
-            break
-    lst = []
-    for i in range(2, ws.max_row):
-        c = ws.cell(row=i, column=col + 2)
-        if c.value is None:
-            break
-        rank = c.value
-        code = str(ws.cell(row=i, column=col).value)
-        name = ws.cell(row=i, column=col + 1).value
-        nav = float(ws.cell(row=i, column=col + 3).value)
-        if nav < 170:
-            lst.append((rank, code, name, nav))
-    return pd.DataFrame(lst, columns=columns)
 
 
 def get_my_list(xlsx: str) -> pd.DataFrame:
@@ -85,38 +61,24 @@ def main():
 
     xlsx = sys.argv[1]
     bones = get_bones(xlsx)
-    print('无阈值排名')
-    radical = bones.head(50)
+    print('无阈值排名(截止到<170的第20名)')
+    df = bones.loc[bones['rank_170'] == 20]
+    r = df.iloc[0, df.columns.get_loc('rank')]
+    radical = bones[bones['rank'] <= r]
     print(radical)
-
-    print('双低轮动转债榜单')
-    low2 = bones[bones['rank_130'].notna()].head(20)
-    # low2['rank_130'] = low2['rank_130'].apply(lambda x: int(x))
-    print(low2)
 
     inner = pd.merge(radical, mine, on=['code', 'name'])
     print('已持有的激进转债({})'.format(len(inner)))
     print(inner)
-    inner2 = pd.merge(low2, mine, on=['code', 'name'])
-    print('已持有的双低转债({})'.format(len(inner2)))
-    print(inner2)
 
     to_buy = radical.append(inner).drop_duplicates(keep=False)
     to_buy = to_buy[to_buy['nav'] < 170]
     print('未持有的<170的激进转债({})'.format(len(to_buy)))
     print(to_buy)
-    to_buy2 = low2.append(inner2).drop_duplicates(keep=False)
-    print('未持有的双低转债({})'.format(len(to_buy2)))
-    print(to_buy2)
 
     to_sell = mine.append(inner[['code', 'name']]).drop_duplicates(keep=False)
-    # print('持有的非激进转债({})'.format(len(to_sell)))
-    # print(to_sell)
-
-    inner2 = pd.merge(low2, to_sell, on=['code', 'name'])
-    to_sell2 = to_sell.append(inner2[['code', 'name']]).drop_duplicates(keep=False)
-    print('持有的非激进或双低转债({})'.format(len(to_sell2)))
-    print(to_sell2)
+    print('持有的非激进转债({})'.format(len(to_sell)))
+    print(to_sell)
 
 
 if __name__ == "__main__":
