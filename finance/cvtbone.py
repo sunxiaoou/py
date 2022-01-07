@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 
 import sys
+from datetime import datetime
 from pprint import pprint
 
 import pandas as pd
@@ -36,7 +37,7 @@ def get_bones(xlsx: str) -> pd.DataFrame:
         lst.append((code, name, rank, rank_170, rank_130, nav, quote_change, comment))
     columns = ['code', 'name', 'rank', 'rank_170', 'rank_130', 'nav', 'quote_change', 'comment']
     df = pd.DataFrame(lst, columns=columns)
-    # df['rank_130'] = df['rank_130'].apply(lambda x: int(x) if pd.notna(x) else x)
+    df['comment'] = df['comment'].apply(lambda x: x.strftime('%m/%d') if isinstance(x, datetime) else x)
     # df = df.set_index('rank')
     # df.index.name = None
     return df
