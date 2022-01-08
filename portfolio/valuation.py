@@ -374,6 +374,10 @@ def calculate_threshold(lst: list) -> pd.DataFrame:
 
 def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
     wb = load_workbook(xlsx)
+    ws = wb.copy_worksheet(wb.worksheets[-1])       # copy a old sheet as template to avoid adjust size
+    ws.title = sheet
+    wb.active = len(wb.worksheets) - 1
+
     writer = pd.ExcelWriter(xlsx, engine='openpyxl')
     writer.book = wb
     writer.sheets = {worksheet.title: worksheet for worksheet in wb.worksheets}
@@ -389,7 +393,6 @@ def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
             ws.cell(row=i, column=j).number_format = '#,##,0.00'
         for j in range(9, last_col + 1):
             ws.cell(row=i, column=j).number_format = '0.00%'
-
     colors = ['99CC00', 'FFCC00', 'FF6600']
     i = 1
     for k in range(9, 12):
