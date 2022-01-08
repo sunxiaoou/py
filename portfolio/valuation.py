@@ -1,11 +1,14 @@
 #! /usr/bin/python3
+import os
 import re
 import sys
 from datetime import datetime
 from pprint import pprint
 
 import pandas as pd
+import pyperclip
 from openpyxl import load_workbook
+from openpyxl.styles import PatternFill
 
 from mongo import Mongo
 
@@ -93,10 +96,6 @@ def parse_fund_code(file: str) -> list:
         for l in f.readlines():
             lines += l.rstrip('\n').split()
 
-    # with open('tmp.txt', 'w') as f:
-    #     for l in lines:
-    #         f.write(l + '\n')
-
     reg_date = re.compile(r'20\d{6}')
     result = []
     try:
@@ -155,14 +154,14 @@ def save_thresholds(file: str):
 
 
 def parse_valuations(file: str) -> list:
+    if not os.path.isfile(file):
+        with open(file, 'w') as fp:
+            fp.write(pyperclip.paste())
+
     with open(file) as f:
         lines = []
         for l in f.readlines():
             lines += l.rstrip('\n').split()
-
-    # with open('tmp.txt', 'w') as f:
-    #     for l in lines:
-    #         f.write(l + '\n')
 
     reg_date = re.compile(r'20\d{6}')
     result = []
@@ -274,14 +273,151 @@ def update_valuations(xlsx: str):
     mongo.save('valuation', df)
 
 
+def to_lowest(row: pd.Series) -> float:
+    val, lowest, low = row.iat[7], row['最低'], row['低估']
+    if row['参考指标'] == '盈利收益率':
+        if val < low:
+            return None
+    elif val > low:
+        return None
+    return round((lowest - val) / (lowest - low), 4)
+
+
+def to_lowest2(row: pd.Series) -> float:
+    val, lowest, low = row.iat[7], row['最低'], row['低估']
+    if row['参考指标'] == '盈利收益率':
+        if val < low:
+            return None
+        return round((val - lowest) / val, 4)
+    if val > low:
+        return None
+    return round((lowest - val) / val, 4)
+
+
+def to_low(row: pd.Series) -> float:
+    val, low, high = row.iat[7], row['低估'], row['高估']
+    if row['参考指标'] == '盈利收益率':
+        if val >= low or val <= high:
+            return None
+    elif val <= low or val >= high:
+        return None
+    return round((low - val) / (low - high), 4)
+
+
+def to_low2(row: pd.Series) -> float:
+    val, low, high = row.iat[7], row['低估'], row['高估']
+    if row['参考指标'] == '盈利收益率':
+        if val <= high:
+            return None
+        return round((val - low) / val, 4)
+    if val >= high:
+        return None
+    return round((low - val) / val, 4)
+
+
+def to_high(row: pd.Series) -> float:
+    val, high, highest = row.iat[7], row['高估'], row['最高']
+    if row['参考指标'] == '盈利收益率':
+        if val > high:
+            return None
+    elif val < high:
+        return None
+    return round((high - val) / (high - highest), 4)
+
+
+def to_high2(row: pd.Series) -> float:
+    val, low, high = row.iat[7], row['低估'], row['高估']
+    if row['参考指标'] == '盈利收益率':
+        if val >= low:
+            return None
+        return round((val - high) / val, 4)
+    if val <= low:
+        return None
+    return round((high - val) / val, 4)
+
+
+def to_highest2(row: pd.Series) -> float:
+    val, high, highest = row.iat[7], row['高估'], row['最高']
+    if row['参考指标'] == '盈利收益率':
+        if val >= high:
+            return None
+        return round((val - highest) / val, 4)
+    if val <= high:
+        return None
+    return round((highest - val) / val, 4)
+
+
+def calculate_threshold(lst: list) -> pd.DataFrame:
+    columns = ['代码', '名称', '参考指标', '最低', '低估', '高估', '最高']
+    df = pd.DataFrame(THRESHOLDS, columns=columns)
+    dic = lst[0]
+    date = dic['_id']
+
+    df2 = pd.DataFrame(dic.items(), columns=['名称', date])
+    # print(len(df), len(df2))
+    # df = pd.merge(df, df2, on='名称', how='left', indicator=True)
+    # print(df[df['_merge'] == 'left_only'])
+    df = pd.merge(df, df2, on='名称', how='left')
+    nan = df[df[date].isna()]
+    assert len(nan) == 0, print(len(nan))
+
+    df['距最低'] = df.apply(to_lowest, axis=1)     # to_lowest(), to_low(), to_high() are just for sort
+    df['距低估'] = df.apply(to_low, axis=1)
+    df['距高估'] = df.apply(to_high, axis=1)
+    df = df.sort_values(by=['距最低', '距低估', '距高估'])
+    df['距最低'] = df.apply(to_lowest2, axis=1)
+    df['距低估'] = df.apply(to_low2, axis=1)
+    df['距高估'] = df.apply(to_high2, axis=1)
+    df['距最高'] = df.apply(to_highest2, axis=1)
+    return df.reset_index(drop=True)
+
+
+def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
+    wb = load_workbook(xlsx)
+    writer = pd.ExcelWriter(xlsx, engine='openpyxl')
+    writer.book = wb
+    writer.sheets = {worksheet.title: worksheet for worksheet in wb.worksheets}
+    df.to_excel(writer, sheet_name=sheet, index=False)
+    writer.save()
+
+    wb = load_workbook(xlsx)
+    ws = wb[sheet]
+    last_row = ws.max_row
+    last_col = ws.max_column
+    for i in range(2, last_row + 1):
+        for j in range(4, 9):
+            ws.cell(row=i, column=j).number_format = '#,##,0.00'
+        for j in range(9, last_col + 1):
+            ws.cell(row=i, column=j).number_format = '0.00%'
+
+    colors = ['99CC00', 'FFCC00', 'FF6600']
+    i = 1
+    for k in range(9, 12):
+        fill = PatternFill(patternType='solid', fgColor=colors[k - 9])
+        while ws.cell(row=i, column=k).value is not None:
+            for j in range(1, last_col + 1):
+                ws.cell(row=i, column=j).fill = fill
+            i += 1
+
+    wb.save(xlsx)
+
+
 def main():
     if len(sys.argv) < 2:
         print('Usage: {} txt'.format(sys.argv[0]))
+        print('       {} txt xlsx'.format(sys.argv[0]))     # update spreadsheet from clipboard or file
+        print('       {} xlsx'.format(sys.argv[0]))         # update db from spreadsheet
         sys.exit(1)
 
     # save_thresholds(sys.argv[1])
     # save_valuations(sys.argv[1])
-    if sys.argv[1].endswith('.xlsx'):
+
+    if len(sys.argv) == 3 and sys.argv[2].endswith('.xlsx'):
+        df = calculate_threshold(parse_valuations(sys.argv[1]))
+        print(df)
+        date = list(df.keys())[7]
+        to_excel(sys.argv[2], date, df)
+    elif sys.argv[1].endswith('.xlsx'):
         update_valuations(sys.argv[1])
 
 
