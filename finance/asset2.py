@@ -171,6 +171,66 @@ def yinhe(datafile: str) -> pd.DataFrame:
     return df
 
 
+def huabao(datafile: str) -> pd.DataFrame:
+    with open(datafile) as f:
+        lines = []
+        for l in f.readlines():
+            # lines += re.sub('－', '-', l.rstrip('\n')).split()
+            lines += l.rstrip('\n').split()
+    i = 0
+    while not lines[i].startswith('其他'):
+        i += 1
+    asset = float(lines[i + 1])
+    total_mv = float(lines[i + 2])
+    i += 3
+    while lines[i] != '可取资金':
+        i += 1
+    cash = float(lines[i + 1])
+    assert round(total_mv + cash, 2) == asset, \
+        print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
+    result = [('华宝', 'cny', 'cash', '现金', '货币', 0, cash, 0)]
+    while not lines[i].startswith('今日盈亏'):
+        i += 1
+    s = lines[i + 2]
+    total_hg = float(re.sub('－', '-', s) if s[0] == '－' else s[1:])
+    i += 3
+    while lines[i] != '仓位':
+        i += 1
+    i += 1
+    try:
+        while True:
+            while not re.match(r'\d{6}\.(SZ|SH)', lines[i]):
+                i += 1
+            name = lines[i - 4]
+            cost = float(lines[i - 3])
+            volume = int(lines[i - 2])
+            code = lines[i][: 6]
+            s = lines[i - 1]
+            hold_gain = float(re.sub('－', '-', s) if s[0] == '－' else s[1:])
+            nav = float(lines[i + 2])
+            v2 = int(lines[i + 3])
+            market_value = float(lines[i + 5])
+            assert v2 == volume, print("v2{} != volume{}".format(v2, volume))
+            assert market_value == round(nav * volume, 2), \
+                print("mv({}) != nav({}) * volume({})".format(market_value, nav, volume))
+            if code[0] == '1':
+                typ, risk = '转债', 2
+            else:
+                name, typ, risk = on_market[code]
+            i += 6
+            result.append(('华宝', 'cny', code, name, type, risk, market_value, hold_gain, volume, nav, cost))
+    except IndexError:
+        pass
+    df = pd.DataFrame(result, columns=columns + ['volume', 'nav', 'cost'])
+    sum_mv = round(df['market_value'].sum(), 2)
+    assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
+    sum_hg = round(df['hold_gain'].sum(), 2)
+    assert sum_hg == total_hg, print("sum_hg({}) != total_hg({})".format(sum_hg, total_hg))
+    df.apply(verify, axis=1)
+    df.drop(columns=['volume', 'cost'], inplace=True)
+    return df
+
+
 def huasheng(datafile: str) -> pd.DataFrame:
     with open(datafile) as fp:
         lines = [re.sub(r'[,＋]', '', re.sub('－', '-', line)).rstrip('\n') for line in fp.readlines()]
@@ -356,7 +416,7 @@ def tonghs(datafile: str) -> pd.DataFrame:
 
 
 def run(file: str) -> pd.DataFrame:
-    platforms = {'zsb': zhaoshang_bank, 'hsb': hangseng_bank, 'yh': yinhe, 'hs': huasheng, 'ft': futu,
+    platforms = {'zsb': zhaoshang_bank, 'hsb': hangseng_bank, 'yh': yinhe, 'hb': huabao, 'hs': huasheng, 'ft': futu,
                  'dj': danjuan, 'ths': tonghs}
     func = platforms[re.search(r'.*/(.*)_.*', file).group(1)]
     return func(file)
@@ -428,7 +488,7 @@ def to_execl(xlsx: str, sheet: str, df: pd.DataFrame):
     summaries = [
         {'location': (last_row + 2, 1),
          'letter': 'A',
-         'labels': ['招商银行', '恒生银行', '银河', '华盛*', '富途*', '蛋卷*', '同花顺'],
+         'labels': ['招商银行', '恒生银行', '银河', '华宝', '华盛*', '富途*', '蛋卷*', '同花顺'],
          'category': 'platform',
          'anchor': 'K1'},
         {'location': (last_row + 2, 4),
