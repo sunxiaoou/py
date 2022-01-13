@@ -62,8 +62,10 @@ def main():
 
     xlsx = sys.argv[1]
     bones = get_bones(xlsx)
-    print('无阈值排名(截止到<170的第20名)')
-    df = bones.loc[bones['rank_170'] == 20]
+    # print('无阈值排名(截止到<170的第20名)')
+    # df = bones.loc[bones['rank_170'] == 20]
+    print('无阈值排名(截止到<130的第10名)')
+    df = bones.loc[bones['rank_130'] == 10]
     r = df.iloc[0, df.columns.get_loc('rank')]
     radical = bones[bones['rank'] <= r]
     print(radical)

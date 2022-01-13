@@ -218,7 +218,7 @@ def huabao(datafile: str) -> pd.DataFrame:
             else:
                 name, typ, risk = on_market[code]
             i += 6
-            result.append(('华宝', 'cny', code, name, type, risk, market_value, hold_gain, volume, nav, cost))
+            result.append(('华宝', 'cny', code, name, typ, risk, market_value, hold_gain, volume, nav, cost))
     except IndexError:
         pass
     df = pd.DataFrame(result, columns=columns + ['volume', 'nav', 'cost'])
@@ -451,7 +451,7 @@ def fill(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def run_all(files: list) -> pd.DataFrame:
-    platforms = ['zsb_', 'hsb_', 'yh_', 'hs_', 'ft_', 'dj_', 'ths_']   # to sort files
+    platforms = ['zsb_', 'hsb_', 'yh_', 'hb_', 'hs_', 'ft_', 'dj_', 'ths_']   # to sort files
     fs = sorted(files)
     frames = []
     for p in platforms:
