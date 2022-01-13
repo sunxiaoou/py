@@ -359,7 +359,7 @@ def calculate_threshold(lst: list) -> pd.DataFrame:
     # print(df[df['_merge'] == 'left_only'])
     df = pd.merge(df, df2, on='名称', how='left')
     nan = df[df[date].isna()]
-    assert len(nan) == 0, print(len(nan))
+    assert len(nan) == 0, print(nan)
 
     df['距最低'] = df.apply(to_lowest, axis=1)     # to_lowest(), to_low(), to_high() are just for sort
     df['距低估'] = df.apply(to_low, axis=1)
