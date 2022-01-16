@@ -45,19 +45,22 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
     i += 2
     while lines[i] != '理财产品':
         i += 1
-    total_mv = float(lines[i + 1])
+    total_mv = float(lines[i + 1].rstrip('>'))
     asset = round(cash + total_mv, 2)
     i += 2
-    while i < len(lines) and lines[i]:
-        name = lines[i]
-        i += 1
-        while not re.match(r'.*[\d.]+', lines[i]):
+    try:
+        while lines[i]:
+            name = lines[i]
             i += 1
-        hold_gain = float(re.sub('[^\d.]+', '', lines[i]))
-        market_value = float(lines[i + 1])
-        type, risk = ('债券', 1) if name in bonds else ('货币', 0)
-        result.append(('招商银行', 'cny', 'product', name, type, risk, market_value, hold_gain))
-        i += 4
+            while not re.match(r'.*[\d.]+', lines[i]):
+                i += 1
+            hold_gain = float(re.sub('[^\d.]+', '', lines[i]))
+            market_value = float(lines[i + 1])
+            type, risk = ('债券', 1) if name in bonds else ('货币', 0)
+            result.append(('招商银行', 'cny', 'product', name, type, risk, market_value, hold_gain))
+            i += 4
+    except IndexError:
+        pass
     df = pd.DataFrame(result, columns=columns)
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
@@ -134,7 +137,7 @@ def yinhe(datafile: str) -> pd.DataFrame:
         else:
             name, code = lines[i][: -6].rstrip(), lines[i][-6:]
         i += 1
-        if code[0] == '1':
+        if code[0] in ['1', '7']:
             type, risk = '转债', 2
         else:
             name, type, risk = on_market[code]
@@ -178,11 +181,11 @@ def huabao(datafile: str) -> pd.DataFrame:
             # lines += re.sub('－', '-', l.rstrip('\n')).split()
             lines += l.rstrip('\n').split()
     i = 0
-    while not lines[i].startswith('其他'):
+    while not re.match(r'\d+\.\d\d', lines[i]):
         i += 1
-    asset = float(lines[i + 1])
-    total_mv = float(lines[i + 2])
-    i += 3
+    asset = float(lines[i])
+    total_mv = float(lines[i + 1])
+    i += 2
     while lines[i] != '可取资金':
         i += 1
     cash = float(lines[i + 1])
@@ -204,15 +207,17 @@ def huabao(datafile: str) -> pd.DataFrame:
             name = lines[i - 4]
             cost = float(lines[i - 3])
             volume = int(lines[i - 2])
-            code = lines[i][: 6]
             s = lines[i - 1]
             hold_gain = float(re.sub('－', '-', s) if s[0] == '－' else s[1:])
-            nav = float(lines[i + 2])
-            v2 = int(lines[i + 3])
-            market_value = float(lines[i + 5])
+            code = lines[i][: 6]
+            market_value = float(lines[i + 2])
+            nav = float(lines[i + 3])
+            v2 = int(lines[i + 4])
             assert v2 == volume, print("v2{} != volume{}".format(v2, volume))
-            assert market_value == round(nav * volume, 2), \
+            assert market_value == round(nav * volume, 2) or market_value == round(nav * volume * 10, 2), \
                 print("mv({}) != nav({}) * volume({})".format(market_value, nav, volume))
+            if market_value == round(nav * volume * 10, 2):
+                volume *= 10
             if code[0] == '1':
                 typ, risk = '转债', 2
             else:
