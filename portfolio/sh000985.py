@@ -64,19 +64,34 @@ def from_web() -> pd.DataFrame:
     return df
 
 
+def calculate_star(df: pd.DataFrame) -> float:
+    date = df.loc[0, '_id']
+    close = df.loc[0, 'close']
+    base = 1657.7              # threshold of 5 stars at 2011-01
+    year, month = date.year, date.month
+    s1 = round(base * 1.1 ** (year - 2011) * (1 + (month - 1) / 120) / 0.8 ** (5 - 1), 2)
+    s5 = round(base * 1.1 ** (year - 2011) * (1 + (month - 1) / 120) / 0.8 ** (5 - 5), 2)
+    star = round((s1 - close) / (s1 - s5) * 5, 1)
+    print(date, close, star)
+    return star
+
+
 def update_mongo(df: pd.DataFrame):
     mongo = Mongo()
     code = CODE.lower()
     ms = mongo.find_last(code)['_id']
     start = datetime.fromtimestamp(ms / 1000.0)
     df = df[df['_id'] > start]
-    print('{} row(s)'.format(df.shape[0]))
-    mongo.save(code, df)
+    rows = df.shape[0]
+    print('{} row(s)'.format(rows))
+    if rows:
+        mongo.save(code, df)
 
 
 def main():
     # update_mongo(from_xlsx())
-    update_mongo(from_web())
+    # update_mongo(from_web())
+    calculate_star(from_web())
 
 
 if __name__ == "__main__":
