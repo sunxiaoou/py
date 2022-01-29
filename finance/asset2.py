@@ -36,7 +36,7 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
     bonds = ['招智睿远平衡二十七期']
 
     with open(datafile) as fp:
-        lines = [re.sub(',', '', line).rstrip('\n') for line in fp.readlines()]
+        lines = [re.sub(r'[,，]', '', line).rstrip('\n') for line in fp.readlines()]
     i = 0
     while lines[i] != '尾号8884':
         i += 1
@@ -139,6 +139,8 @@ def yinhe(datafile: str) -> pd.DataFrame:
         i += 1
         if code[0] in ['1', '7']:
             type, risk = '转债', 2
+        elif code[0] == '2':
+            type, risk = '货币', 0
         else:
             name, type, risk = on_market[code]
 
@@ -210,9 +212,9 @@ def huabao(datafile: str) -> pd.DataFrame:
             s = lines[i - 1]
             hold_gain = float(re.sub('－', '-', s) if s[0] == '－' else s[1:])
             code = lines[i][: 6]
-            market_value = float(lines[i + 2])
-            nav = float(lines[i + 3])
-            v2 = int(lines[i + 4])
+            nav = float(lines[i + 2])
+            v2 = int(lines[i + 3])
+            market_value = float(lines[i + 5])
             assert v2 == volume, print("v2{} != volume{}".format(v2, volume))
             assert market_value == round(nav * volume, 2) or market_value == round(nav * volume * 10, 2), \
                 print("mv({}) != nav({}) * volume({})".format(market_value, nav, volume))
@@ -281,7 +283,7 @@ def huasheng(datafile: str) -> pd.DataFrame:
 
 def futu(datafile: str) -> pd.DataFrame:
     with open(datafile) as fp:
-        lines = [re.sub(r'[,＋]', '', re.sub('－', '-', line)).rstrip('\n') for line in fp.readlines()]
+        lines = [re.sub(r'[,，＋]', '', re.sub('－', '-', line)).rstrip('\n') for line in fp.readlines()]
 
     i = 0
     while not lines[i].startswith('资产净值'):
@@ -356,10 +358,10 @@ def danjuan(datafile: str) -> pd.DataFrame:
     result = []
     for i in response.json()['data']['items']:
         code = i['fd_code']
-        if code in ['CSI666', 'CSI1033']:       # 螺丝钉指数基金组合, 螺丝钉主动优选组合
+        if code in ['CSI666', 'TIA06020']:       # 螺丝钉指数基金组合, 螺丝钉金钉宝主动优选
             result.extend(get_plan(code))
         else:
-            if code in ['CSI1014', 'CSI1019']:  # 我要稳稳的幸福, 钉钉宝365天组合
+            if code in ['CSI1014', 'TIA06019']:  # 我要稳稳的幸福, 螺丝钉银钉宝365天
                 name, type, risk = i['fd_name'], '债券', 1
             else:
                 name, type, risk = off_market[code]
