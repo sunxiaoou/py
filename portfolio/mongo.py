@@ -7,6 +7,7 @@ from datetime import datetime
 from pprint import pprint
 
 import pandas as pd
+from bson import json_util, Int64
 from pymongo import MongoClient
 
 pd.set_option('display.max_rows', 1000)
@@ -25,7 +26,10 @@ class Mongo:
         return list(cursor)
 
     def find_last(self, collection: str) -> dict:
-        return self.db.get_collection(collection).find_one({'$query': {}, '$orderby': {'_id': -1}})
+        dic = self.db.get_collection(collection).find_one({'$query': {}, '$orderby': {'_id': -1}})
+        if type(dic['_id']) == Int64:
+            print(datetime.fromtimestamp(dic['_id'] / 1000.0).strftime('%Y-%m-%d'))
+        return dic
 
     def get_list(self, prefix: str) -> list:
         return [name for name in self.db.list_collection_names() if name.startswith(prefix)]
@@ -35,21 +39,12 @@ class Mongo:
         collection = self.db[collection]
         collection.insert(dic.values())
 
-    # def save_securities(self, codes: list):
-    #     for code in codes:
-    #         if code in self.db.list_collection_names():
-    #             print(code + ' is already in')
-    #             continue
-    #         print(code)
-    #         df = pd.DataFrame()
-    #         if re.match(r'(sh|sz)\d{6}', code) is not None:
-    #             df = Mongo.index_price_daily(code)
-    #         elif re.match(r'f\d{6}', code) is not None:
-    #             df = Mongo.fund_nav_daily(code)
-    #         else:
-    #             assert True, print('code is not valid')
-    #         self.save(code, df)
-    #         time.sleep(1)
+    def dump(self, collection_name: str):
+        collection = self.db[collection_name]
+        cursor = collection.find({})
+        with open(collection_name + '.json', 'w') as f:
+            json.dump(json.loads(json_util.dumps(cursor)), f)
+        print(collection_name + ' dumped')
 
     def load_info(self, code: str) -> dict:
         dic = {}
@@ -132,10 +127,9 @@ def main():
     # pprint(otc_lst)
     # print(len(otc_lst))
 
-    code = 'sh000985'
-    # print(mongo.load_info(code))
-    # ms = Mongo().find_last(code)['_id']
-    # print(datetime.fromtimestamp(ms / 1000.0).strftime('%Y-%m-%d'))
+    # Mongo().find_last('sh000985')
+    Mongo().dump('valuation')
+    exit()
     # print(mongo.load_close_price(code))
     # print(Mongo().get_manager('otc_166002'))
     # print(Mongo().get_otc_indexes())
