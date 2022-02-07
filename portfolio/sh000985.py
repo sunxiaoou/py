@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+
 import sys
 from datetime import datetime
 from pprint import pprint
@@ -43,19 +44,19 @@ def from_web() -> pd.DataFrame:
     result = []
     try:
         response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            items = response.json()['data']['items']
-            for i in items:
-                dic = {
-                    # 'code': i['quote']['symbol'],
-                    '_id': datetime.fromtimestamp(i['quote']['timestamp'] / 1000).date(),
-                    'open': round(i['quote']['open'], 2),
-                    'close': round(i['quote']['current'], 2),
-                    'high': round(i['quote']['high'], 2),
-                    'low': round(i['quote']['low'], 2),
-                    'volume': i['quote']['volume'],
-                    'amount': i['quote']['amount']}
-                result.append(dic.copy())
+        assert response.status_code == 200
+        items = response.json()['data']['items']
+        for i in items:
+            dic = {
+                # 'code': i['quote']['symbol'],
+                '_id': datetime.fromtimestamp(i['quote']['timestamp'] / 1000).date(),
+                'open': round(i['quote']['open'], 2),
+                'close': round(i['quote']['current'], 2),
+                'high': round(i['quote']['high'], 2),
+                'low': round(i['quote']['low'], 2),
+                'volume': i['quote']['volume'],
+                'amount': i['quote']['amount']}
+            result.append(dic.copy())
     except requests.ConnectionError as e:
         print('Error', e.args)
 
@@ -72,7 +73,7 @@ def calculate_star(df: pd.DataFrame) -> float:
     s1 = round(base * 1.1 ** (year - 2011) * (1 + (month - 1) / 120) / 0.8 ** (5 - 1), 2)
     s5 = round(base * 1.1 ** (year - 2011) * (1 + (month - 1) / 120) / 0.8 ** (5 - 5), 2)
     star = round((s1 - close) / (s1 - s5) * 5, 1)
-    print(date, close, star)
+    print('{} 中证全指 {} {}'.format(date.date(), close, star))
     return star
 
 
@@ -90,8 +91,9 @@ def update_mongo(df: pd.DataFrame):
 
 def main():
     # update_mongo(from_xlsx())
-    # update_mongo(from_web())
-    calculate_star(from_web())
+    df = from_web()
+    update_mongo(df)
+    calculate_star(df)
 
 
 if __name__ == "__main__":
