@@ -62,6 +62,7 @@ def get_my_list(xlsx: str) -> pd.DataFrame:
 def main():
     if len(sys.argv) < 2:
         print('Usage: {} xlsx'.format(sys.argv[0]))
+        print('Usage: {} xlsx rank130'.format(sys.argv[0]))
         sys.exit(1)
 
     mine = get_my_list('asset.xlsx')
@@ -70,8 +71,10 @@ def main():
     bones = get_bones(xlsx)
     # print('无阈值排名(截止到<170的第20名)')
     # df = bones.loc[bones['rank_170'] == 20]
-    print('无阈值排名(截止到<130的第15名)')
-    df = bones.loc[bones['rank_130'] == 15]
+
+    rank130 = 20 if len(sys.argv) == 2 else int(sys.argv[2])
+    print('无阈值排名(截止到<130的第{}名)'.format(rank130))
+    df = bones.loc[bones['rank_130'] == rank130]
     r = df.iloc[0, df.columns.get_loc('rank')]
     radical = bones[bones['rank'] <= r]
     print(radical)
