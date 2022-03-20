@@ -32,7 +32,10 @@ def get_bones(xlsx: str) -> pd.DataFrame:
         rank_170 = ws.cell(row=i, column=col + 3).value
         rank_130 = ws.cell(row=i, column=col + 4).value
         nav = ws.cell(row=i, column=col + 5).value
-        quote_change = '{0:.2%}'.format(ws.cell(row=i, column=col + 6).value)
+        try:
+            quote_change = '{0:.2%}'.format(ws.cell(row=i, column=col + 6).value)
+        except ValueError:
+            pass
         comment = ws.cell(row=i, column=col + 7).value
         lst.append((code, name, rank, rank_170, rank_130, nav, quote_change, comment))
     columns = ['code', 'name', 'rank', 'rank_170', 'rank_130', 'nav', 'quote_change', 'comment']
@@ -72,12 +75,15 @@ def main():
     # print('无阈值排名(截止到<170的第20名)')
     # df = bones.loc[bones['rank_170'] == 20]
 
-    rank130 = 20 if len(sys.argv) == 2 else int(sys.argv[2])
-    print('无阈值排名(截止到<130的第{}名)'.format(rank130))
-    df = bones.loc[bones['rank_130'] == rank130]
-    r = df.iloc[0, df.columns.get_loc('rank')]
-    radical = bones[bones['rank'] <= r]
-    print(radical)
+    if len(sys.argv) > 2:
+        rank130 = int(sys.argv[2])
+        df = bones.loc[bones['rank_130'] == rank130]
+        r = df.iloc[0, df.columns.get_loc('rank')]
+        radical = bones[bones['rank'] <= r]
+        print('无阈值排名(截止到<130的第{}名)'.format(rank130))
+        print(radical)
+    else:
+        radical = bones
 
     inner = pd.merge(radical, mine, on=['code', 'name'])
     print('已持有的激进转债({})'.format(len(inner)))
@@ -90,7 +96,8 @@ def main():
 
     to_sell = mine.append(inner[['code', 'name']]).drop_duplicates(keep=False)
     print('持有的非激进转债({})'.format(len(to_sell)))
-    print(to_sell)
+    if len(to_sell):
+        print(to_sell)
 
 
 if __name__ == "__main__":
