@@ -4,6 +4,7 @@ import sys
 from datetime import datetime
 from pprint import pprint
 
+import numpy as np
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.utils import column_index_from_string
@@ -14,35 +15,51 @@ pd.set_option('display.max_columns', 100)
 
 def get_bones(xlsx: str) -> pd.DataFrame:
     wb = load_workbook(xlsx, data_only=True)
-    # ws = wb['激进轮动可转债']
-    ws = wb['可转债排名']
-    # col = column_index_from_string('J')
-    for col in range(1, 20):
-        c = ws.cell(row=1, column=col)
-        if c.value == '转债代码':
+    ws = wb['今天可转债']
+    for j in range(1, ws.max_column):
+        if not ws.cell(row=2, column=j).value:
             break
-    lst = []
+    data = []
+    for row in ws.iter_rows(min_row=1, min_col=1, max_row=ws.max_row - 2, max_col=j):
+        data.append([cell.value for cell in row])
+    titles = [i for i in data[0] if i]
+    title = titles[0]
+    for i in range(1, len(data[0])):
+        if data[0][i] is None:
+            data[0][i] = title
+        else:
+            title = data[0][i]
+    cols = ['代码', '名称', '价格', '涨幅']
+    frame = pd.DataFrame(data[2:], columns=[data[0], data[1]])
+    # print(frame)
+    new130 = titles.pop()
+    df = pd.concat([frame[i][cols] for i in titles]).drop_duplicates()
+    df.index = np.arange(1, len(df) + 1)
+    df = df.reindex(axis=1)
+    df['代码'] = df['代码'].apply(lambda x: str(x))
+    df['无阈值排名'] = df.index
+    df['170阈值排名'] = df['无阈值排名'][df['价格'] < 170].rank()
+    df['150阈值排名'] = df['170阈值排名'][df['价格'] < 150].rank()
+    df['130阈值排名'] = df['150阈值排名'][df['价格'] < 130].rank()
+    # print(df.dtypes)
+
+    ws = wb['强赎预警']
+    dic = {}
+    for j in range(1, ws.max_column):
+        title = ws.cell(row=1, column=j).value
+        if title in ['代码', '强赎天计数']:
+            dic[title] = j
+            if(len(dic)) == 2:
+                break
+    dic2 = {}
     for i in range(2, ws.max_row):
-        c = ws.cell(row=i, column=col)
-        if c.value is None:
+        code = ws.cell(row=i, column=dic['代码']).value
+        if not isinstance(code, int):
             break
-        code = str(c.value)
-        name = ws.cell(row=i, column=col + 1).value.rstrip('!')
-        rank = ws.cell(row=i, column=col + 2).value
-        rank_170 = ws.cell(row=i, column=col + 3).value
-        rank_130 = ws.cell(row=i, column=col + 4).value
-        nav = ws.cell(row=i, column=col + 5).value
-        try:
-            quote_change = '{0:.2%}'.format(ws.cell(row=i, column=col + 6).value)
-        except ValueError:
-            pass
-        comment = ws.cell(row=i, column=col + 7).value
-        lst.append((code, name, rank, rank_170, rank_130, nav, quote_change, comment))
-    columns = ['code', 'name', 'rank', 'rank_170', 'rank_130', 'nav', 'quote_change', 'comment']
-    df = pd.DataFrame(lst, columns=columns)
-    df['comment'] = df['comment'].apply(lambda x: x.strftime('%m/%d') if isinstance(x, datetime) else x)
-    # df = df.set_index('rank')
-    # df.index.name = None
+        dic2[str(code)] = ws.cell(row=i, column=dic['强赎天计数']).value
+    df['强赎天计数'] = df['代码'].apply(lambda x: dic2[x] if x in dic2 else None)
+    df.rename({'170阈值排名': '170排名', '150阈值排名': '150排名', '130阈值排名': '130排名'}, axis=1, inplace=True)
+    # print(df)
     return df
 
 
@@ -51,14 +68,12 @@ def get_my_list(xlsx: str) -> pd.DataFrame:
     ws = wb.worksheets[-1]
     lst = []
     for i in range(1, ws.max_row):
-        # if ws.cell(row=i, column=1).value == '银河' and ws.cell(row=i, column=4).value.endswith('转债'):
         try:
             if ws.cell(row=i, column=4).value.endswith('转债'):
                 lst.append((ws.cell(row=i, column=3).value, ws.cell(row=i, column=4).value))
         except AttributeError:
             pass
-    df = pd.DataFrame(lst, columns=['code', 'name']).drop_duplicates()
-    # print(df)
+    df = pd.DataFrame(lst, columns=['代码', '名称']).drop_duplicates()
     return df
 
 
@@ -72,29 +87,25 @@ def main():
 
     xlsx = sys.argv[1]
     bones = get_bones(xlsx)
-    # print('无阈值排名(截止到<170的第20名)')
-    # df = bones.loc[bones['rank_170'] == 20]
 
     if len(sys.argv) > 2:
         rank130 = int(sys.argv[2])
-        df = bones.loc[bones['rank_130'] == rank130]
-        r = df.iloc[0, df.columns.get_loc('rank')]
-        radical = bones[bones['rank'] <= r]
+        df = bones.loc[bones['130排名'] == rank130]
+        r = df.iloc[0, df.columns.get_loc('无阈值排名')]
+        bones = bones[bones['无阈值排名'] <= r]
         print('无阈值排名(截止到<130的第{}名)'.format(rank130))
-        print(radical)
-    else:
-        radical = bones
+        print(bones)
 
-    inner = pd.merge(radical, mine, on=['code', 'name'])
+    inner = pd.merge(bones, mine, on=['代码', '名称'])
     print('已持有的激进转债({})'.format(len(inner)))
     print(inner)
 
-    to_buy = radical.append(inner).drop_duplicates(keep=False)
-    to_buy = to_buy[to_buy['nav'] < 170]
+    to_buy = pd.concat([bones, inner]).drop_duplicates(keep=False)
+    to_buy = to_buy[to_buy['价格'] < 170]
     print('未持有的<170的激进转债({})'.format(len(to_buy)))
     print(to_buy)
 
-    to_sell = mine.append(inner[['code', 'name']]).drop_duplicates(keep=False)
+    to_sell = pd.concat([inner[['代码', '名称']], mine]).drop_duplicates(keep=False)
     print('持有的非激进转债({})'.format(len(to_sell)))
     if len(to_sell):
         print(to_sell)
