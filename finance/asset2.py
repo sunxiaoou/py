@@ -300,7 +300,7 @@ def futu(datafile: str) -> pd.DataFrame:
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
     result = [('富途', currency, 'cash', '现金', '货币', 0, cash, 0)]
     i += 2
-    while not lines[i].startswith('持仓盈亏'):
+    while not lines[i].startswith('今日盈亏'):
         i += 1
     i += 1
     while len(lines) - i >= 7:
@@ -535,6 +535,12 @@ def to_execl(xlsx: str, sheet: str, df: pd.DataFrame):
         c = ws.cell(row=row+i+1, column=col+2)
         c.number_format = "#,##,0.00"
         c.value = '=SUM({0}{1}:{0}{2})'.format(le[2], row, row + i)
+
+        if summary['letter'] == 'E':
+            for i in range(len(summary['labels']) + 1):
+                c = ws.cell(row=row+i, column=col+3)
+                c.number_format = '0.00%'
+                c.value = '={1}{0}/({2}{0}-{1}{0})'.format(row + i, le[2], le[1])
 
         pie = PieChart()
         labels = Reference(ws, min_col=col, min_row=row, max_row=row+i)
