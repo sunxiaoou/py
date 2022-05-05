@@ -69,9 +69,11 @@ def get_my_list(xlsx: str) -> pd.DataFrame:
     lst = []
     for i in range(1, ws.max_row):
         try:
-            if ws.cell(row=i, column=4).value.endswith('转债'):
-                lst.append((ws.cell(row=i, column=3).value, ws.cell(row=i, column=4).value))
-        except AttributeError:
+            code = ws.cell(row=i, column=3).value
+            name = ws.cell(row=i, column=4).value
+            if code[0] in ['1', '7'] and name[2] == '转':
+                lst.append((code, name))
+        except TypeError:
             pass
     df = pd.DataFrame(lst, columns=['代码', '名称']).drop_duplicates()
     return df
@@ -87,6 +89,7 @@ def main():
 
     xlsx = sys.argv[1]
     bones = get_bones(xlsx)
+    b2 = bones
 
     if len(sys.argv) > 2:
         rank130 = int(sys.argv[2])
@@ -106,6 +109,7 @@ def main():
     print(to_buy)
 
     to_sell = pd.concat([inner[['代码', '名称']], mine]).drop_duplicates(keep=False)
+    to_sell = pd.merge(to_sell, b2, on=['代码', '名称'], how='left')
     print('持有的非激进转债({})'.format(len(to_sell)))
     if len(to_sell):
         print(to_sell)

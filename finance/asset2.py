@@ -537,10 +537,10 @@ def to_execl(xlsx: str, sheet: str, df: pd.DataFrame):
         c.value = '=SUM({0}{1}:{0}{2})'.format(le[2], row, row + i)
 
         if summary['letter'] == 'E':
-            for i in range(len(summary['labels']) + 1):
-                c = ws.cell(row=row+i, column=col+3)
+            for j in range(len(summary['labels']) + 1):
+                c = ws.cell(row=row+j, column=col+3)
                 c.number_format = '0.00%'
-                c.value = '={1}{0}/({2}{0}-{1}{0})'.format(row + i, le[2], le[1])
+                c.value = '={1}{0}/({2}{0}-{1}{0})'.format(row + j, le[2], le[1])
 
         pie = PieChart()
         labels = Reference(ws, min_col=col, min_row=row, max_row=row+i)
