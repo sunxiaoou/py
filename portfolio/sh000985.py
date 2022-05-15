@@ -40,6 +40,7 @@ def from_web() -> pd.DataFrame:
     with open('auth/xq_cookie.txt', 'r') as f:
         headers['Cookie'] = f.read()[:-1]
 
+    # https://stock.xueqiu.com/v5/stock/quote.json?symbol=SH000985&extend=detail
     url = stock_base + urlencode(params)
     result = []
     try:
