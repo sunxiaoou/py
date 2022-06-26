@@ -92,6 +92,8 @@ def hangseng_bank(datafile: str) -> pd.DataFrame:
             code = lines[i][: 6]
         name, type, risk = off_market[code]
         i += 1
+        if not re.match(r'.*[\d.]+', lines[i]):
+            i += 1
         hold_gain = float(lines[i])
         i += 6
         if re.match(r'.*[\d.]+', lines[i]):
