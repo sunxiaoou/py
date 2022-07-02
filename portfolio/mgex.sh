@@ -1,23 +1,20 @@
 #! /bin/sh
 
-count()
-{
-mongo <<-!end
-    use $db
-    db.$collection.find({}).count()
+count() {
+mongosh <<-!end
+    use $1
+    db.$2.countDocuments()
 !end
 }
 
-ex1()
-{
+ex1() {
 mongo <<-!end
     use $db
     db.$collection.find({type: 'a'}, {_id: 0, name: 1, price: 1}).limit(10)
 !end
 }
 
-ex2()
-{
+ex2() {
 mongo <<-!end
     use shoulie
     db.getCollection('resumes').
@@ -28,8 +25,7 @@ mongo <<-!end
 !end
 }
 
-ex3()
-{
+ex3() {
 mongo <<-!end
     use tutorial
     db.getCollection('resumes').
@@ -40,16 +36,14 @@ mongo <<-!end
 !end
 }
 
-count_type()
-{
+count_type() {
 mongo <<-!end
   use $db
   db.getCollection('funds_info').aggregate([{\$group: {_id: {'type': '\$type', 'typ2': '\$typ2'}, num: {\$sum : 1}}}])
 !end
 }
 
-find_date()
-{
+find_date() {
 mongo <<-!end
   use $db
   db.getCollection('sh000985').find({
@@ -63,8 +57,7 @@ mongo <<-!end
 !end
 }
 
-drop_collections()
-{
+drop_collections() {
 mongo <<-!end
   use $db
   regex = /^f/;
@@ -76,11 +69,23 @@ mongo <<-!end
 !end
 }
 
+show_last_documents() {
+mongosh <<-!end
+  use $1
+  db.getCollection('$2').aggregate([
+    {\$sort: {'_id': -1}},
+    {\$addFields: {'Date': {\$toDate: '\$_id'}}},
+    {\$limit: 2}
+  ]);
+!end
+}
+
+
 ## main ##
 
 db='portfolio'
-# collection='funds_info'
-# count
+# count 'portfolio' 'funds_info'
 # count_type
 # find_date
-drop_collections
+# drop_collections
+show_last_documents 'portfolio' 'sh000985'  # 'valuation'
