@@ -25,6 +25,15 @@ def from_xlsx() -> pd.DataFrame:
     return df
 
 
+def calculate_star(date: datetime.date, close: float) -> float:
+    base = 1657.7              # threshold of 5 stars at 2011-01
+    year, month = date.year, date.month
+    s1 = round(base * 1.1 ** (year - 2011) * (1 + (month - 1) / 120) / 0.8 ** (5 - 1), 2)
+    s5 = round(base * 1.1 ** (year - 2011) * (1 + (month - 1) / 120) / 0.8 ** (5 - 5), 2)
+    star = round((s1 - close) / (s1 - s5) * 5 - 0.1, 1)
+    return star
+
+
 def from_web() -> pd.DataFrame:
     stock_base = 'https://stock.xueqiu.com/v5/stock/batch/quote.json?'
     headers = {
@@ -63,19 +72,13 @@ def from_web() -> pd.DataFrame:
 
     df = pd.DataFrame(result)
     df['_id'] = pd.to_datetime(df['_id'])
-    return df
-
-
-def calculate_star(df: pd.DataFrame) -> float:
     date = df.loc[0, '_id']
     close = df.loc[0, 'close']
-    base = 1657.7              # threshold of 5 stars at 2011-01
-    year, month = date.year, date.month
-    s1 = round(base * 1.1 ** (year - 2011) * (1 + (month - 1) / 120) / 0.8 ** (5 - 1), 2)
-    s5 = round(base * 1.1 ** (year - 2011) * (1 + (month - 1) / 120) / 0.8 ** (5 - 5), 2)
-    star = round((s1 - close) / (s1 - s5) * 5, 1)
+    star = calculate_star(date, close) if len(sys.argv) == 1 else float(sys.argv[1])
+    df['star'] = star
     print('{} 中证全指 {} {}'.format(date.date(), close, star))
-    return star
+
+    return df
 
 
 def update_mongo(df: pd.DataFrame):
@@ -94,7 +97,6 @@ def main():
     # update_mongo(from_xlsx())
     df = from_web()
     update_mongo(df)
-    calculate_star(df)
 
 
 if __name__ == "__main__":
