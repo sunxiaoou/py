@@ -34,6 +34,24 @@ def calculate_star(date: datetime.date, close: float) -> float:
     return star
 
 
+def get_star(row: pd.Series) -> float:
+    return calculate_star(row['_id'], row['close'])
+
+
+def add_star():
+    mongo = Mongo()
+    code = CODE.lower()
+    df = mongo.load_collection(code)
+    df = df.dropna()
+    # print(df)
+    df = df.rename({'date': '_id'}, axis=1)
+    df['star'] = df.apply(get_star, axis=1)
+    print(df)
+    if mongo.has_collection(code):
+        mongo.drop(code)
+    mongo.save(code, df)
+
+
 def from_web() -> pd.DataFrame:
     stock_base = 'https://stock.xueqiu.com/v5/stock/batch/quote.json?'
     headers = {
@@ -72,11 +90,9 @@ def from_web() -> pd.DataFrame:
 
     df = pd.DataFrame(result)
     df['_id'] = pd.to_datetime(df['_id'])
-    date = df.loc[0, '_id']
-    close = df.loc[0, 'close']
-    star = calculate_star(date, close) if len(sys.argv) == 1 else float(sys.argv[1])
-    df['star'] = star
-    print('{} 中证全指 {} {}'.format(date.date(), close, star))
+    df['star'] = df.apply(get_star, axis=1) if len(sys.argv) == 1 else float(sys.argv[1])
+    row = df.iloc[0]
+    print('{} 中证全指 {} {}'.format(row['_id'].date(), row['close'], row['star']))
 
     return df
 
@@ -95,6 +111,7 @@ def update_mongo(df: pd.DataFrame):
 
 def main():
     # update_mongo(from_xlsx())
+    # add_star()
     df = from_web()
     update_mongo(df)
 

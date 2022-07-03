@@ -89,8 +89,11 @@ class Mongo:
         # print(df)
         return df
 
-    def load_valuation(self, indexes: list) -> pd.DataFrame:
-        cursor = self.db.get_collection('valuation').find({}, {i: 1 for i in indexes})
+    def load_collection(self, collection: str, indexes: list = None) -> pd.DataFrame:
+        if not indexes:
+            cursor = self.db.get_collection(collection).find({})
+        else:
+            cursor = self.db.get_collection(collection).find({}, {i: 1 for i in indexes})
         df = pd.DataFrame(list(cursor))
         df['_id'] = pd.to_datetime(df['_id'], unit='ms')
         df = df.rename({'_id': 'date'}, axis=1)
@@ -128,12 +131,13 @@ def main():
     # print(len(otc_lst))
 
     # Mongo().find_last('sh000985')
-    Mongo().dump('valuation')
-    exit()
+    # Mongo().dump('valuation')
+    # exit()
     # print(mongo.load_close_price(code))
     # print(Mongo().get_manager('otc_166002'))
     # print(Mongo().get_otc_indexes())
-    df = Mongo().load_valuation(['中证医疗', '中概互联'])
+    # df = Mongo().load_collection('valuation', ['中证医疗', '中概互联'])
+    df = Mongo().load_collection('sh000985')
     df = df.dropna()
     print(df)
 

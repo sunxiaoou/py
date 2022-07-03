@@ -83,6 +83,8 @@ mongosh <<-!end
 
 ## main ##
 
+# mongoexport --db portfolio --collection sh000985 --type=json --out=sh000985.json
+
 db='portfolio'
 # count 'portfolio' 'funds_info'
 # count_type
