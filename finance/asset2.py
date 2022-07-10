@@ -195,16 +195,16 @@ def huabao(datafile: str) -> pd.DataFrame:
     cash = float(lines[i + 1])
     assert round(total_mv + cash, 2) == asset, \
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
-    result = [('华宝', 'cny', 'cash', '现金', '货币', 0, cash, 0)]
+    result = [('华宝', 'cny', 'cash', '现金', '货币', 0, cash, 0, None, None, None)]
     while not lines[i].startswith('今日盈亏'):
         i += 1
     s = lines[i + 2]
     total_hg = float(re.sub('－', '-', s) if s[0] == '－' else s[1:])
     i += 3
-    while lines[i] != '仓位':
-        i += 1
-    i += 1
     try:
+        while lines[i] != '仓位':
+            i += 1
+        i += 1
         while True:
             while not re.match(r'\d{6}\.(SZ|SH)', lines[i]):
                 i += 1

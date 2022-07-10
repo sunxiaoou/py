@@ -19,6 +19,7 @@ def get_bones(xlsx: str) -> pd.DataFrame:
     for j in range(1, ws.max_column):
         if not ws.cell(row=2, column=j).value:
             break
+    j = 31
     data = []
     for row in ws.iter_rows(min_row=1, min_col=1, max_row=ws.max_row - 2, max_col=j):
         data.append([cell.value for cell in row])
