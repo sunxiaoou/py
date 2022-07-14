@@ -1,5 +1,5 @@
 #! /usr/bin/python3
-
+import re
 import sys
 from datetime import datetime
 from pprint import pprint
@@ -83,10 +83,49 @@ def get_my_list(xlsx: str) -> pd.DataFrame:
     return df
 
 
+def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
+    try:
+        wb = load_workbook(xlsx)
+    except FileNotFoundError:
+        df.to_excel(xlsx, sheet_name=sheet, index=False)
+        print(xlsx + ' created')
+        return
+
+    ws = wb.copy_worksheet(wb.worksheets[-1])       # copy a old sheet as template to avoid adjust size
+    ws.title = sheet
+    wb.active = len(wb.worksheets) - 1
+
+    writer = pd.ExcelWriter(xlsx, engine='openpyxl')
+    writer.book = wb
+    writer.sheets = {worksheet.title: worksheet for worksheet in wb.worksheets}
+    df.to_excel(writer, sheet_name=sheet, index=False)
+    writer.save()
+
+    # wb = load_workbook(xlsx)
+    # ws = wb[sheet]
+    # last_row = ws.max_row
+    # last_col = ws.max_column
+    # for i in range(2, last_row + 1):
+    #     for j in range(4, 9):
+    #         ws.cell(row=i, column=j).number_format = '#,##,0.00'
+    #     for j in range(9, last_col + 1):
+    #         ws.cell(row=i, column=j).number_format = '0.00%'
+    # colors = ['99CC00', 'FFCC00', 'FF6600']
+    # i = 1
+    # for k in range(9, 12):
+    #     fill = PatternFill(patternType='solid', fgColor=colors[k - 9])
+    #     while ws.cell(row=i, column=k).value is not None:
+    #         for j in range(1, last_col + 1):
+    #             ws.cell(row=i, column=j).fill = fill
+    #         i += 1
+    #
+    # wb.save(xlsx)
+
+
 def main():
     if len(sys.argv) < 2:
-        print('Usage: {} xlsx'.format(sys.argv[0]))
-        print('Usage: {} xlsx rank130'.format(sys.argv[0]))
+        print('Usage: {} ref_rank_list.xlsx'.format(sys.argv[0]))
+        print('Usage: {} ref_rank_list.xlsx 20'.format(sys.argv[0]))
         sys.exit(1)
 
     mine = get_my_list('asset.xlsx')
@@ -102,6 +141,8 @@ def main():
         bones = bones[bones['无阈值排名'] <= r]
         print('无阈值排名(截止到<130的第{}名)'.format(rank130))
         print(bones)
+        if len(sys.argv) == 4 and sys.argv[3].endswith('.xlsx'):
+            to_excel(sys.argv[3], re.search(r'\d{8}', xlsx)[0], bones)
 
     inner = pd.merge(bones, mine, on=['代码', '名称'])
     print('已持有的激进转债({})'.format(len(inner)))
