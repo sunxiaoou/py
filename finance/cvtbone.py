@@ -92,6 +92,8 @@ def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
         return
 
     ws = wb.copy_worksheet(wb.worksheets[-1])       # copy a old sheet as template to avoid adjust size
+    if df.shape[0] < ws.max_row:
+        ws.delete_rows(df.shape[0], ws.max_row - 1)
     ws.title = sheet
     wb.active = len(wb.worksheets) - 1
 
@@ -100,26 +102,6 @@ def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
     writer.sheets = {worksheet.title: worksheet for worksheet in wb.worksheets}
     df.to_excel(writer, sheet_name=sheet, index=False)
     writer.save()
-
-    # wb = load_workbook(xlsx)
-    # ws = wb[sheet]
-    # last_row = ws.max_row
-    # last_col = ws.max_column
-    # for i in range(2, last_row + 1):
-    #     for j in range(4, 9):
-    #         ws.cell(row=i, column=j).number_format = '#,##,0.00'
-    #     for j in range(9, last_col + 1):
-    #         ws.cell(row=i, column=j).number_format = '0.00%'
-    # colors = ['99CC00', 'FFCC00', 'FF6600']
-    # i = 1
-    # for k in range(9, 12):
-    #     fill = PatternFill(patternType='solid', fgColor=colors[k - 9])
-    #     while ws.cell(row=i, column=k).value is not None:
-    #         for j in range(1, last_col + 1):
-    #             ws.cell(row=i, column=j).fill = fill
-    #         i += 1
-    #
-    # wb.save(xlsx)
 
 
 def main():
