@@ -256,7 +256,7 @@ def huasheng(datafile: str) -> pd.DataFrame:
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
     result = [('华盛', currency, 'cash', '现金', '货币', 0, cash, 0)]
     i += 15
-    while not lines[i].startswith('持仓盈亏'):
+    while not lines[i].endswith('现价／成本价'):
         i += 1
     i += 1
     while len(lines) - i >= 8:

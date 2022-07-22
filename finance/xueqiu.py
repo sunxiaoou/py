@@ -28,8 +28,8 @@ cvtbones = [
     'SH113570', 'SH113591', 'SZ123023', 'SZ123110', 'SZ123127', 'SZ128021',
     'SZ128022', 'SZ128025', 'SZ128042', 'SZ128066', 'SZ128073', 'SZ128085',
     'SZ128100', 'SZ128119', 'SZ128130',
-    'SH110070', 'SH113027', 'SH113039', 'SH113502', 'SH113504', 'SH113525',
-    'SH113567', 'SH113598', 'SZ123080', 'SZ127007', 'SZ128029', 'SZ128034',
+    'SH110070', 'SH113027', 'SH113039', 'SH113502', 'SH113504', 'SH113567',
+    'SH113598', 'SZ123080', 'SZ123089', 'SZ127007', 'SZ128029', 'SZ128034',
     'SZ128040', 'SZ128076', 'SZ128087', 'SZ128128']
 a_etfs = [
     'SH501021', 'SH501050', 'SH510310', 'SH510580', 'SH510710', 'SH512000',
@@ -66,18 +66,18 @@ def get_stocks(base_url: str, codes: list) -> list:
     # print(url)
     try:
         response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            result = []
-            items = response.json()['data']['items']
-            for i in items:
-                dic = {
-                    'code': i['quote']['symbol'],
-                    'timestamp': datetime.fromtimestamp(i['quote']['timestamp'] / 1000),
-                    'name': i['quote']['name'],
-                    'price': i['quote']['current'],
-                    'percent': i['quote']['percent']}
-                result.append(dic.copy())
-            return result
+        assert response.status_code == 200
+        result = []
+        items = response.json()['data']['items']
+        for i in items:
+            dic = {
+                'code': i['quote']['symbol'],
+                'ts': datetime.fromtimestamp(i['quote']['timestamp'] / 1000),
+                'name': i['quote']['name'],
+                'price': i['quote']['current'],
+                'pc': i['quote']['percent']}
+            result.append(dic.copy())
+        return result
     except requests.ConnectionError as e:
         print('Error', e.args)
 
