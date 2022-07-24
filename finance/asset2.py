@@ -214,9 +214,14 @@ def huabao(datafile: str) -> pd.DataFrame:
             s = lines[i - 1]
             hold_gain = float(re.sub('－', '-', s) if s[0] == '－' else s[1:])
             code = lines[i][: 6]
-            market_value = float(lines[i + 2])
-            nav = float(lines[i + 3])
-            v2 = int(lines[i + 4])
+            if '.' in lines[i + 3]:
+                market_value = float(lines[i + 2])
+                nav = float(lines[i + 3])
+                v2 = int(lines[i + 4])
+            else:
+                nav = float(lines[i + 2])
+                v2 = int(lines[i + 3])
+                market_value = float(lines[i + 5])
             assert v2 == volume, print("v2{} != volume{}".format(v2, volume))
             assert market_value == round(nav * volume, 2) or market_value == round(nav * volume * 10, 2), \
                 print("mv({}) != nav({}) * volume({})".format(market_value, nav, volume))
