@@ -7,6 +7,7 @@ from pprint import pprint
 import openpyxl
 import pandas as pd
 import requests
+from bs4 import BeautifulSoup
 from forex_python.converter import CurrencyRates
 from openpyxl import load_workbook
 from openpyxl.chart import PieChart, Reference
@@ -269,7 +270,7 @@ def huasheng(datafile: str) -> pd.DataFrame:
         volume = int(lines[i + 1])
         hold_gain = float(lines[i + 2])
         nav = float(lines[i + 3])
-        code = lines[i + 4].rstrip('融')
+        code = re.search(r'[0-9A-Z]+', lines[i + 4]).group()
         name, type, risk = on_market[code]
         market_value = float(lines[i + 5])
         i += 6
@@ -382,7 +383,7 @@ def danjuan(datafile: str) -> pd.DataFrame:
             result.append(('蛋卷', 'cny', code, name, type, risk, market_value, hold_gain, nav))
     df = pd.DataFrame(result, columns=columns + ['nav'])
     sum_mv = round(df['market_value'].sum(), 2)
-    assert abs(sum_mv - asset) <= 1, print("sum_mv({}) != asset({})".format(sum_mv, asset))
+    # assert abs(sum_mv - asset) <= 1, print("sum_mv({}) != asset({})".format(sum_mv, asset))
     sum_hg = round(df['hold_gain'].sum(), 2)
     assert abs(sum_hg - total_hg) <= 1, print("sum_hg({}) != total_hg({})".format(sum_hg, total_hg))
     df.to_csv(datafile)
@@ -455,11 +456,32 @@ def gain_rate(row: pd.Series) -> float:
     return round(rate, 4)
 
 
+def hkd_usd_rate() -> tuple:
+    res = requests.get('https://www.boc.cn/sourcedb/whpj/')
+    res.raise_for_status()
+    res.encoding = res.apparent_encoding
+    soup = BeautifulSoup(res.text, 'lxml')
+
+    tab = soup.find_all("table")[1]
+    trs = tab.find_all("tr")
+    trs.pop(0)
+    dic = {}
+    for tr in trs:
+        tds = tr.find_all("td")
+        if tds[0].text == '港币':
+            dic['港币'] = float(tds[4].text) / 100
+        elif tds[0].text == '美元':
+            dic['美元'] = float(tds[4].text) / 100
+    return dic['港币'], dic['美元']
+
+
 def fill(df: pd.DataFrame) -> pd.DataFrame:
-    cr = CurrencyRates()
-    h2c = round(cr.get_rate('HKD', 'CNY'), 2)
-    u2c = round(cr.get_rate('USD', 'CNY'), 2)
-    # print(h2c, u2c)
+    # cr = CurrencyRates()
+    # h2c = round(cr.get_rate('HKD', 'CNY'), 2)
+    # u2c = round(cr.get_rate('USD', 'CNY'), 2)
+
+    h2c, u2c = hkd_usd_rate()
+    print(h2c, u2c)
     df['name'] = df['name'].apply(lambda s: s if len(s) <= 10 else s[: 8] + '..')   # truncate name
     df['market_value'] = df.apply(lambda row: to_cny(row, 'market_value', (h2c, u2c)), axis=1)
     df['hold_gain'] = df.apply(lambda row: to_cny(row, 'hold_gain', (h2c, u2c)), axis=1)

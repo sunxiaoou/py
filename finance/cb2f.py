@@ -6,10 +6,10 @@ import pyperclip
 
 def clipboard2file(file: str):
     text = pyperclip.paste()
-    if file.endswith('_cookie.txt'):
-        header = 'Cookie: '
-        assert text.startswith(header), print(text[: len(header)])
-        text = text.lstrip(header)
+    # if file.endswith('_cookie.txt'):
+    #     header = 'Cookie: '
+    #     assert text.startswith(header), print(text[: len(header)])
+    #     text = text.lstrip(header)
     with open(file, 'w') as fp:
         fp.write(text)
 
