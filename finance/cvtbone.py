@@ -38,6 +38,7 @@ def get_bones(xlsx: str) -> pd.DataFrame:
     # titles.pop()
     # titles.append(new130)
     df = pd.concat([frame[i][cols] for i in titles]).drop_duplicates()
+    df = df[df['价格'] != '#N/A']
     df.index = np.arange(1, len(df) + 1)
     df = df.reindex(axis=1)
     df['代码'] = df['代码'].apply(lambda x: str(x))

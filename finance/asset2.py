@@ -266,19 +266,22 @@ def huasheng(datafile: str) -> pd.DataFrame:
         i += 1
     i += 1
     while len(lines) - i >= 8:
-        name = lines[i]
-        volume = int(lines[i + 1])
-        hold_gain = float(lines[i + 2])
-        nav = float(lines[i + 3])
-        code = re.search(r'[0-9A-Z]+', lines[i + 4]).group()
-        name, type, risk = on_market[code]
-        market_value = float(lines[i + 5])
-        i += 6
-        while not re.match(r'.*[\d.]+$', lines[i]):
+        try:
+            name = lines[i]
+            volume = int(lines[i + 1])
+            hold_gain = float(lines[i + 2])
+            nav = float(lines[i + 3])
+            code = re.search(r'[0-9A-Z]+', lines[i + 4]).group()
+            name, type, risk = on_market[code]
+            market_value = float(lines[i + 5])
+            i += 6
+            while not re.match(r'.*[\d.]+$', lines[i]):
+                i += 1
+            cost = float(lines[i])
             i += 1
-        cost = float(lines[i])
-        i += 1
-        result.append(('华盛', currency, code, name, type, risk, market_value, hold_gain, volume, nav, cost))
+            result.append(('华盛', currency, code, name, type, risk, market_value, hold_gain, volume, nav, cost))
+        except ValueError:
+            break
     df = pd.DataFrame(result, columns=columns + ['volume', 'nav', 'cost'])
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
@@ -383,7 +386,7 @@ def danjuan(datafile: str) -> pd.DataFrame:
             result.append(('蛋卷', 'cny', code, name, type, risk, market_value, hold_gain, nav))
     df = pd.DataFrame(result, columns=columns + ['nav'])
     sum_mv = round(df['market_value'].sum(), 2)
-    # assert abs(sum_mv - asset) <= 1, print("sum_mv({}) != asset({})".format(sum_mv, asset))
+    assert abs(sum_mv - asset) <= 1, print("sum_mv({}) != asset({})".format(sum_mv, asset))
     sum_hg = round(df['hold_gain'].sum(), 2)
     assert abs(sum_hg - total_hg) <= 1, print("sum_hg({}) != total_hg({})".format(sum_hg, total_hg))
     df.to_csv(datafile)
