@@ -15,6 +15,22 @@ pd.set_option('display.max_columns', 100)
 
 def get_bones(xlsx: str) -> (pd.DataFrame, pd.DataFrame):
     wb = load_workbook(xlsx, data_only=True)
+
+    ws = wb['强赎预警']
+    dic = {}
+    for j in range(1, ws.max_column):
+        title = ws.cell(row=1, column=j).value
+        if title in ['代码', '强赎天计数']:
+            dic[title] = j
+            if(len(dic)) == 2:
+                break
+    dic2 = {}
+    for i in range(2, ws.max_row):
+        code = ws.cell(row=i, column=dic['代码']).value
+        if not isinstance(code, int):
+            break
+        dic2[str(code)] = ws.cell(row=i, column=dic['强赎天计数']).value
+
     ws = wb['今天可转债']
     for j in range(1, ws.max_column):
         if not ws.cell(row=2, column=j).value:
@@ -36,6 +52,7 @@ def get_bones(xlsx: str) -> (pd.DataFrame, pd.DataFrame):
     n130 = frame[titles.pop()][cols]      # .head(int(sys.argv[2]))
     n130.index = np.arange(1, len(n130) + 1)
     n130['代码'] = n130['代码'].apply(lambda x: str(x))
+    n130['强赎天计数'] = n130['代码'].apply(lambda x: dic2[x] if x in dic2 else None)
 
     df = pd.concat([frame[i][cols] for i in titles]).drop_duplicates()
     df = df[df['价格'] != '#N/A']
@@ -47,24 +64,10 @@ def get_bones(xlsx: str) -> (pd.DataFrame, pd.DataFrame):
     df['150阈值排名'] = df['170阈值排名'][df['价格'] < 150].rank()
     df['130阈值排名'] = df['150阈值排名'][df['价格'] < 130].rank()
     # print(df.dtypes)
-
-    ws = wb['强赎预警']
-    dic = {}
-    for j in range(1, ws.max_column):
-        title = ws.cell(row=1, column=j).value
-        if title in ['代码', '强赎天计数']:
-            dic[title] = j
-            if(len(dic)) == 2:
-                break
-    dic2 = {}
-    for i in range(2, ws.max_row):
-        code = ws.cell(row=i, column=dic['代码']).value
-        if not isinstance(code, int):
-            break
-        dic2[str(code)] = ws.cell(row=i, column=dic['强赎天计数']).value
     df['强赎天计数'] = df['代码'].apply(lambda x: dic2[x] if x in dic2 else None)
     df.rename({'170阈值排名': '170排名', '150阈值排名': '150排名', '130阈值排名': '130排名'}, axis=1, inplace=True)
     # print(df)
+
     return n130, df
 
 
