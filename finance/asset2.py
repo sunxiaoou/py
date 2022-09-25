@@ -358,7 +358,8 @@ def danjuan(datafile: str) -> pd.DataFrame:
 
     with open('auth/dj_cookie.txt', 'r') as f:
         cookie = f.read()[:-1]      # delete last '\n'
-    url = 'https://danjuanapp.com/djapi/holding/'
+    # url = 'https://danjuanapp.com/djapi/holding/'
+    url = 'https://danjuanfunds.com/djapi/holding/'
     headers = {
         'Cookie': cookie,
         'Host': url.split('/')[2],
@@ -366,7 +367,7 @@ def danjuan(datafile: str) -> pd.DataFrame:
                       'AppleWebKit/537.36 (KHTML, like Gecko) '
                       'Chrome/88.0.4324.192 Safari/537.36'}
 
-    response = requests.get(url + 'summary', headers=headers)
+    response = requests.get(url + 'summary/v2', headers=headers)
     assert response.status_code == 200, print('status_code({}) != 200'.format(response.status_code))
     asset = float(response.json()['data']['total_assets'])
     total_hg = float(response.json()['data']['hold_gain'])
