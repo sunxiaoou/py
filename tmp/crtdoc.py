@@ -7,13 +7,15 @@ from uuid import uuid4
 
 from requests import request
 
+# TOKEN = "nqf4mtafv03jmksonlm6rwghq18773lq"
+URL_DOC = "http://localhost:8000/desktop/api2/xo_doc/"
 URL_DOCS = "http://localhost:8000/desktop/api2/xo_docs/"
 URL_FILE = "http://localhost:8000/filebrowser/listdir2/"
-# TOKEN = "nqf4mtafv03jmksonlm6rwghq18773lq"
+HOME_PATH = "/user/sun_xo/"
 WORKSPACE = "/user/hue/oozie/workspaces/"
 
 
-def listdir(token: str, path: str = None):
+def listdir_from_hue(token: str, path: str = None) -> list:
     url = URL_FILE + "?path=" + path if path else URL_FILE
     payload = {}
     files = {}
@@ -21,7 +23,8 @@ def listdir(token: str, path: str = None):
         'x-csrftoken': token
     }
     response = request("GET", url, headers=headers, data=payload, files=files)
-    return response.text
+    dic = json.loads(response.text)
+    return dic["data"] if dic["status"] == 0 else []
 
 
 def get_empty_doc():
@@ -487,7 +490,7 @@ def add_shell_node(command: str, files: list, document: dict):
     layout[0]["rows"].append(row)
 
 
-def create_shell_document(name: str, command: str, files: list) -> dict:
+def prepare_shell_document(name: str, command: str, files: list) -> dict:
     document = get_empty_doc()
     workflow = document["workflow"]
     workflow["name"] = name
@@ -497,14 +500,27 @@ def create_shell_document(name: str, command: str, files: list) -> dict:
     return document
 
 
-def send_request(token: str, document: dict) -> str:
+def create_document_in_hue(token: str, document: dict) -> int:
     payload = json.dumps(document)
     headers = {
         'Content-Type': 'application/json',
         'x-csrftoken': token
     }
     response = request("POST", URL_DOCS, headers=headers, data=payload)
-    return response.text
+    dic = json.loads(response.text)
+    return dic["id"] if dic["status"] == 0 else -1
+
+
+def get_document_from_hue(token: str, wf_id: int) -> dict:
+    url = URL_DOC + "?workflow=" + str(wf_id)
+    payload = {}
+    files = {}
+    headers = {
+        'x-csrftoken': token
+    }
+    response = request("GET", url, headers=headers, data=payload, files=files)
+    dic = json.loads(response.text)
+    return dic["data"] if dic["status"] == 0 else {}
 
 
 def main():
@@ -512,13 +528,15 @@ def main():
         print('Usage: {} token doc_name'.format(sys.argv[0]))
         sys.exit(1)
 
-    # pprint(listdir(sys.argv[1]))
-    # pprint(listdir(sys.argv[1], '/user/sun_xo/oozie/apps'))
+    # pprint(listdir_from_hue(sys.argv[1]))
+    # pprint(listdir_from_hue(sys.argv[1], HOME_PATH + "/oozie/apps"))
 
-    shell_command = "/user/sun_xo/oozie/apps/hue/hello_hue.sh"
-    doc = create_shell_document(sys.argv[2], shell_command, [shell_command])
+    shell_command = HOME_PATH + "oozie/apps/hue/hello_hue.sh"
+    doc = prepare_shell_document(sys.argv[2], shell_command, [shell_command])
     # pprint(doc)
-    print(send_request(sys.argv[1], doc))
+    workflow_id = create_document_in_hue(sys.argv[1], doc)
+    print(workflow_id)
+    pprint(get_document_from_hue(sys.argv[1], workflow_id))
 
 
 if __name__ == "__main__":
