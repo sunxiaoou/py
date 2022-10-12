@@ -490,13 +490,136 @@ def add_shell_node(command: str, files: list, document: dict):
     layout[0]["rows"].append(row)
 
 
-def prepare_shell_document(name: str, command: str, files: list) -> dict:
+def add_sqoop_node(command: str, files: list, document: dict):
+    workflow = document["workflow"]
+    start_node, end_node, kill_node = workflow["nodes"]
+    node_id = str(uuid4())
+    node_name = "sqoop-" + node_id[: 4]
+    node = {
+        "id": node_id,
+        "name": node_name,
+        "type": "sqoop-widget",
+        "properties": {
+            "command": command,
+            "arguments": [],
+            # "env_var": [],
+            # "capture_output": True,
+            "files": files,
+            "archives": [],
+            "job_properties": [],
+            "prepares": [],
+            "job_xml": "",
+            "retry_max": [],
+            "retry_interval": [],
+            "sla": [
+                {
+                    "key": "enabled",
+                    "value": False
+                },
+                {
+                    "key": "nominal-time",
+                    "value": "${nominal_time}"
+                },
+                {
+                    "key": "should-start",
+                    "value": ""
+                },
+                {
+                    "key": "should-end",
+                    "value": "${30 * MINUTES}"
+                },
+                {
+                    "key": "max-duration",
+                    "value": ""
+                },
+                {
+                    "key": "alert-events",
+                    "value": ""
+                },
+                {
+                    "key": "alert-contact",
+                    "value": ""
+                },
+                {
+                    "key": "notification-msg",
+                    "value": ""
+                },
+                {
+                    "key": "upstream-apps",
+                    "value": ""
+                }
+            ],
+            "credentials": []
+        },
+        "children": [
+            {
+                "to": end_node["id"]
+            },
+            {
+                "error": kill_node["id"]
+            }
+        ],
+        "associatedDocumentLoading": True,
+        "associatedDocumentUuid": None,
+        "actionParameters": [],
+        "actionParametersFetched": False
+    }
+
+    workflow["nodes"].append(node)
+    start_node["children"][0]["to"] = node["id"]
+    workflow["nodeIds"].append(node_id)
+    workflow["nodeNamesMapping"][node_id] = node_name
+    workflow["linkMapping"][start_node["id"]] = [node_id]
+    workflow["linkMapping"][node_id] = [end_node["id"]]
+
+    layout = document["layout"]
+    row = {
+        "id": "f71d9c0b-47c6-fc60-420c-1812b607e28a",
+        "widgets": [
+            {
+                "size": 12,
+                "gridsterHeight": 0,
+                "name": "Sqoop 1",
+                "id": node_id,
+                "widgetType": "sqoop-widget",
+                "properties": {},
+                "offset": 0,
+                "isLoading": False,
+                "isEditing": False,
+                "klass": "card card-widget span12",
+                "oozieMovable": True,
+                "oozieExpanded": False,
+                "ooziePropertiesExpanded": False,
+                "status": "",
+                "progress": 0,
+                "actionURL": "",
+                "logsURL": "",
+                "externalId": "",
+                "externalJobId": "",
+                "externalIdUrl": ""
+            }
+        ],
+        "columns": [],
+        "enableOozieDrop": False,
+        "enableOozieDropOnBefore": True,
+        "enableOozieDropOnSide": True
+    }
+    layout[0]["oozieRows"].append(row)
+    layout[0]["rows"].append(row)
+
+
+def prepare_document(name: str, node_type: str, command: str, files: list) -> dict:
     document = get_empty_doc()
     workflow = document["workflow"]
     workflow["name"] = name
     workflow["uuid"] = str(uuid4())
     workflow["properties"]["deployment_dir"] = WORKSPACE + str(time.time())
-    add_shell_node(command,  [{"value": x} for x in files], document)
+    if node_type == 'shell':
+        add_shell_node(command, [{"value": x} for x in files], document)
+    elif node_type == 'sqoop':
+        add_sqoop_node(command, [{"value": x} for x in files], document)
+    else:
+        assert False, node_type + " is not supported"
     return document
 
 
@@ -531,8 +654,20 @@ def main():
     # pprint(listdir_from_hue(sys.argv[1]))
     # pprint(listdir_from_hue(sys.argv[1], HOME_PATH + "/oozie/apps"))
 
-    shell_command = HOME_PATH + "oozie/apps/hue/hello_hue.sh"
-    doc = prepare_shell_document(sys.argv[2], shell_command, [shell_command])
+    # command = HOME_PATH + "oozie/apps/hue/hello_hue.sh"
+    # doc = prepare_document(sys.argv[2], "shell", command, [command])
+
+    command = "import " \
+              "--connect jdbc:mysql://localhost:3306/manga " \
+              "--username manga " \
+              "--password manga " \
+              "--table fruit " \
+              "--target-dir /user/sun_xo/sqoop/fruit " \
+              "-m 1 " \
+              "--delete-target-dir"
+    file = "/user/sun_xo/oozie/apps/sqoop_import/lib/mysql-connector-java-8.0.28.jar"
+    doc = prepare_document(sys.argv[2], "sqoop", command, [file])
+
     # pprint(doc)
     workflow_id = create_document_in_hue(sys.argv[1], doc)
     print(workflow_id)
