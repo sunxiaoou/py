@@ -1,13 +1,15 @@
 #! /usr/bin/python3
+import json
 import re
 import sys
 from datetime import datetime
 from pprint import pprint
+from urllib.parse import urlencode
 
 import numpy as np
 import pandas as pd
 from openpyxl import load_workbook
-from openpyxl.utils import column_index_from_string
+from requests import request
 
 pd.set_option('display.max_rows', 200)
 pd.set_option('display.max_columns', 100)
@@ -87,6 +89,36 @@ def get_my_list(xlsx: str) -> pd.DataFrame:
     return df
 
 
+def get_a_list(cookie: str, pid: int) -> list:
+    url = 'https://stock.xueqiu.com/v5/stock/portfolio/stock/list.json?'
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_1) '
+                      'AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/88.0.4324.192 Safari/537.36',
+        'Cookie': cookie
+    }
+    params = {
+        'size': 1000,
+        'category': 1,
+        'pid': pid
+    }
+    url += urlencode(params)
+    response = request("GET", url, headers=headers)
+    assert response.status_code == 200
+    stocks = json.loads(response.text)['data']['stocks']
+    return [(x['symbol'][2:], x['name']) for x in stocks]
+
+
+def get_xq_list() -> pd.DataFrame:
+    with open('auth/xq_cookie.txt', 'r') as f:
+        cookie = f.read()[: -1]  # delete last '\n'
+
+    lis = get_a_list(cookie, 8) + get_a_list(cookie, 11)
+    df = pd.DataFrame(lis, columns=['代码', '名称']).drop_duplicates()
+    # print(df)
+    return df
+
+
 def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
     try:
         wb = load_workbook(xlsx)
@@ -114,7 +146,8 @@ def main():
         print('Usage: {} ref_rank_list.xlsx 20'.format(sys.argv[0]))
         sys.exit(1)
 
-    mine = get_my_list('asset.xlsx')
+    # mine = get_my_list('asset.xlsx')
+    mine = get_xq_list()
 
     xlsx = sys.argv[1]
     new130, bones = get_bones(xlsx)
