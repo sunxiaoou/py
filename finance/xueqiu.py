@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+import json
 import sys
 from datetime import datetime
 from pprint import pprint
@@ -11,30 +12,16 @@ from pymongo import MongoClient
 
 from mysql import MySql
 
-stock_base = 'https://stock.xueqiu.com/v5/stock/batch/quote.json?'
 fund_base = 'https://fund.xueqiu.com/dj/open/fund/deriveds?'
-headers = {
+
+URL_LIST = 'https://stock.xueqiu.com/v5/stock/portfolio/stock/list.json?'
+URL_STOCK = 'https://stock.xueqiu.com/v5/stock/batch/quote.json?'
+HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_1) '
                   'AppleWebKit/537.36 (KHTML, like Gecko) '
-                  'Chrome/88.0.4324.192 Safari/537.36'}
+                  'Chrome/88.0.4324.192 Safari/537.36',
+}
 
-a_stocks = [
-    'SH600009', 'SH600036', 'SH600104', 'SH600276', 'SH600309', 'SH600519',
-    'SH600585', 'SH600660', 'SH600887', 'SH600900', 'SH601318', 'SH601901',
-    'SH603288', 'SH603886',
-    'SZ000002', 'SZ000333', 'SZ000651', 'SZ000858', 'SZ000895', 'SZ002271',
-    'SZ002304', 'SZ002372', 'SZ002415', 'SZ002508', 'SZ002677', 'SZ300015']
-cvtbones = [
-    'SH113570', 'SH113591', 'SZ123023', 'SZ123110', 'SZ123127', 'SZ128021',
-    'SZ128022', 'SZ128025', 'SZ128042', 'SZ128066', 'SZ128073', 'SZ128085',
-    'SZ128100', 'SZ128119', 'SZ128130',
-    'SH110070', 'SH113027', 'SH113039', 'SH113502', 'SH113504', 'SH113567',
-    'SH113598', 'SZ123080', 'SZ123089', 'SZ127007', 'SZ128029', 'SZ128034',
-    'SZ128040', 'SZ128076', 'SZ128087', 'SZ128128']
-a_etfs = [
-    'SH501021', 'SH501050', 'SH510310', 'SH510580', 'SH510710', 'SH512000',
-    'SH512170', 'SH512260', 'SH512800', 'SH515170', 'SH515180',
-    'SZ159910', 'SZ159915', 'SZ159916', 'SZ159928']
 hk_stocks = [
     '00345', '00388', '00405', '00700', '00778', '01928',
     '02020', '02840', '03033', '03690', '07200', '09988']
@@ -55,42 +42,52 @@ mongo_db_name = 'finance'
 mongo_db_collection = 'xueqiu'
 
 
-def get_stocks(base_url: str, codes: list) -> list:
-    headers['Host'] = base_url.split('/')[2]
+def get_list(category: int, pid: int) -> list:
+    params = {
+        'size': 1000,
+        'category': category,
+        'pid': pid
+    }
+    url = URL_LIST + urlencode(params)
+    response = requests.request("GET", url, headers=HEADERS)
+    assert response.status_code == 200
+    stocks = json.loads(response.text)['data']['stocks']
+    return [x['symbol'] for x in stocks]
+
+
+def get_stocks(codes: list) -> list:
+    HEADERS['Host'] = URL_STOCK.split('/')[2]
     params = {
         'symbol': ','.join(codes),
         'extend': 'detail',
         'is_delay_hk': 'true'
     }
-    url = base_url + urlencode(params)
+    url = URL_STOCK + urlencode(params)
     # print(url)
-    try:
-        response = requests.get(url, headers=headers)
-        assert response.status_code == 200
-        result = []
-        items = response.json()['data']['items']
-        for i in items:
-            dic = {
-                'code': i['quote']['symbol'],
-                'ts': datetime.fromtimestamp(i['quote']['timestamp'] / 1000),
-                'name': i['quote']['name'],
-                'price': i['quote']['current'],
-                'pc': i['quote']['percent']}
-            result.append(dic.copy())
-        return result
-    except requests.ConnectionError as e:
-        print('Error', e.args)
+    response = requests.get(url, headers=HEADERS)
+    assert response.status_code == 200
+    result = []
+    items = response.json()['data']['items']
+    for i in items:
+        dic = {
+            'code': i['quote']['symbol'],
+            'ts': datetime.fromtimestamp(i['quote']['timestamp'] / 1000),
+            'name': i['quote']['name'],
+            'price': i['quote']['current'],
+            'pc': i['quote']['percent']}
+        result.append(dic.copy())
+    return result
 
 
 def get_funds(base_url: str, codes: list) -> list:
-    headers['Host'] = base_url.split('/')[2]
+    HEADERS['Host'] = base_url.split('/')[2]
     params = {
         'codes': ','.join(codes),
     }
     url = base_url + urlencode(params)
     # print(url)
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=HEADERS)
         if response.status_code == 200:
             result = []
             items = response.json()['data']
@@ -113,32 +110,28 @@ def main():
         sys.exit(1)
 
     with open('auth/xq_cookie.txt', 'r') as f:
-        headers['Cookie'] = f.read()[:-1]       # delete last '\n'
+        HEADERS['Cookie'] = f.read()[:-1]       # delete last '\n'
 
     if sys.argv[1] == 'a':
-        result = get_stocks(stock_base, a_stocks) + get_stocks(stock_base, a_etfs)
+        result = get_stocks(get_list(1, 0))
     elif sys.argv[1] == 'hk':
-        result = get_stocks(stock_base, hk_stocks)
+        result = get_stocks(hk_stocks)
     elif sys.argv[1] == 'us':
-        result = get_stocks(stock_base, us_stocks)
+        result = get_stocks(us_stocks)
     elif sys.argv[1] == 'fund':
         result = get_funds(fund_base, funds)
     elif sys.argv[1] == 'cvtb':
-        result = get_stocks(stock_base, cvtbones)
+        result = get_stocks(get_list(1, 8) + get_list(1, 11))
     else:
         print("Usage: {} a!hk|us|fund".format(sys.argv[0]))
         sys.exit(1)
 
-    # for i in result:
-    #     i['type'] = sys.argv[1]
-    # pprint(result)
-    print(len(result))
-
+    # print(len(result))
     df = pd.DataFrame(result)
     print(df)
 
-    mysql = MySql()
-    mysql.from_frame('instant_price', df)
+    # mysql = MySql()
+    # mysql.from_frame('instant_price', df)
 
     # client = MongoClient(host=mongo_host, port=mongo_port)
     # db = client[mongo_db_name]
