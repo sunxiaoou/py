@@ -7,22 +7,15 @@ from uuid import uuid4
 
 from requests import request
 
-# TOKEN = "nqf4mtafv03jmksonlm6rwghq18773lq"
-URL_DOC = "http://localhost:8000/desktop/api2/xo_doc/"
-URL_DOCS = "http://localhost:8000/desktop/api2/xo_docs/"
-URL_FILE = "http://localhost:8000/filebrowser/listdir2/"
-HOME_PATH = "/user/sun_xo/"
-WORKSPACE = "/user/hue/oozie/workspaces/"
 
-
-def listdir_from_hue(token: str, path: str = None) -> list:
-    url = URL_FILE + "?path=" + path if path else URL_FILE
-    payload = {}
-    files = {}
+def listdir_from_hue(host: str, token: str, path: str = None) -> list:
+    url = "http://" + host + ":8000/filebrowser/listdir2/"
+    if path:
+        url += "?path=" + path
     headers = {
         'x-csrftoken': token
     }
-    response = request("GET", url, headers=headers, data=payload, files=files)
+    response = request("GET", url, headers=headers)
     dic = json.loads(response.text)
     return dic["data"] if dic["status"] == 0 else []
 
@@ -372,6 +365,15 @@ def get_empty_doc():
     return document
 
 
+def prepare_document(name: str) -> dict:
+    document = get_empty_doc()
+    workflow = document["workflow"]
+    workflow["name"] = name
+    workflow["uuid"] = str(uuid4())
+    workflow["properties"]["deployment_dir"] = "/user/hue/oozie/workspaces/" + str(time.time())
+    return document
+
+
 def add_shell_node(command: str, files: list, document: dict):
     workflow = document["workflow"]
     start_node, end_node, kill_node = workflow["nodes"]
@@ -608,34 +610,20 @@ def add_sqoop_node(command: str, files: list, document: dict):
     layout[0]["rows"].append(row)
 
 
-def prepare_document(name: str, node_type: str, command: str, files: list) -> dict:
-    document = get_empty_doc()
-    workflow = document["workflow"]
-    workflow["name"] = name
-    workflow["uuid"] = str(uuid4())
-    workflow["properties"]["deployment_dir"] = WORKSPACE + str(time.time())
-    if node_type == 'shell':
-        add_shell_node(command, [{"value": x} for x in files], document)
-    elif node_type == 'sqoop':
-        add_sqoop_node(command, [{"value": x} for x in files], document)
-    else:
-        assert False, node_type + " is not supported"
-    return document
-
-
-def create_document_in_hue(token: str, document: dict) -> int:
+def create_document_in_hue(host: str, token: str, document: dict) -> int:
+    url = "http://" + host + ":8000/desktop/api2/xo_docs/"
     payload = json.dumps(document)
     headers = {
         'Content-Type': 'application/json',
         'x-csrftoken': token
     }
-    response = request("POST", URL_DOCS, headers=headers, data=payload)
+    response = request("POST", url, headers=headers, data=payload)
     dic = json.loads(response.text)
     return dic["id"] if dic["status"] == 0 else -1
 
 
-def get_document_from_hue(token: str, wf_id: int) -> dict:
-    url = URL_DOC + "?workflow=" + str(wf_id)
+def get_document_from_hue(host: str, token: str, wf_id: int) -> dict:
+    url = "http://" + host + ":8000/desktop/api2/xo_doc/" + "?workflow=" + str(wf_id)
     payload = {}
     files = {}
     headers = {
@@ -647,31 +635,36 @@ def get_document_from_hue(token: str, wf_id: int) -> dict:
 
 
 def main():
-    if len(sys.argv) < 3:
-        print('Usage: {} token doc_name'.format(sys.argv[0]))
+    if len(sys.argv) < 6:
+        print('Usage: {} host user token doc_name node_type'.format(sys.argv[0]))
         sys.exit(1)
 
-    # pprint(listdir_from_hue(sys.argv[1]))
-    # pprint(listdir_from_hue(sys.argv[1], HOME_PATH + "/oozie/apps"))
+    home_path = "/user/{}/".format(sys.argv[2])
+    # pprint(listdir_from_hue(sys.argv[1], sys.argv[3]))
+    # pprint(listdir_from_hue(sys.argv[1], sys.argv[3], home_path + "/oozie/apps"))
 
-    # command = HOME_PATH + "oozie/apps/hue/hello_hue.sh"
-    # doc = prepare_document(sys.argv[2], "shell", command, [command])
-
-    command = "import " \
-              "--connect jdbc:mysql://localhost:3306/manga " \
-              "--username manga " \
-              "--password manga " \
-              "--table fruit " \
-              "--target-dir /user/sun_xo/sqoop/fruit " \
-              "-m 1 " \
-              "--delete-target-dir"
-    file = "/user/sun_xo/oozie/apps/sqoop_import/lib/mysql-connector-java-8.0.28.jar"
-    doc = prepare_document(sys.argv[2], "sqoop", command, [file])
-
-    # pprint(doc)
-    workflow_id = create_document_in_hue(sys.argv[1], doc)
+    document = prepare_document(sys.argv[4])
+    if sys.argv[5] == 'shell':
+        command = home_path + "oozie/apps/hue/hello_hue.sh"
+        files = [command]
+        add_shell_node(command, [{"value": x} for x in files], document)
+    elif sys.argv[5] == 'sqoop':
+        command = "import " \
+                  "--connect jdbc:mysql://localhost:3306/manga " \
+                  "--username manga " \
+                  "--password manga " \
+                  "--table fruit " \
+                  "--target-dir " + home_path + "sqoop/fruit " \
+                  "-m 1 " \
+                  "--delete-target-dir"
+        files = [home_path + "oozie/apps/sqoop_import/lib/mysql-connector-java-8.0.28.jar"]
+        add_sqoop_node(command, [{"value": x} for x in files], document)
+    else:
+        assert False, "node_type({}) is not supported".format(sys.argv[5])
+    # pprint(document)
+    workflow_id = create_document_in_hue(sys.argv[1], sys.argv[3], document)
     print(workflow_id)
-    pprint(get_document_from_hue(sys.argv[1], workflow_id))
+    pprint(get_document_from_hue(sys.argv[1], sys.argv[3], workflow_id))
 
 
 if __name__ == "__main__":
