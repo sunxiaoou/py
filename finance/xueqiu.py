@@ -22,13 +22,6 @@ HEADERS = {
                   'Chrome/88.0.4324.192 Safari/537.36',
 }
 
-hk_stocks = [
-    '00345', '00388', '00405', '00700', '00778', '01928',
-    '02020', '02840', '03033', '03690', '07200', '09988']
-us_stocks = [
-    'AAPL', 'ADBE', 'AMZN', 'ARKG', 'ARKK', 'ARKW', 'BABA', 'BILI', 'FB',
-    'GBTC', 'GOOGL', 'GS', 'MSFT', 'PDD', 'QQQ', 'SPY', 'TSM', 'VTV', 'VXX']
-
 funds = [
     '001556', '001594', '001810', '003318', '004069', '005259',
     '005827', '006327', '008138', '008407', '070023', '090010',
@@ -106,7 +99,7 @@ def get_funds(base_url: str, codes: list) -> list:
 
 def main():
     if len(sys.argv) < 2:
-        print('Usage: {} "a|hk|us|fund"'.format(sys.argv[0]))
+        print('Usage: {} "a|cvtb|hk|us|fund"'.format(sys.argv[0]))
         sys.exit(1)
 
     with open('auth/xq_cookie.txt', 'r') as f:
@@ -115,9 +108,9 @@ def main():
     if sys.argv[1] == 'a':
         result = get_stocks(get_list(1, 0))
     elif sys.argv[1] == 'hk':
-        result = get_stocks(hk_stocks)
+        result = get_stocks(get_list(1, -7))
     elif sys.argv[1] == 'us':
-        result = get_stocks(us_stocks)
+        result = get_stocks(get_list(1, -6))
     elif sys.argv[1] == 'fund':
         result = get_funds(fund_base, funds)
     elif sys.argv[1] == 'cvtb':
@@ -128,7 +121,7 @@ def main():
 
     # print(len(result))
     df = pd.DataFrame(result)
-    print(df)
+    print(df.sort_values(by='pc', ascending=False))
 
     # mysql = MySql()
     # mysql.from_frame('instant_price', df)
