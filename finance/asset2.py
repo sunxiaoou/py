@@ -34,7 +34,7 @@ def verify(row: pd.Series):
 
 
 def zhaoshang_bank(datafile: str) -> pd.DataFrame:
-    bonds = ['招智睿远平衡二十七期']
+    bonds = ['招银理财招智睿远平衡二十七期']
 
     with open(datafile) as fp:
         lines = [re.sub(r'[,，]', '', line).rstrip('\n') for line in fp.readlines()]

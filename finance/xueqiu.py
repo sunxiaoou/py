@@ -115,6 +115,8 @@ def main():
         result = get_funds(fund_base, funds)
     elif sys.argv[1] == 'cvtb':
         result = get_stocks(get_list(1, 8) + get_list(1, 11))
+    elif sys.argv[1] == 'misc':
+        result = get_stocks(get_list(1, 4))
     else:
         print("Usage: {} a!hk|us|fund".format(sys.argv[0]))
         sys.exit(1)
