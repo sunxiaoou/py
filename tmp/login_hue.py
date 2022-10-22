@@ -6,11 +6,10 @@ import requests
 
 def login_hue(username: str, password: str):
     url = "http://localhost:8000/hue/accounts/login"
-    payload = {}
     headers = {
-        'Test': 'application/json',
+        'Response-type': 'application/json',
     }
-    response = requests.request("GET", url, headers=headers, data=payload)
+    response = requests.request("GET", url, headers=headers)
     assert response.status_code == 200
     dic = json.loads(response.text)
     dic['sessionid'] = response.cookies.get('sessionid')
@@ -19,13 +18,14 @@ def login_hue(username: str, password: str):
     payload = {
         'username': username,
         'password': password,
-        'next': '/',
-        'csrfmiddlewaretoken': dic['csrfmiddlewaretoken']
+        'next': '/'
+        # 'csrfmiddlewaretoken': dic['csrfmiddlewaretoken']
     }
     files = []
     headers = {
-        'Test': 'application/json',
-        'Cookie': 'csrftoken={}; sessionid={}'.format(dic['csrftoken'], dic['sessionid'])
+        'Response-type': 'application/json',
+        'Cookie': 'csrftoken={}; sessionid={}'.format(dic['csrftoken'], dic['sessionid']),
+        'X-CSRFToken': dic['csrfmiddlewaretoken']
     }
 
     response = requests.request("POST", url, headers=headers, data=payload, files=files)
