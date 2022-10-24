@@ -1,5 +1,6 @@
 #! /usr/bin/python3
 import json
+import re
 import sys
 import time
 from pprint import pprint
@@ -8,12 +9,12 @@ from uuid import uuid4
 from requests import request
 
 
-def listdir_from_hue(host: str, token: str, path: str = None) -> list:
+def listdir_from_hue(host: str, cookie: str, path: str = None) -> list:
     url = "http://" + host + ":8000/filebrowser/listdir2/"
     if path:
         url += "?path=" + path
     headers = {
-        'x-csrftoken': token
+        'cookie': cookie
     }
     response = request("GET", url, headers=headers)
     dic = json.loads(response.text)
@@ -610,24 +611,25 @@ def add_sqoop_node(command: str, files: list, document: dict):
     layout[0]["rows"].append(row)
 
 
-def create_document_in_hue(host: str, token: str, document: dict) -> int:
+def create_document_in_hue(host: str, cookie: str, document: dict) -> int:
     url = "http://" + host + ":8000/desktop/api2/xo_docs/"
     payload = json.dumps(document)
     headers = {
         'Content-Type': 'application/json',
-        'x-csrftoken': token
+        'cookie': cookie,
+        'x-csrftoken': re.search('csrftoken=(.+?);', cookie).group(1)
     }
     response = request("POST", url, headers=headers, data=payload)
     dic = json.loads(response.text)
     return dic["id"] if dic["status"] == 0 else -1
 
 
-def get_document_from_hue(host: str, token: str, wf_id: int) -> dict:
+def get_document_from_hue(host: str, cookie: str, wf_id: int) -> dict:
     url = "http://" + host + ":8000/desktop/api2/xo_doc/" + "?workflow=" + str(wf_id)
     payload = {}
     files = {}
     headers = {
-        'x-csrftoken': token
+        'cookie': cookie
     }
     response = request("GET", url, headers=headers, data=payload, files=files)
     dic = json.loads(response.text)
@@ -635,20 +637,24 @@ def get_document_from_hue(host: str, token: str, wf_id: int) -> dict:
 
 
 def main():
-    if len(sys.argv) < 6:
-        print('Usage: {} host user token doc_name node_type'.format(sys.argv[0]))
+    if len(sys.argv) < 5:
+        print('Usage: {} host user doc_name node_type'.format(sys.argv[0]))
         sys.exit(1)
 
-    home_path = "/user/{}/".format(sys.argv[2])
-    # pprint(listdir_from_hue(sys.argv[1], sys.argv[3]))
-    # pprint(listdir_from_hue(sys.argv[1], sys.argv[3], home_path + "/oozie/apps"))
+    with open('hue_cookie.txt', 'r') as f:
+        cookie = f.read()[:-1]
 
-    document = prepare_document(sys.argv[4])
-    if sys.argv[5] == 'shell':
+    home_path = "/user/{}/".format(sys.argv[2])
+
+    # pprint(listdir_from_hue(sys.argv[1], cookie))
+    # pprint(listdir_from_hue(sys.argv[1], cookie, home_path + "/oozie/apps"))
+
+    document = prepare_document(sys.argv[3])
+    if sys.argv[4] == 'shell':
         command = home_path + "oozie/apps/hue/hello_hue.sh"
         files = [command]
         add_shell_node(command, [{"value": x} for x in files], document)
-    elif sys.argv[5] == 'sqoop':
+    elif sys.argv[4] == 'sqoop':
         command = "import " \
                   "--connect jdbc:mysql://localhost:3306/manga " \
                   "--username manga " \
@@ -660,11 +666,11 @@ def main():
         files = [home_path + "oozie/apps/sqoop_import/lib/mysql-connector-java-8.0.28.jar"]
         add_sqoop_node(command, [{"value": x} for x in files], document)
     else:
-        assert False, "node_type({}) is not supported".format(sys.argv[5])
+        assert False, "node_type({}) is not supported".format(sys.argv[4])
     # pprint(document)
-    workflow_id = create_document_in_hue(sys.argv[1], sys.argv[3], document)
+    workflow_id = create_document_in_hue(sys.argv[1], cookie, document)
     print(workflow_id)
-    pprint(get_document_from_hue(sys.argv[1], sys.argv[3], workflow_id))
+    pprint(get_document_from_hue(sys.argv[1], cookie, workflow_id))
 
 
 if __name__ == "__main__":

@@ -1,11 +1,12 @@
 #! /usr/bin/python3
 import json
+import sys
 
 import requests
 
 
-def login_hue(username: str, password: str):
-    url = "http://localhost:8000/hue/accounts/login"
+def login_hue(host: str, username: str, password: str):
+    url = "http://" + host + ":8000/hue/accounts/login"
     headers = {
         'Response-type': 'application/json',
     }
@@ -13,7 +14,7 @@ def login_hue(username: str, password: str):
     assert response.status_code == 200
     dic = json.loads(response.text)
     dic['sessionid'] = response.cookies.get('sessionid')
-    print(dic)
+    # print(dic)
 
     payload = {
         'username': username,
@@ -34,7 +35,11 @@ def login_hue(username: str, password: str):
 
 
 def main():
-    dic = login_hue('sun_xo', 'sun_xo')
+    if len(sys.argv) < 4:
+        print('Usage: {} host username password'.format(sys.argv[0]))
+        sys.exit(1)
+
+    dic = login_hue(sys.argv[1], sys.argv[2], sys.argv[3])
     print('csrftoken={}; sessionid={}'.format(dic['csrftoken'], dic['sessionid']))
 
 
