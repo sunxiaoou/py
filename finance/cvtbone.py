@@ -40,7 +40,10 @@ def get_bones(xlsx: str) -> (pd.DataFrame, pd.DataFrame):
     j = 31
     data = []
     for row in ws.iter_rows(min_row=1, min_col=1, max_row=ws.max_row - 2, max_col=j):
-        data.append([cell.value for cell in row])
+        cells = [cell.value for cell in row]
+        if not cells[0]:
+            break
+        data.append(cells)
     titles = [i for i in data[0] if i]
     title = titles[0]
     for i in range(1, len(data[0])):
