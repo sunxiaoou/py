@@ -676,6 +676,18 @@ def modify_document(host: str, cookie: str, wf_id: int) -> dict:
     return json.loads(response.text)
 
 
+def delete_document(host: str, cookie: str, wf_id: int) -> dict:
+    url = "http://" + host + ":8000/desktop/api2/xo_doc/" + "?workflow=" + str(wf_id)
+    headers = {
+        'Content-Type': 'application/json',
+        'Cookie': cookie,
+        'X-CSRFToken': re.search('csrftoken=(.+?);', cookie).group(1)
+    }
+    response = request("DELETE", url, headers=headers)
+    assert response.status_code == 200
+    return json.loads(response.text)
+
+
 def main():
     if len(sys.argv) < 5:
         print('Usage: {} host user doc_name node_type'.format(sys.argv[0]))
@@ -690,10 +702,9 @@ def main():
     # workflow_id = add_document(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], cookie)
     # print(workflow_id)
     # pprint(get_document(sys.argv[1], cookie, workflow_id))
-
     # pprint(list_documents(sys.argv[1], cookie))
-    # pprint(get_document(sys.argv[1], cookie, 213))
-    pprint(modify_document(sys.argv[1], cookie, 213))
+    # pprint(modify_document(sys.argv[1], cookie, 213))
+    pprint(delete_document(sys.argv[1], cookie, 174))
 
 
 if __name__ == "__main__":
