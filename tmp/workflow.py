@@ -157,7 +157,9 @@ def get_job_job(host: str, app_id: str, cookie: str) -> dict:
 
 def main():
     if len(sys.argv) < 3:
-        print('Usage: {} host wf_id|job_id'.format(sys.argv[0]))
+        print('Usage: {} host wf_id     # submit a workflow'.format(sys.argv[0]))
+        print('       {} host app_id    # get logs from workflow | job'.format(sys.argv[0]))
+        print('       {} host user      # list workflows | jobs of a user'.format(sys.argv[0]))
         sys.exit(1)
 
     with open('hue_cookie.txt', 'r') as f:
