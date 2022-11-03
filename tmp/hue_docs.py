@@ -651,7 +651,7 @@ def add_document(host: str, user: str, name: str, node_type: str, cookie: str) -
     return dic["id"] if dic["status"] == 0 else -1
 
 
-def get_document(host: str, cookie: str, wf_id: int) -> dict:
+def get_document(host: str, wf_id: int, cookie: str) -> dict:
     url = "http://" + host + ":8000/desktop/api2/xo_doc/" + "?workflow=" + str(wf_id)
     headers = {'cookie': cookie}
     response = request("GET", url, headers=headers)
@@ -660,8 +660,8 @@ def get_document(host: str, cookie: str, wf_id: int) -> dict:
     return dic["data"] if dic["status"] == 0 else {}
 
 
-def modify_document(host: str, cookie: str, wf_id: int) -> dict:
-    doc = get_document(host, cookie, wf_id)
+def modify_document(host: str, wf_id: int, cookie: str) -> dict:
+    doc = get_document(host, wf_id, cookie)
     doc['workflow']['id'] = wf_id
     doc['workflow']['properties']['description'] = 'from new world'
     url = "http://" + host + ":8000/desktop/api2/xo_doc/"
@@ -676,7 +676,7 @@ def modify_document(host: str, cookie: str, wf_id: int) -> dict:
     return json.loads(response.text)
 
 
-def delete_document(host: str, cookie: str, wf_id: int) -> dict:
+def delete_document(host: str, wf_id: int, cookie: str) -> dict:
     url = "http://" + host + ":8000/desktop/api2/xo_doc/" + "?workflow=" + str(wf_id)
     headers = {
         'Content-Type': 'application/json',
@@ -689,22 +689,29 @@ def delete_document(host: str, cookie: str, wf_id: int) -> dict:
 
 
 def main():
-    if len(sys.argv) < 5:
-        print('Usage: {} host user doc_name node_type'.format(sys.argv[0]))
-        sys.exit(1)
-
     with open('hue_cookie.txt', 'r') as f:
         cookie = f.read()[:-1]
 
-    # pprint(listdir_from_hue(sys.argv[1], cookie))
-    # pprint(listdir_from_hue(sys.argv[1], cookie, home_path + "/oozie/apps"))
-
-    # workflow_id = add_document(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], cookie)
-    # print(workflow_id)
-    # pprint(get_document(sys.argv[1], cookie, workflow_id))
-    # pprint(list_documents(sys.argv[1], cookie))
-    # pprint(modify_document(sys.argv[1], cookie, 213))
-    pprint(delete_document(sys.argv[1], cookie, 174))
+    if len(sys.argv) > 5:
+        assert sys.argv[1] == 'add'
+        workflow_id = add_document(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], cookie)
+        print(workflow_id)
+    elif len(sys.argv) > 3:
+        if sys.argv[1] == 'get':
+            pprint(get_document(sys.argv[2], int(sys.argv[3]), cookie))
+        elif sys.argv[1] == 'modify':
+            pprint(modify_document(sys.argv[2], int(sys.argv[3]), cookie))
+        elif sys.argv[1] == 'delete':
+            pprint(delete_document(sys.argv[2], int(sys.argv[3]), cookie))
+        else:
+            assert False
+    elif len(sys.argv) > 2:
+        assert sys.argv[1] == 'list'
+        pprint(list_documents(sys.argv[2], cookie))
+    else:
+        print('Usage: {} add host user doc_name shell|sqoop'.format(sys.argv[0]))
+        print('       {} get|modify|delete host workflow_id'.format(sys.argv[0]))
+        print('       {} list host'.format(sys.argv[0]))
 
 
 if __name__ == "__main__":
