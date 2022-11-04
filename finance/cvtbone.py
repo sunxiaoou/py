@@ -178,17 +178,19 @@ def main():
     print(to_buy)
 
     inner = pd.merge(bones, mine, on=['代码', '名称'])
-    print('已持有的激进转债({})'.format(len(inner)))
+    print('已持有的上榜转债({})'.format(len(inner)))
     print(inner)
 
     to_buy = pd.concat([bones, inner]).drop_duplicates(keep=False)
     to_buy = to_buy[to_buy['价格'] < 170]
-    print('未持有的<170的激进转债({})'.format(len(to_buy)))
+    print('未持有的<170的上榜转债({})'.format(len(to_buy)))
     print(to_buy)
 
     to_sell = pd.concat([inner[['代码', '名称']], mine]).drop_duplicates(keep=False)
+    inner = pd.merge(new130[['代码', '名称']], to_sell, on=['代码', '名称'])
+    to_sell = pd.concat([to_sell, inner]).drop_duplicates(keep=False)
     to_sell = pd.merge(to_sell, b2, on=['代码', '名称'], how='left')
-    print('持有的非激进转债({})'.format(len(to_sell)))
+    print('持有的未上榜转债({})'.format(len(to_sell)))
     if len(to_sell):
         print(to_sell)
 
