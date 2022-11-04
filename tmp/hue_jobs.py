@@ -156,23 +156,33 @@ def get_job_job(host: str, app_id: str, cookie: str) -> dict:
 
 
 def main():
-    if len(sys.argv) < 3:
-        print('Usage: {} host wf_id     # submit a workflow'.format(sys.argv[0]))
-        print('       {} host app_id    # get logs from workflow | job'.format(sys.argv[0]))
-        print('       {} host user      # list workflows | jobs of a user'.format(sys.argv[0]))
+    if len(sys.argv) < 4:
+        print('Usage: {} submit host wf_id          # submit a workflow'.format(sys.argv[0]))
+        print('       {} get_workflow host app_id   # get workflow log'.format(sys.argv[0]))
+        print('       {} get_job host app_id        # get job log'.format(sys.argv[0]))
+        print('       {} list_workflows host user   # list workflow logs'.format(sys.argv[0]))
+        print('       {} list_jobs host user        # list job logs'.format(sys.argv[0]))
         sys.exit(1)
 
     with open('hue_cookie.txt', 'r') as f:
         cookie = f.read()[:-1]
 
-    if sys.argv[2].isnumeric():
-        dic = submit_wf(sys.argv[1], sys.argv[2], cookie)
-    elif sys.argv[2].startswith('application_') or '-' in sys.argv[2]:
-        # dic = get_job_wf(sys.argv[1], sys.argv[2], cookie)
-        dic = get_job_job(sys.argv[1], sys.argv[2], cookie)
+    if sys.argv[1] == 'submit':
+        assert sys.argv[3].isnumeric()
+        dic = submit_wf(sys.argv[2], sys.argv[3], cookie)
+    elif sys.argv[1] == 'get_workflow':
+        assert '-' in sys.argv[3]
+        dic = get_job_wf(sys.argv[2], sys.argv[3], cookie)
+    elif sys.argv[1] == 'get_job':
+        assert sys.argv[3].startswith('application_')
+        dic = get_job_job(sys.argv[2], sys.argv[3], cookie)
+    elif sys.argv[1] == 'list_workflows':
+        dic = list_jobs_workflows(sys.argv[2], sys.argv[3], cookie)
+    elif sys.argv[1] == 'list_jobs':
+        dic = list_jobs_jobs(sys.argv[2], sys.argv[3], cookie)
     else:
-        # dic = list_jobs_workflows(sys.argv[1], sys.argv[2], cookie)
-        dic = list_jobs_jobs(sys.argv[1], sys.argv[2], cookie)
+        assert False
+
     pprint(dic)
 
 

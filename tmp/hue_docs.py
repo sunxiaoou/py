@@ -709,9 +709,9 @@ def main():
         assert sys.argv[1] == 'list'
         pprint(list_documents(sys.argv[2], cookie))
     else:
-        print('Usage: {} add host user doc_name shell|sqoop'.format(sys.argv[0]))
-        print('       {} get|modify|delete host workflow_id'.format(sys.argv[0]))
-        print('       {} list host'.format(sys.argv[0]))
+        print('Usage: {} add host user doc_name shell|sqoop  # add document'.format(sys.argv[0]))
+        print('       {} get|modify|delete host workflow_id  # operate document'.format(sys.argv[0]))
+        print('       {} list host                           # list documents'.format(sys.argv[0]))
 
 
 if __name__ == "__main__":
