@@ -62,8 +62,8 @@ def ninwin(cbs: list) -> pd.DataFrame:
 
 
 def main():
-    cbs = get_list(1, 8) + get_list(1, 11)
-    print(ninwin(cbs))
+    print(ninwin(get_list(1, 8) + get_list(1, 11)))
+    print(ninwin(get_list(1, 4)))
 
 
 if __name__ == "__main__":
