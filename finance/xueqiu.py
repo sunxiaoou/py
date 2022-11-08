@@ -124,6 +124,7 @@ def main():
     # print(len(result))
     df = pd.DataFrame(result)
     print(df.sort_values(by='pc', ascending=False))
+    print('mean({})'.format(round(df['pc'].mean(), 3)))
 
     # mysql = MySql()
     # mysql.from_frame('instant_price', df)

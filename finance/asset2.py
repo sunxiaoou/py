@@ -374,17 +374,18 @@ def danjuan(datafile: str) -> pd.DataFrame:
     result = []
     for i in response.json()['data']['items']:
         code = i['fd_code']
-        if code in ['CSI666', 'TIA06020', 'TIA06028']:  # 螺丝钉指数基金组合, 螺丝钉金钉宝主动优选, 螺丝钉金钉宝指数增强
-            result.extend(get_plan(code))
-        else:
-            if code == 'TIA06019':      # 螺丝钉银钉宝365天
-                name, type, risk = i['fd_name'], '债券', 1
-            else:
-                name, type, risk = off_market[code]
-            market_value = float(i['market_value'])
-            hold_gain = float(i['hold_gain'])
-            nav = float(i['nav'])
-            result.append(('蛋卷', 'cny', code, name, type, risk, market_value, hold_gain, nav))
+        # if code in ['TIA06020', 'TIA06028']:  # 螺丝钉金钉宝主动优选, 螺丝钉金钉宝指数增强
+        #     result.extend(get_plan(code))
+        #     name, type, risk = i['fd_name'], '债券', 1
+        # else:
+        #     if code == 'TIA06019':      # 螺丝钉银钉宝365天
+        #         name, type, risk = i['fd_name'], '债券', 1
+        #     else:
+        name, type, risk = off_market[code]
+        market_value = float(i['market_value'])
+        hold_gain = float(i['hold_gain'])
+        nav = float(i['nav'])
+        result.append(('蛋卷', 'cny', code, name, type, risk, market_value, hold_gain, nav))
     df = pd.DataFrame(result, columns=columns + ['nav'])
     sum_mv = round(df['market_value'].sum(), 2)
     assert abs(sum_mv - asset) <= 1, print("sum_mv({}) != asset({})".format(sum_mv, asset))
