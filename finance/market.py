@@ -1,7 +1,7 @@
 #! /usr/bin/python3
 import json
 import sys
-from datetime import datetime
+from datetime import date, datetime
 from pprint import pprint
 from urllib.parse import urlencode
 
@@ -72,6 +72,35 @@ def get_stocks(codes: list) -> list:
     return result
 
 
+def get_cvtbones(codes: list) -> list:
+    HEADERS['Host'] = URL_STOCK.split('/')[2]
+    params = {
+        'symbol': ','.join(codes),
+        'extend': 'detail',
+        'is_delay_hk': 'true'
+    }
+    url = URL_STOCK + urlencode(params)
+    # print(url)
+    response = requests.get(url, headers=HEADERS)
+    assert response.status_code == 200
+    result = []
+    items = response.json()['data']['items']
+    for i in items:
+        quote = i['quote']
+        dic = {
+            # 'ts': datetime.fromtimestamp(quote['timestamp'] / 1000),
+            'code': quote['symbol'],
+            'name': quote['name'],
+            'price': quote['current'],
+            'premium': quote['convert_bond_ratio'],
+            'remains': round(quote['outstanding_amt'] / quote['total_issue_scale'] * 100, 2),
+            'days': (datetime.fromtimestamp(quote['maturity_date'] / 1000).date() - date.today()).days,
+            'pc': quote['percent']
+        }
+        result.append(dic.copy())
+    return result
+
+
 def get_funds(base_url: str, codes: list) -> list:
     HEADERS['Host'] = base_url.split('/')[2]
     params = {
@@ -114,9 +143,11 @@ def main():
     elif sys.argv[1] == 'fund':
         result = get_funds(fund_base, funds)
     elif sys.argv[1] == 'cvtb':
-        result = get_stocks(get_list(1, 8) + get_list(1, 11))
+        result = get_cvtbones(get_list(1, 8) + get_list(1, 11))
     elif sys.argv[1] == 'misc':
-        result = get_stocks(get_list(1, 4))
+        result = get_cvtbones(get_list(1, 4))
+    elif sys.argv[1] == 'grid':
+        result = get_cvtbones(get_list(1, 12))
     else:
         print("Usage: {} a!hk|us|fund".format(sys.argv[0]))
         sys.exit(1)
