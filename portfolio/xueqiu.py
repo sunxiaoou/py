@@ -22,19 +22,18 @@ def get_cookies(stock_code: str) -> RequestsCookieJar:
         'User-Agent': 'PostmanRuntime/7.29.2'
     }
     resp = request("GET", url_str, headers=headers)
-    if resp.status_code == 200:
-        return resp.cookies
-    else:
-        print(resp, resp.text)
+    resp.raise_for_status()
+    return resp.cookies
 
 
-def get_data(stock_code: str, period: str) -> pd.DataFrame:
+def get_data(stock_code: str, period: str = 'day') -> pd.DataFrame:
     begin = int(time.time() * 1000)
     time_type = "before"
     count = 2000000000
-    url_string = "https://stock.xueqiu.com/v5/stock/chart/kline.json?symbol=%s&begin=%d&period=%s&type=%s&count=%d" \
-                 "&indicator=%s" % (
-                     stock_code, begin, period, time_type, -count, "kline,pe,pb,ps,pcf,market_capital,agt,ggt,balance")
+    url_string = "https://stock.xueqiu.com/v5/stock/chart/kline.json?" \
+                 "symbol=%s&begin=%d&period=%s&type=%s&count=%d&indicator=%s" %\
+                 (stock_code, begin, period, time_type, -count,
+                  "kline,pe,pb,ps,pcf,market_capital,agt,ggt,balance")
     # print(url_string)
     headers = {
         'User-Agent': 'PostmanRuntime/7.29.2'
@@ -48,7 +47,8 @@ def get_data(stock_code: str, period: str) -> pd.DataFrame:
     items = []
     for i in data['data']['item']:
         item = i[: 8]
-        item[0] = datetime.fromtimestamp(item[0] / 1000).date()
+        # item[0] = datetime.fromtimestamp(item[0] / 1000).date()
+        item[0] = datetime.fromtimestamp(item[0] / 1000).strftime('%Y-%m-%d')
         items.append(item)
     return pd.DataFrame(items, columns=columns)
 
@@ -57,7 +57,8 @@ def draw(df: pd.DataFrame, name: str, start_date: str = ''):
     df = df[['date', 'close']]
     df = df.rename({'close': name}, axis=1)
     if start_date:
-        df = df[df['date'] >= datetime.strptime(start_date, "%Y-%m-%d").date()]
+        # df = df[df['date'] >= datetime.strptime(start_date, "%Y-%m-%d").date()]
+        df = df[df['date'] >= start_date]
     df = df.dropna().set_index('date')
     print(df)
     df.index.name = None
@@ -68,7 +69,7 @@ def draw(df: pd.DataFrame, name: str, start_date: str = ''):
 def main():
     # df = get_data('SZ128040', 'day')
     # draw(df, 'SZ128040', '2022-01-01')
-    df = get_data("KWEB", 'day')
+    df = get_data("KWEB")
     draw(df, 'KWEB', '2022-01-01')
 
 
