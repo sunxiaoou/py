@@ -1,4 +1,6 @@
 #! /usr/bin/python3
+import sys
+
 import pandas as pd
 from matplotlib import pyplot, ticker
 
@@ -86,8 +88,8 @@ class Grid:
         pyplot.gca().xaxis.set_major_locator(ticker.MultipleLocator(40))
         pyplot.xticks(rotation=30)
         pyplot.plot(data.index, data[self.code])
-        pyplot.plot(buy.index, buy['price'], 'or')
-        pyplot.plot(sell.index, sell['price'], 'og')
+        pyplot.plot(buy.index, buy['price'], 'og')
+        pyplot.plot(sell.index, sell['price'], 'or')
         pyplot.show()
 
     def trade_daily(self, data: pd.DataFrame):
@@ -103,12 +105,17 @@ class Grid:
 
 
 def main():
-    code = 'SH113504'
+    if len(sys.argv) < 2:
+        print('Usage: {} stock_code [start_date(%Y-%m-%d)]'.format(sys.argv[0]))
+        sys.exit(1)
+
+    code = sys.argv[1]              # e.g.  code = 'SH113504'
     df = xueqiu.get_data(code)
-    start_date = '2021-07-01'
-    if start_date:
+    if len(sys.argv) > 2:
+        start_date = sys.argv[2]    # start_date = '2021-07-01'
         df = df[df['date'] >= start_date]
-    grid = Grid('SH113504', 130, 170, 10, 50)
+
+    grid = Grid(code, 130, 170, 10, 50)
     grid.trade_daily(df)
 
 
