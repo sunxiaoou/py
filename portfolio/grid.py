@@ -8,8 +8,9 @@ import xueqiu
 
 
 class Grid:
-    def __init__(self, code: str, low: float, high: float, interval: float, unit: int):
+    def __init__(self, code: str, name: str, low: float, high: float, interval: float, unit: int):
         self.code = code
+        self.name = name
         self.interval = interval
         self.unit = unit
         self.high = high
@@ -86,7 +87,8 @@ class Grid:
         sell.index.name = None
 
         pyplot.figure(figsize=(10, 6))
-        pyplot.title('可转债网格回测 %s (%s ~ %s)' % (self.code, data.index[0], data.index[-1]))
+        pyplot.title('可转债网格回测 %s(%s) (%s ~ %s)' %
+                     (self.name, self.code, data.index[0], data.index[-1]))
         pyplot.ylabel('开盘价(元)')
         pyplot.grid()
         pyplot.gca().xaxis.set_major_locator(ticker.MultipleLocator(data.shape[0] // 8))
@@ -111,6 +113,7 @@ class Grid:
         pyplot.figtext(0.9, 0.20, ' 成本 %.2f' % self.cost)
         pyplot.figtext(0.9, 0.15, ' 收益 %.2f' % (self.value - self.cost))
         pyplot.figtext(0.9, 0.05, '- 同光和尘')
+        pyplot.savefig('%s.png' % self.code, dpi=400, bbox_inches='tight')
         pyplot.show()
 
     def trade_daily(self, data: pd.DataFrame):
@@ -131,12 +134,13 @@ def main():
         sys.exit(1)
 
     code = sys.argv[1]              # e.g.  code = 'SH113504'
+    name = xueqiu.get_name(code)
     df = xueqiu.get_data(code)
     if len(sys.argv) > 2:
         start_date = sys.argv[2]    # start_date = '2021-07-01'
         df = df[df['date'] >= start_date]
 
-    grid = Grid(code, 130, 170, 10, 50)
+    grid = Grid(code, name, 130, 170, 10, 50)
     grid.trade_daily(df)
 
 

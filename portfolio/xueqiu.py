@@ -14,31 +14,38 @@ plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
 
 
-def get_cookies(stock_code: str) -> RequestsCookieJar:
-    # https://xueqiu.com/S/%s
-    # 需要先请求页面获取cookie
-    url_str = "https://xueqiu.com/S/%s" % stock_code
+def get_cookies(code: str) -> RequestsCookieJar:
+    url = "https://xueqiu.com/S/%s" % code
     headers = {
         'User-Agent': 'PostmanRuntime/7.29.2'
     }
-    resp = request("GET", url_str, headers=headers)
+    resp = request("GET", url, headers=headers)
     resp.raise_for_status()
     return resp.cookies
 
 
-def get_data(stock_code: str, period: str = 'day') -> pd.DataFrame:
-    begin = int(time.time() * 1000)
-    time_type = "before"
-    count = 2000000000
-    url_string = "https://stock.xueqiu.com/v5/stock/chart/kline.json?" \
-                 "symbol=%s&begin=%d&period=%s&type=%s&count=%d&indicator=%s" %\
-                 (stock_code, begin, period, time_type, -count,
-                  "kline,pe,pb,ps,pcf,market_capital,agt,ggt,balance")
-    # print(url_string)
+def get_name(code: str) -> str:
+    url = 'https://stock.xueqiu.com/v5/stock/quote.json?symbol=%s' % code
     headers = {
         'User-Agent': 'PostmanRuntime/7.29.2'
     }
-    resp = request("GET", url_string, headers=headers, cookies=get_cookies(stock_code))
+    resp = request("GET", url, headers=headers, cookies=get_cookies(code))
+    resp.raise_for_status()
+    return resp.json()['data']['quote']['name']
+
+
+def get_data(code: str, period: str = 'day') -> pd.DataFrame:
+    begin = int(time.time() * 1000)
+    time_type = "before"
+    count = 2000000000
+    url = "https://stock.xueqiu.com/v5/stock/chart/kline.json?" \
+          "symbol=%s&begin=%d&period=%s&type=%s&count=%d&indicator=%s" % \
+          (code, begin, period, time_type, -count, "kline,pe,pb,ps,pcf,market_capital,agt,ggt,balance")
+    # print(url)
+    headers = {
+        'User-Agent': 'PostmanRuntime/7.29.2'
+    }
+    resp = request("GET", url, headers=headers, cookies=get_cookies(code))
     resp.raise_for_status()
     resp.encoding = 'utf-8'
     data = json.loads(resp.text)
@@ -67,10 +74,11 @@ def draw(df: pd.DataFrame, name: str, start_date: str = ''):
 
 
 def main():
-    # df = get_data('SZ128040', 'day')
-    # draw(df, 'SZ128040', '2022-01-01')
-    df = get_data("KWEB")
-    draw(df, 'KWEB', '2022-01-01')
+    code = 'SZ128040'
+    # code = 'KWEB'
+    print(get_name(code))
+    df = get_data(code)
+    draw(df, code, '2022-01-01')
 
 
 if __name__ == "__main__":
