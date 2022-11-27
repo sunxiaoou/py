@@ -8,14 +8,14 @@ import xueqiu
 
 
 class Grid:
-    def __init__(self, code: str, name: str, low: float, high: float, interval: float, unit: int):
+    def __init__(self, code: str, name: str, low: float, high: float, change: float, quantity: int):
         self.code = code
         self.name = name
-        self.interval = interval
-        self.unit = unit
+        self.change = change
+        self.quantity = quantity
         self.high = high
         self.low = low
-        self.number = (high - low) // interval
+        self.number = (high - low) // change
         self.index = 0
         self.benchmark = high
         self.cost = 0
@@ -28,20 +28,19 @@ class Grid:
 
     def trade_open(self, day: str, price: float):
         count = 0
-        while price <= self.benchmark - self.interval and self.index + count < self.number:
-            self.benchmark -= self.interval
+        while price <= self.benchmark - self.change and self.index + count < self.number:
+            self.benchmark -= self.change
             count += 1
         if count:
             self.index += count
             self.benchmark = price
-            quantity = self.unit * count
-            self.cost += price * quantity
-            self.value = price * self.unit * self.index
-            # tran = Transaction(day, self.code, 1, price, quantity)
+            volume = self.quantity * count
+            self.cost += price * volume
+            self.value = price * self.quantity * self.index
             dic = {'date': day,
                    'opt': 1,
                    'price': price,
-                   'quantity': quantity,
+                   'volume': volume,
                    'index': self.index,
                    'value': self.value,
                    'cost': self.cost,
@@ -49,20 +48,19 @@ class Grid:
             self.trans.append(dic.copy())
             return
         # count = 0
-        while price >= self.benchmark + self.interval and self.index - count > 0:
-            self.benchmark += self.interval
+        while price >= self.benchmark + self.change and self.index - count > 0:
+            self.benchmark += self.change
             count += 1
         if count:
             self.index -= count
             self.benchmark = price
-            quantity = self.unit * count
-            self.cost -= price * quantity
-            self.value = price * self.unit * self.index
-            # tran = Transaction(day, self.code, -1, price, quantity)
+            volume = self.quantity * count
+            self.cost -= price * volume
+            self.value = price * self.quantity * self.index
             dic = {'date': day,
                    'opt': -1,
                    'price': price,
-                   'quantity': quantity,
+                   'volume': volume,
                    'index': self.index,
                    'value': self.value,
                    'cost': self.cost,
@@ -70,7 +68,7 @@ class Grid:
             self.trans.append(dic.copy())
             return
         if self.index:
-            self.value = price * self.unit * self.index
+            self.value = price * self.quantity * self.index
 
     def draw(self, data: pd.DataFrame, trans: pd.DataFrame):
         data = data[['date', 'open']]
@@ -87,7 +85,7 @@ class Grid:
         sell.index.name = None
 
         pyplot.figure(figsize=(10, 6))
-        pyplot.title('可转债网格回测 %s(%s) (%s ~ %s)' %
+        pyplot.title('网格策略回测 %s(%s) (%s ~ %s)' %
                      (self.name, self.code, data.index[0], data.index[-1]))
         pyplot.ylabel('开盘价(元)')
         pyplot.grid()
@@ -101,17 +99,17 @@ class Grid:
         pyplot.figtext(0.9, 0.80, ' 格数 %d格' % (self.number + 1))
         pyplot.figtext(0.9, 0.75, ' 最高 %d元' % self.high)
         pyplot.figtext(0.9, 0.70, ' 最低 %d元' % self.low)
-        pyplot.figtext(0.9, 0.65, ' 间隔 %d元' % self.interval)
-        pyplot.figtext(0.9, 0.60, ' 单位 %d张' % self.unit)
+        pyplot.figtext(0.9, 0.65, ' 涨跌幅 %d元' % self.change)
+        pyplot.figtext(0.9, 0.60, ' 数量 %d股' % self.quantity)
         pyplot.figtext(0.9, 0.55, ' Trade')
         pyplot.figtext(0.9, 0.50, ' 开盘买(绿)')
         pyplot.figtext(0.9, 0.45, ' 开盘卖(红)')
         pyplot.figtext(0.9, 0.40, ' Result')
-        pyplot.figtext(0.9, 0.35, ' 当前网格 %d' % self.index)
+        pyplot.figtext(0.9, 0.35, ' 剩余网格 %d' % self.index)
         pyplot.figtext(0.9, 0.30, ' 基准 %.2f' % self.benchmark)
         pyplot.figtext(0.9, 0.25, ' 市值 %.2f' % self.value)
         pyplot.figtext(0.9, 0.20, ' 成本 %.2f' % self.cost)
-        pyplot.figtext(0.9, 0.15, ' 收益 %.2f' % (self.value - self.cost))
+        pyplot.figtext(0.9, 0.15, ' 盈亏 %.2f' % (self.value - self.cost))
         pyplot.figtext(0.9, 0.05, '- 同光和尘')
         pyplot.savefig('%s.png' % self.code, dpi=400, bbox_inches='tight')
         pyplot.show()
@@ -129,18 +127,18 @@ class Grid:
 
 
 def main():
-    if len(sys.argv) < 2:
-        print('Usage: {} stock_code [start_date(%Y-%m-%d)]'.format(sys.argv[0]))
+    if len(sys.argv) < 6:
+        print('Usage: {} code low high change quantity [start_date(%Y-%m-%d)]'.format(sys.argv[0]))
         sys.exit(1)
 
     code = sys.argv[1]              # e.g.  code = 'SH113504'
     name = xueqiu.get_name(code)
     df = xueqiu.get_data(code)
-    if len(sys.argv) > 2:
-        start_date = sys.argv[2]    # start_date = '2021-07-01'
+    if len(sys.argv) > 6:
+        start_date = sys.argv[6]    # start_date = '2021-07-01'
         df = df[df['date'] >= start_date]
 
-    grid = Grid(code, name, 130, 170, 10, 50)
+    grid = Grid(code, name, float(sys.argv[2]), float(sys.argv[3]), int(sys.argv[4]), int(sys.argv[5]))
     grid.trade_daily(df)
 
 
