@@ -26,46 +26,35 @@ class Grid:
         return 'index(%d), benchmark(%.2f), value(%.2f), cost(%.2f), profit(%.2f)' %\
                (self.index, self.benchmark, self.value, self.cost, self.value - self.cost)
 
+    def trade(self, day: str, price: float, opt: int, count: int):
+        self.index += count * opt
+        self.benchmark = price
+        volume = self.quantity * count
+        self.cost += price * volume * opt
+        self.value = price * self.quantity * self.index
+        dic = {'date': day,
+               'opt': opt,
+               'price': price,
+               'volume': volume,
+               'index': self.index,
+               'value': self.value,
+               'cost': self.cost,
+               'profit': self.value - self.cost}
+        self.trans.append(dic.copy())
+
     def trade_open(self, day: str, price: float):
         count = 0
         while price <= self.benchmark - self.change and self.index + count < self.number:
             self.benchmark -= self.change
             count += 1
         if count:
-            self.index += count
-            self.benchmark = price
-            volume = self.quantity * count
-            self.cost += price * volume
-            self.value = price * self.quantity * self.index
-            dic = {'date': day,
-                   'opt': 1,
-                   'price': price,
-                   'volume': volume,
-                   'index': self.index,
-                   'value': self.value,
-                   'cost': self.cost,
-                   'profit': self.value - self.cost}
-            self.trans.append(dic.copy())
+            self.trade(day, price, 1, count)
             return
-        # count = 0
         while price >= self.benchmark + self.change and self.index - count > 0:
             self.benchmark += self.change
             count += 1
         if count:
-            self.index -= count
-            self.benchmark = price
-            volume = self.quantity * count
-            self.cost -= price * volume
-            self.value = price * self.quantity * self.index
-            dic = {'date': day,
-                   'opt': -1,
-                   'price': price,
-                   'volume': volume,
-                   'index': self.index,
-                   'value': self.value,
-                   'cost': self.cost,
-                   'profit': self.value - self.cost}
-            self.trans.append(dic.copy())
+            self.trade(day, price, -1, count)
             return
         if self.index:
             self.value = price * self.quantity * self.index
@@ -111,7 +100,7 @@ class Grid:
         pyplot.figtext(0.9, 0.20, ' 成本 %.2f' % self.cost)
         pyplot.figtext(0.9, 0.15, ' 盈亏 %.2f' % (self.value - self.cost))
         pyplot.figtext(0.9, 0.05, '- 同光和尘')
-        pyplot.savefig('%s.png' % self.code, dpi=400, bbox_inches='tight')
+        pyplot.savefig('%s_%s.png' % (self.code, self.name), dpi=400, bbox_inches='tight')
         pyplot.show()
 
     def trade_daily(self, data: pd.DataFrame):
