@@ -15,7 +15,7 @@ class Grid:
         self.quantity = quantity
         self.high = high
         self.low = low
-        self.number = (high - low) // change
+        self.number = (high - low) // change if self.change > 0.1 else 4
         self.index = 0
         self.benchmark = high
         self.cost = 0
@@ -44,18 +44,24 @@ class Grid:
 
     def trade_open(self, day: str, price: float):
         count = 0
-        while price <= self.benchmark - self.change and self.index + count < self.number:
-            self.benchmark -= self.change
+        change = self.change if self.change > 0.1 else self.benchmark * self.change
+
+        while price <= self.benchmark - change and self.index + count < self.number:
+            self.benchmark -= change
+            change = self.change if self.change > 0.1 else self.benchmark * self.change
             count += 1
         if count:
             self.trade(day, price, 1, count)
             return
-        while price >= self.benchmark + self.change and self.index - count > 0:
-            self.benchmark += self.change
+
+        while price >= self.benchmark + change and self.index - count > 0:
+            self.benchmark += change
+            change = self.change if self.change > 0.1 else self.benchmark * self.change
             count += 1
         if count:
             self.trade(day, price, -1, count)
             return
+
         if self.index:
             self.value = price * self.quantity * self.index
 
@@ -85,11 +91,14 @@ class Grid:
         pyplot.plot(sell.index, sell['price'], 'or')
 
         pyplot.figtext(0.9, 0.85, ' Grid')
-        pyplot.figtext(0.9, 0.80, ' 格数 %d格' % (self.number + 1))
-        pyplot.figtext(0.9, 0.75, ' 最高 %d元' % self.high)
-        pyplot.figtext(0.9, 0.70, ' 最低 %d元' % self.low)
-        pyplot.figtext(0.9, 0.65, ' 涨跌幅 %d元' % self.change)
-        pyplot.figtext(0.9, 0.60, ' 数量 %d股' % self.quantity)
+        pyplot.figtext(0.9, 0.80, ' 格数 %d' % (self.number + 1))
+        pyplot.figtext(0.9, 0.75, ' 最高 %.2f' % self.high)
+        pyplot.figtext(0.9, 0.70, ' 最低 %.2f' % self.low)
+        if self.change > 0.1:
+            pyplot.figtext(0.9, 0.65, ' 涨跌幅 %.2f' % self.change * 100)
+        else:
+            pyplot.figtext(0.9, 0.65, ' 涨跌幅 %.2f' % (self.change * 100) + '%')
+        pyplot.figtext(0.9, 0.60, ' 数量 %d' % self.quantity)
         pyplot.figtext(0.9, 0.55, ' Trade')
         pyplot.figtext(0.9, 0.50, ' 开盘买(绿)')
         pyplot.figtext(0.9, 0.45, ' 开盘卖(红)')
@@ -127,7 +136,7 @@ def main():
         start_date = sys.argv[6]    # start_date = '2021-07-01'
         df = df[df['date'] >= start_date]
 
-    grid = Grid(code, name, float(sys.argv[2]), float(sys.argv[3]), int(sys.argv[4]), int(sys.argv[5]))
+    grid = Grid(code, name, float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]), int(sys.argv[5]))
     grid.trade_daily(df)
 
 
