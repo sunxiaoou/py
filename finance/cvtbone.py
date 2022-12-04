@@ -57,6 +57,7 @@ def get_bones(xlsx: str) -> (pd.DataFrame, pd.DataFrame):
     n130 = frame[titles.pop()][cols]      # .head(int(sys.argv[2]))
     n130.index = np.arange(1, len(n130) + 1)
     n130['代码'] = n130['代码'].apply(lambda x: str(x))
+    n130['n130排名'] = n130.index
     n130['强赎天计数'] = n130['代码'].apply(lambda x: dic2[x] if x in dic2 else None)
 
     df = pd.concat([frame[i][cols] for i in titles]).drop_duplicates()
@@ -116,7 +117,7 @@ def get_xq_list() -> pd.DataFrame:
     with open('auth/xq_cookie.txt', 'r') as f:
         cookie = f.read()[: -1]  # delete last '\n'
 
-    lis = get_a_list(cookie, 8) + get_a_list(cookie, 11)
+    lis = get_a_list(cookie, 8) + get_a_list(cookie, 11) + get_a_list(cookie, 12)
     df = pd.DataFrame(lis, columns=['代码', '名称']).drop_duplicates()
     # print(df)
     return df
@@ -154,7 +155,7 @@ def main():
 
     xlsx = sys.argv[1]
     new130, bones = get_bones(xlsx)
-    b2 = bones
+    n2, b2 = new130, bones
 
     if len(sys.argv) > 2:
         rank130 = int(sys.argv[2])
@@ -189,7 +190,10 @@ def main():
     to_sell = pd.concat([inner[['代码', '名称']], mine]).drop_duplicates(keep=False)
     inner = pd.merge(new130[['代码', '名称']], to_sell, on=['代码', '名称'])
     to_sell = pd.concat([to_sell, inner]).drop_duplicates(keep=False)
-    to_sell = pd.merge(to_sell, b2, on=['代码', '名称'], how='left')
+    to_sell_1 = pd.merge(to_sell, b2, on=['代码', '名称'], how='left')
+    to_sell_2 = pd.merge(to_sell, n2, on=['代码', '名称'], how='left')
+    to_sell = to_sell_1.combine_first(to_sell_2)
+    to_sell = to_sell[['代码', '名称', '价格', '涨幅', '无阈值排名', '170排名', '150排名', '130排名', 'n130排名', '强赎天计数']]
     print('持有的未上榜转债({})'.format(len(to_sell)))
     if len(to_sell):
         print(to_sell)
