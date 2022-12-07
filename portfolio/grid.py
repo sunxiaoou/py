@@ -117,19 +117,33 @@ class Grid:
             # print(row['date'], row['open'])
             self.trade_open(row['date'], row['open'])
 
-        trans = pd.DataFrame(self.trans)
-        print(trans)
-        print('%s - %s' % (data.iloc[0]['date'], data.iloc[-1]['date']))
-        print(self)
-        self.draw(data, trans)
+        if len(sys.argv) < 8:
+            print('%s(%s) %s_%s %d %d %.2f %.2f %.2f %.2f' %
+                  (self.code, self.name, data.iloc[0]['date'], data.iloc[-1]['date'], len(self.trans),
+                   self.index * self.quantity, self.benchmark, self.value, self.cost, self.value - self.cost))
+        else:
+            trans = pd.DataFrame(self.trans)
+            print(trans)
+            print('%s~%s' % (data.iloc[0]['date'], data.iloc[-1]['date']), self)
+            self.draw(data, trans)
 
 
 def main():
     if len(sys.argv) < 6:
-        print('Usage: {} code low high change quantity [start_date(%Y-%m-%d)]'.format(sys.argv[0]))
+        print('Usage: {} code low high change quantity [start_date(%Y-%m-%d)] [1]'.format(sys.argv[0]))
         sys.exit(1)
 
     code = sys.argv[1]              # e.g.  code = 'SH113504'
+    if len(code) == 8 and code[: 2] in ['sh', 'sz', 'SH', 'SZ'] and code[2:].isnumeric():
+        code = code.upper()
+    elif len(code) == 6 and code.isnumeric():
+        if code.startswith('11'):
+            code = 'SH' + code
+        elif code.startswith('12'):
+            code = 'SZ' + code
+    else:
+        assert False
+
     name = xueqiu.get_name(code)
     df = xueqiu.get_data(code)
     if len(sys.argv) > 6:
