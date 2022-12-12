@@ -85,7 +85,7 @@ def hangseng_bank(datafile: str) -> pd.DataFrame:
     while lines[i] != '交易记录':
         i += 1
     i += 1
-    while re.match(r'\d{6}.*', lines[i]):
+    while i < len(lines) and re.match(r'\d{6}.*', lines[i]):
         if len(lines[i]) == 6:
             code = lines[i]
             i += 1

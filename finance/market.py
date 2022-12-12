@@ -43,7 +43,7 @@ def get_list(category: int, pid: int) -> list:
     }
     url = URL_LIST + urlencode(params)
     response = requests.request("GET", url, headers=HEADERS)
-    assert response.status_code == 200
+    response.raise_for_status()
     stocks = json.loads(response.text)['data']['stocks']
     return [x['symbol'] for x in stocks]
 
@@ -58,7 +58,7 @@ def get_stocks(codes: list) -> list:
     url = URL_STOCK + urlencode(params)
     # print(url)
     response = requests.get(url, headers=HEADERS)
-    assert response.status_code == 200
+    response.raise_for_status()
     result = []
     items = response.json()['data']['items']
     for i in items:
@@ -82,7 +82,7 @@ def get_cvtbones(codes: list) -> list:
     url = URL_STOCK + urlencode(params)
     # print(url)
     response = requests.get(url, headers=HEADERS)
-    assert response.status_code == 200
+    response.raise_for_status()
     result = []
     items = response.json()['data']['items']
     for i in items:
