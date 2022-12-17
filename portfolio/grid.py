@@ -95,7 +95,7 @@ class Grid:
         pyplot.figtext(0.9, 0.75, ' 最高 %.2f' % self.high)
         pyplot.figtext(0.9, 0.70, ' 最低 %.2f' % self.low)
         if self.change > 0.1:
-            pyplot.figtext(0.9, 0.65, ' 涨跌幅 %.2f' % self.change * 100)
+            pyplot.figtext(0.9, 0.65, ' 涨跌幅 %.2f' % self.change)
         else:
             pyplot.figtext(0.9, 0.65, ' 涨跌幅 %.2f' % (self.change * 100) + '%')
         pyplot.figtext(0.9, 0.60, ' 数量 %d' % self.quantity)
