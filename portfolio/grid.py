@@ -28,7 +28,10 @@ class Grid:
 
     def trade(self, day: str, price: float, opt: int, count: int):
         self.index += count * opt
-        self.benchmark = price
+        if self.change > 0.1:
+            assert self.benchmark == self.high - self.change * self.index
+        else:
+            self.benchmark = price
         volume = self.quantity * count
         self.cost += price * volume * opt
         self.value = price * self.quantity * self.index
