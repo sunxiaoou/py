@@ -6,6 +6,7 @@ from pprint import pprint
 
 import openpyxl
 import pandas as pd
+import pyperclip
 import requests
 from bs4 import BeautifulSoup
 from forex_python.converter import CurrencyRates
@@ -597,18 +598,22 @@ def main():
         sys.exit(1)
 
     path = sys.argv[1]
-    if os.path.isfile(path) or path.endswith('.csv'):
+    if path.endswith('.txt'):
+        if not os.path.isfile(path):
+            with open(path, 'w') as fp:
+                fp.write(pyperclip.paste())
         print(run(path))
-        sys.exit(0)
-
-    assert(os.path.isdir(path))
-    df = run_all([os.path.join(path, file) for file in os.listdir(path)])
-
-    if len(sys.argv) == 2:
-        print(df)
-        sys.exit(0)
-
-    to_execl(sys.argv[2], path, df)
+    elif path.endswith('.csv'):
+        print(run(path))
+    elif os.path.isdir(path):
+        path = path.rstrip('/')
+        df = run_all([os.path.join(path, file) for file in os.listdir(path)])
+        if len(sys.argv) == 2:
+            print(df)
+        else:
+            to_execl(sys.argv[2], path, df)
+    else:
+        assert False
 
 
 if __name__ == "__main__":
