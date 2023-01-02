@@ -1,7 +1,7 @@
 #! /usr/bin/python3
 import json
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, MetaData, Table
 from sqlalchemy.orm import sessionmaker
 import pandas as pd
 # import pymysql
@@ -17,9 +17,15 @@ class MySql:
     # def close(self):
     #     self.db.close()
 
-    def last_row(self, table: str, column: str) -> tuple:
+    def last_row(self, table: str, column: str) -> dict:
+        metadata = MetaData(self.db)
+        tab = Table(table, metadata, autoload=True)
+        columns = [c.name for c in tab.columns]
+        # print(columns)
         query = 'SELECT * FROM %s ORDER BY %s DESC LIMIT 1' % (table, column)
-        return self.db.execute(query).fetchone()
+        values = self.db.execute(query).fetchone()
+        # print(values)
+        return dict(zip(columns, values))
 
     def insert(self, table: str, row: dict):
         session = sessionmaker(bind=self.db)()
@@ -122,7 +128,7 @@ def valuation() -> pd.DataFrame:
 
     df = pd.merge(val, sh, on='timestamp')
     df['timestamp'] //= 1000
-
+    df['timestamp'] -= 3600 * 8
     return df
 
 
@@ -136,10 +142,10 @@ def main():
     # db.from_frame('valuation', df)
     # # df = db.to_frame('instant_price')
     # df = db.to_frame('instant_price', ['code', 'price'])
-    # db = MySql(database='portfolio')
-    # print(db.last_row('valuation', 'timestamp'))
-    db = MySql(database='manga')
-    db.insert('export', {'export_id': 27, 'name': '费沙自治领'})
+    db = MySql(database='portfolio')
+    print(db.last_row('valuation', 'timestamp'))
+    # db = MySql(database='manga')
+    # db.insert('export', {'export_id': 27, 'name': '费沙自治领'})
 
 
 if __name__ == "__main__":

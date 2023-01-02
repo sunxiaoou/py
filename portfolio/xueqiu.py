@@ -56,7 +56,7 @@ class Xueqiu:
         df = self.get_data(code)
         df = df[['date', 'close']]
         dic = df.iloc[-1].to_dict()
-        dic[name] = dic.pop('close')
+        dic[name] = round(dic.pop('close'), 2)
         return dic
 
 

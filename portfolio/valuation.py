@@ -4,14 +4,17 @@ import re
 import sys
 from datetime import datetime
 from pprint import pprint
+import time
 
 import pandas as pd
 import pyperclip
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
 
-from thresholds import COLUMNS, THRESHOLDS
+from thresholds import COLUMNS, THRESHOLDS, name_code
+from mysql import MySql
 from mongo import Mongo
+from xueqiu import Xueqiu
 
 INDEXES = [
     # PB
@@ -286,10 +289,9 @@ def to_highest2(row: pd.Series) -> float:
     return round((highest - val) / val, 4)
 
 
-def calculate_threshold(lst: list) -> pd.DataFrame:
+def get_valuation_with_threshold(dic: dict) -> pd.DataFrame:
     columns = ['代码', '名称', '参考指标', '最低', '低估', '高估', '最高']
     df = pd.DataFrame(THRESHOLDS, columns=columns)
-    dic = lst[0]
     date = dic['_id']
 
     df2 = pd.DataFrame(dic.items(), columns=['名称', date])
@@ -344,23 +346,63 @@ def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
     wb.save(xlsx)
 
 
-def main():
-    if len(sys.argv) < 2:
-        print('Usage: {} txt'.format(sys.argv[0]))
-        print('       {} txt xlsx'.format(sys.argv[0]))     # update spreadsheet from clipboard or file
-        print('       {} xlsx'.format(sys.argv[0]))         # update db from spreadsheet
-        sys.exit(1)
+def get_valuation_with_star(dic: dict, star: float) -> dict:
+    date = dic['_id']
+    dic = {v: dic[k] for k, v in name_code().items()}
 
+    snowball = Xueqiu()
+    dic2 = snowball.last_close('sh000985')
+    assert date == dic2['date'].replace('-', '')
+    dic['timestamp'] = int(time.mktime(time.strptime(date, "%Y%m%d")))
+    dic['sh000985'] = dic2['中证全指']
+    dic['star'] = star
+    return dic
+
+
+def to_mysql(dic: dict):
+    db = MySql(database='portfolio')
+    last = db.last_row('valuation', 'timestamp')
+    # print(last)
+    # for key in dic:
+    #     if dic[key] != last[key]:
+    #         print(f"Different value for {key}: {dic[key]} != {last[key]}")
+    if dic['timestamp'] > last['timestamp']:
+        db.insert('valuation', dic)
+        print('inserted row(%s) after row(%s)' %
+              (datetime.fromtimestamp(dic['timestamp']).strftime('%y%m%d'),
+               datetime.fromtimestamp(last['timestamp']).strftime('%y%m%d')))
+
+
+def usage():
+    print('Usage: %s star txt' % sys.argv[0])       # update spreadsheet from clipboard or file
+    print('       %s star txt xlsx' % sys.argv[0])  # dump to spreadsheet and database
+    print('       %s xlsx' % sys.argv[0])           # update db from spreadsheet
+    sys.exit(1)
+
+
+def main():
     # save_thresholds(sys.argv[1])
     # save_valuations(sys.argv[1])
 
-    if len(sys.argv) == 3 and sys.argv[2].endswith('.xlsx'):
-        df = calculate_threshold(parse_valuations(sys.argv[1]))
-        print(df)
-        date = list(df.keys())[7]
-        to_excel(sys.argv[2], date, df)
+    if len(sys.argv) > 2:
+        if not sys.argv[2].endswith('.txt'):
+            usage()
+        dic = parse_valuations(sys.argv[2])[0]
+        date = dic['_id']
+        val_df = get_valuation_with_threshold(dic)
+        print(val_df)
+        val_dict = get_valuation_with_star(dic, float(sys.argv[1]))
+        pprint(val_dict)
+        if len(sys.argv) > 3:
+            if not sys.argv[3].endswith('.xlex'):
+                usage()
+            to_excel(sys.argv[2], date, val_df)
+            to_mysql(val_dict)
+        print('%s: 中证全指 %.2f 星级 %.1f' % (date, val_dict['sh000985'], val_dict['star']))
     elif sys.argv[1].endswith('.xlsx'):
         update_valuations(sys.argv[1])
+    else:
+        usage()
 
 
 if __name__ == "__main__":

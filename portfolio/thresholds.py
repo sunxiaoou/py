@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+from pprint import pprint
 
 COLUMNS = ['代码', '_id', '参考指标', '最低', '低估', '高估', '最高']
 THRESHOLDS = [
@@ -64,8 +65,15 @@ THRESHOLDS = [
     ('930697', '家用电器', '市盈率', 12, 17, 20, 28)]
 
 
+def name_code() -> dict:
+    dic = {t[1]: 'C' + t[0] if t[0].isnumeric() else t[0] for t in THRESHOLDS}
+    # print(len(dic))
+    # dic = dict(sorted(dic.items(), key=lambda x: x[1]))
+    return dic
+
+
 def main():
-    pass
+    pprint(name_code())
 
 
 if __name__ == "__main__":
