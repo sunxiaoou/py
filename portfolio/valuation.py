@@ -399,7 +399,7 @@ def main():
             to_excel(sys.argv[2], date, val_df)
             to_mysql(val_dict)
         print('%s: 中证全指 %.2f 星级 %.1f' % (date, val_dict['sh000985'], val_dict['star']))
-    elif sys.argv[1].endswith('.xlsx'):
+    elif len(sys.argv) > 1 and sys.argv[1].endswith('.xlsx'):
         update_valuations(sys.argv[1])
     else:
         usage()
