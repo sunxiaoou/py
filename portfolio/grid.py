@@ -4,7 +4,7 @@ import sys
 import pandas as pd
 from matplotlib import pyplot, ticker
 
-import xueqiu
+from xueqiu import Xueqiu
 
 
 class Grid:
@@ -144,11 +144,12 @@ def main():
             code = 'SH' + code
         elif code.startswith('12'):
             code = 'SZ' + code
-    else:
-        assert False
+    # else:
+    #     assert False
 
-    name = xueqiu.get_name(code)
-    df = xueqiu.get_data(code)
+    snowball = Xueqiu()
+    name = snowball.get_name(code)
+    df = snowball.get_data(code)
     if len(sys.argv) > 6:
         start_date = sys.argv[6]    # start_date = '2021-07-01'
         df = df[df['date'] >= start_date]
