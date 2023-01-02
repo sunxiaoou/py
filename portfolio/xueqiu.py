@@ -23,7 +23,7 @@ class Xueqiu:
         self.cookies = resp.cookies
 
     def get_name(self, code: str) -> str:
-        url = 'https://stock.xueqiu.com/v5/stock/quote.json?symbol=%s' % code
+        url = 'https://stock.xueqiu.com/v5/stock/quote.json?symbol=%s' % code.upper()
         resp = request("GET", url, headers=self.headers, cookies=self.cookies)
         resp.raise_for_status()
         return resp.json()['data']['quote']['name']
@@ -34,7 +34,8 @@ class Xueqiu:
         count = 2000000000
         url = "https://stock.xueqiu.com/v5/stock/chart/kline.json?" \
               "symbol=%s&begin=%d&period=%s&type=%s&count=%d&indicator=%s" % \
-              (code, begin, period, time_type, -count, "kline,pe,pb,ps,pcf,market_capital,agt,ggt,balance")
+              (code.upper(), begin, period, time_type, -count,
+               "kline,pe,pb,ps,pcf,market_capital,agt,ggt,balance")
         # print(url)
         resp = request("GET", url, headers=self.headers, cookies=self.cookies)
         resp.raise_for_status()
@@ -49,6 +50,14 @@ class Xueqiu:
             item[0] = datetime.fromtimestamp(item[0] / 1000).strftime('%Y-%m-%d')
             items.append(item)
         return pd.DataFrame(items, columns=columns)
+
+    def last_close(self, code: str) -> dict:
+        name = self.get_name(code)
+        df = self.get_data(code)
+        df = df[['date', 'close']]
+        dic = df.iloc[-1].to_dict()
+        dic[name] = dic.pop('close')
+        return dic
 
 
 def draw(df: pd.DataFrame, name: str, start_date: str):
@@ -74,10 +83,11 @@ def main():
         sys.exit(1)
 
     snowball = Xueqiu()
-    print(snowball.get_name(code))
-    df = snowball.get_data(code)
-    print(df)
+    # print(snowball.get_name(code))
+    # df = snowball.get_data(code)
+    # print(df)
     # draw(df, code, start)
+    print(snowball.last_close(code))
 
 
 if __name__ == "__main__":
