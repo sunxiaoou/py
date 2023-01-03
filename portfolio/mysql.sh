@@ -99,7 +99,8 @@ table=$4
 
 # createTable
 # insertTable
-# selectTable
-echo $db.$table.sql
-mysqldump -u $user -p$pass -h localhost $db $table > /tmp/$db.$table.sql
-mysql -u $user -p$pass -h centos1 $db < /tmp/$db.$table.sql
+selectTable
+
+# echo $db.$table.sql
+# mysqldump -u $user -p$pass -h localhost $db $table > /tmp/$db.$table.sql
+# mysql -u $user -p$pass -h centos1 $db < /tmp/$db.$table.sql

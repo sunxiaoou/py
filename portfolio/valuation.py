@@ -394,11 +394,12 @@ def main():
         val_dict = get_valuation_with_star(dic, float(sys.argv[1]))
         pprint(val_dict)
         if len(sys.argv) > 3:
-            if not sys.argv[3].endswith('.xlex'):
+            if not sys.argv[3].endswith('.xlsx'):
                 usage()
-            to_excel(sys.argv[2], date, val_df)
+            to_excel(sys.argv[3], date, val_df)
             to_mysql(val_dict)
-        print('%s: 中证全指 %.2f 星级 %.1f' % (date, val_dict['sh000985'], val_dict['star']))
+        date = datetime.strptime(date, '%Y%m%d').strftime('%Y-%m-%d')
+        print('\n%s 中证全指 %.2f 星级 %.1f' % (date, val_dict['sh000985'], val_dict['star']))
     elif len(sys.argv) > 1 and sys.argv[1].endswith('.xlsx'):
         update_valuations(sys.argv[1])
     else:
