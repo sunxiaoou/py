@@ -88,8 +88,8 @@ EOF
 
 if [ $# -lt 4 ]
 then
-    echo "$0 user pass db table"
-    exit 1
+  echo "$0 user pass db table"
+  exit 1
 fi
 
 user=$1
@@ -99,4 +99,7 @@ table=$4
 
 # createTable
 # insertTable
-selectTable
+# selectTable
+echo $db.$table.sql
+mysqldump -u $user -p$pass -h localhost $db $table > /tmp/$db.$table.sql
+mysql -u $user -p$pass -h centos1 $db < /tmp/$db.$table.sql
