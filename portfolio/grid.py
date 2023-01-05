@@ -8,9 +8,24 @@ from xueqiu import Xueqiu
 
 
 class Grid:
-    def __init__(self, code: str, name: str, low: float, high: float, change: float, quantity: int):
+    def __init__(self, code: str, low: float, high: float, change: float, quantity: int, start_date: str = ''):
+        if len(code) == 8 and code[: 2] in ['sh', 'sz', 'SH', 'SZ'] and code[2:].isnumeric():
+            code = code.upper()
+        elif len(code) == 6 and code.isnumeric():
+            if code.startswith('11'):
+                code = 'SH' + code
+            elif code.startswith('12'):
+                code = 'SZ' + code
+
+        snowball = Xueqiu()
+        name = snowball.get_name(code)
+        data = snowball.get_data(code)
+        if start_date:
+            data = data[data['date'] >= start_date]
+
         self.code = code
         self.name = name
+        self.data = data
         self.change = change
         self.quantity = quantity
         self.high = high
@@ -115,47 +130,33 @@ class Grid:
         pyplot.savefig('%s_%s.png' % (self.code, self.name), dpi=400, bbox_inches='tight')
         pyplot.show()
 
-    def trade_daily(self, data: pd.DataFrame):
-        for _, row in data.iterrows():
+    def trade_daily(self):
+        for _, row in self.data.iterrows():
             # print(row['date'], row['open'])
             self.trade_open(row['date'], row['open'])
 
-        if len(sys.argv) < 8:
+        if sys.argv[6] == '0':
             print('%s(%s) %s_%s %d %d %.2f %.2f %.2f %.2f' %
-                  (self.code, self.name, data.iloc[0]['date'], data.iloc[-1]['date'], len(self.trans),
+                  (self.code, self.name, self.data.iloc[0]['date'], self.data.iloc[-1]['date'], len(self.trans),
                    self.index * self.quantity, self.benchmark, self.value, self.cost, self.value - self.cost))
         else:
             trans = pd.DataFrame(self.trans)
             print(trans)
-            print('%s~%s' % (data.iloc[0]['date'], data.iloc[-1]['date']), self)
-            self.draw(data, trans)
+            print('%s~%s' % (self.data.iloc[0]['date'], self.data.iloc[-1]['date']), self)
+            self.draw(self.data, trans)
 
 
 def main():
-    if len(sys.argv) < 6:
-        print('Usage: {} code low high change quantity [start_date(%Y-%m-%d)] [1]'.format(sys.argv[0]))
+    if len(sys.argv) > 7:
+        grid = Grid(sys.argv[1], float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]), int(sys.argv[5]),
+                    sys.argv[7])
+        grid.trade_daily()
+    elif len(sys.argv) == 7:
+        grid = Grid(sys.argv[1], float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]), int(sys.argv[5]))
+        grid.trade_daily()
+    else:
+        print('Usage: {} code low high change quantity 0|1 [start_date(%Y-%m-%d)]'.format(sys.argv[0]))
         sys.exit(1)
-
-    code = sys.argv[1]              # e.g.  code = 'SH113504'
-    if len(code) == 8 and code[: 2] in ['sh', 'sz', 'SH', 'SZ'] and code[2:].isnumeric():
-        code = code.upper()
-    elif len(code) == 6 and code.isnumeric():
-        if code.startswith('11'):
-            code = 'SH' + code
-        elif code.startswith('12'):
-            code = 'SZ' + code
-    # else:
-    #     assert False
-
-    snowball = Xueqiu()
-    name = snowball.get_name(code)
-    df = snowball.get_data(code)
-    if len(sys.argv) > 6:
-        start_date = sys.argv[6]    # start_date = '2021-07-01'
-        df = df[df['date'] >= start_date]
-
-    grid = Grid(code, name, float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]), int(sys.argv[5]))
-    grid.trade_daily(df)
 
 
 if __name__ == "__main__":
