@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 import sys
 
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot, ticker
 
@@ -8,7 +9,30 @@ from xueqiu import Xueqiu
 
 
 class Grid:
-    def __init__(self, code: str, low: float, high: float, change: float, quantity: int, start_date: str = ''):
+    def __init__(self, low: float, high: float, is_percent: bool, change: float, quantity: int):
+        self.low = low
+        self.high = high
+        self.is_percent = is_percent
+        self.change = change
+        self.quantity = quantity
+        if not self.is_percent:
+            self.number = (high - low) // change
+            self.array = [low + self.change * i for i in np.arange(self.number + 1)]
+        else:
+            self.number = (high - low) // ((high + low) / 2 * change)
+
+    def get_count(self, price: float) -> int:
+        print(self.array)
+        count = 0
+        benchmark = self.high
+        while price <= benchmark - self.change and count < self.number:
+            benchmark -= self.change
+            count += 1
+        return count
+
+
+class LoopBack:
+    def __init__(self, code: str, grid: Grid, start_date: str = ''):
         if len(code) == 8 and code[: 2] in ['sh', 'sz', 'SH', 'SZ'] and code[2:].isnumeric():
             code = code.upper()
         elif len(code) == 6 and code.isnumeric():
@@ -26,13 +50,9 @@ class Grid:
         self.code = code
         self.name = name
         self.data = data
-        self.change = change
-        self.quantity = quantity
-        self.high = high
-        self.low = low
-        self.number = (high - low) // change if self.change > 0.1 else 4
+        self.grid = grid
         self.index = 0
-        self.benchmark = high
+        self.benchmark = grid.high
         self.cost = 0
         self.value = 0
         self.trans = []
@@ -43,13 +63,13 @@ class Grid:
 
     def trade(self, day: str, price: float, opt: int, count: int):
         self.index += count * opt
-        if self.change > 0.1:
-            assert self.benchmark == self.high - self.change * self.index
+        if not self.grid.is_percent:
+            assert self.benchmark == self.grid.high - self.grid.change * self.index
         else:
             self.benchmark = price
-        volume = self.quantity * count
+        volume = self.grid.quantity * count
         self.cost += price * volume * opt
-        self.value = price * self.quantity * self.index
+        self.value = price * self.grid.quantity * self.index
         dic = {'date': day,
                'opt': opt,
                'price': price,
@@ -62,11 +82,11 @@ class Grid:
 
     def trade_open(self, day: str, price: float):
         count = 0
-        change = self.change if self.change > 0.1 else self.benchmark * self.change
+        change = self.grid.change if not self.grid.is_percent else self.benchmark * self.grid.change
 
-        while price <= self.benchmark - change and self.index + count < self.number:
+        while price <= self.benchmark - change and self.index + count < self.grid.number:
             self.benchmark -= change
-            change = self.change if self.change > 0.1 else self.benchmark * self.change
+            change = self.grid.change if self.grid.change > 0.1 else self.benchmark * self.grid.change
             count += 1
         if count:
             self.trade(day, price, 1, count)
@@ -74,14 +94,14 @@ class Grid:
 
         while price >= self.benchmark + change and self.index - count > 0:
             self.benchmark += change
-            change = self.change if self.change > 0.1 else self.benchmark * self.change
+            change = self.grid.change if not self.grid.is_percent else self.benchmark * self.grid.change
             count += 1
         if count:
             self.trade(day, price, -1, count)
             return
 
         if self.index:
-            self.value = price * self.quantity * self.index
+            self.value = price * self.grid.quantity * self.index
 
     def draw(self, data: pd.DataFrame, trans: pd.DataFrame):
         data = data[['date', 'open']]
@@ -109,14 +129,14 @@ class Grid:
         pyplot.plot(sell.index, sell['price'], 'or')
 
         pyplot.figtext(0.9, 0.85, ' Grid')
-        pyplot.figtext(0.9, 0.80, ' 格数 %d' % (self.number + 1))
-        pyplot.figtext(0.9, 0.75, ' 最高 %.2f' % self.high)
-        pyplot.figtext(0.9, 0.70, ' 最低 %.2f' % self.low)
-        if self.change > 0.1:
-            pyplot.figtext(0.9, 0.65, ' 涨跌幅 %.2f' % self.change)
+        pyplot.figtext(0.9, 0.80, ' 格数 %d' % (self.grid.number + 1))
+        pyplot.figtext(0.9, 0.75, ' 最高 %.2f' % self.grid.high)
+        pyplot.figtext(0.9, 0.70, ' 最低 %.2f' % self.grid.low)
+        if self.grid.change > 0.1:
+            pyplot.figtext(0.9, 0.65, ' 涨跌幅 %.2f' % self.grid.change)
         else:
-            pyplot.figtext(0.9, 0.65, ' 涨跌幅 %.2f' % (self.change * 100) + '%')
-        pyplot.figtext(0.9, 0.60, ' 数量 %d' % self.quantity)
+            pyplot.figtext(0.9, 0.65, ' 涨跌幅 %.2f' % (self.grid.change * 100) + '%')
+        pyplot.figtext(0.9, 0.60, ' 数量 %d' % self.grid.quantity)
         pyplot.figtext(0.9, 0.55, ' Trade')
         pyplot.figtext(0.9, 0.50, ' 开盘买(绿)')
         pyplot.figtext(0.9, 0.45, ' 开盘卖(红)')
@@ -138,7 +158,7 @@ class Grid:
         if len(sys.argv) < 7 or sys.argv[6] == '0':
             return '%s(%s) %s_%s %d %d %.2f %.2f %.2f %.2f' \
                    % (self.code, self.name, self.data.iloc[0]['date'], self.data.iloc[-1]['date'], len(self.trans),
-                      self.index * self.quantity, self.benchmark, self.value, self.cost, self.value - self.cost)
+                      self.index * self.grid.quantity, self.benchmark, self.value, self.cost, self.value - self.cost)
         else:
             trans = pd.DataFrame(self.trans)
             print(trans)
@@ -163,8 +183,9 @@ def get_codes(file: str) -> list:
 def trade_codes(codes: list, low: float, high: float, change: float, quantity: int, start_date: str)\
         -> pd.DataFrame:
     result = []
+    grid = Grid(low, high, change < 0.1, change, quantity)
     for code in codes:
-        s = Grid(code, low, high, change, quantity, start_date).trade_daily()
+        s = LoopBack(code, grid, start_date).trade_daily()
         s = s.split()
         result.append([s[0], float(s[-1])])
     return pd.DataFrame(result, columns=['name', '%d_%.1f' % (low, change)])
@@ -186,16 +207,24 @@ def batch(file: str, start_date: str) -> pd.DataFrame:
 
 def main():
     if len(sys.argv) > 7:
-        grid = Grid(sys.argv[1], float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]), int(sys.argv[5]),
-                    sys.argv[7])
-        print(grid.trade_daily())
+        grid = Grid(float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]) < 0.1, float(sys.argv[4]),
+                    int(sys.argv[5]))
+        loopback = LoopBack(sys.argv[1], grid, sys.argv[7])
+        print(loopback.trade_daily())
     elif len(sys.argv) == 7:
-        grid = Grid(sys.argv[1], float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]), int(sys.argv[5]))
-        print(grid.trade_daily())
+        grid = Grid(float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]) < 0.1, float(sys.argv[4]),
+                    int(sys.argv[5]))
+        loopback = LoopBack(sys.argv[1], grid)
+        print(loopback.trade_daily())
+    elif len(sys.argv) == 5:
+        grid = Grid(float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]) < 0.1, float(sys.argv[4]), 10)
+        print(grid.get_count(float(sys.argv[1])))
     elif len(sys.argv) == 3:
         print(batch(sys.argv[1], sys.argv[2]))
     else:
         print('Usage: {} code low high change quantity 0|1 [start_date(%Y-%m-%d)]'.format(sys.argv[0]))
+        print('       {} price low high change'.format(sys.argv[0]))
+        print('       {} cvt_file start_date(%Y-%m-%d)'.format(sys.argv[0]))
         sys.exit(1)
 
 
