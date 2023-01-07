@@ -1,7 +1,7 @@
 #! /usr/bin/python3
+import re
 import sys
 
-import numpy as np
 import pandas as pd
 from matplotlib import pyplot, ticker
 
@@ -9,30 +9,39 @@ from xueqiu import Xueqiu
 
 
 class Grid:
-    def __init__(self, low: float, high: float, is_percent: bool, change: float, quantity: int):
+    def __init__(self, low: float, high: float, number: int, is_percent: bool):
         self.low = low
         self.high = high
         self.is_percent = is_percent
-        self.change = change
-        self.quantity = quantity
+        self.number = number
         if not self.is_percent:
-            self.number = (high - low) // change
-            self.array = [low + self.change * i for i in np.arange(self.number + 1)]
+            self.change = round((high - low) / number, 2)
+            self.array = [high - self.change * i for i in range(self.number + 1)]
         else:
-            self.number = (high - low) // ((high + low) / 2 * change)
+            self.change = round((high / low) ** (1 / number) - 1, 4)
+            self.array = [round(high / (1 + self.change) ** i, 2) for i in range(self.number + 1)]
+            pass
 
-    def get_count(self, price: float) -> int:
-        print(self.array)
+    def __str__(self):
+        return str(self.change) + ' ' + str(self.array)
+
+    def get_count(self, price: float, benchmark: float) -> tuple:
+        index = self.array.index(benchmark)
         count = 0
-        benchmark = self.high
-        while price <= benchmark - self.change and count < self.number:
-            benchmark -= self.change
+        while index < self.number and self.array[index + 1] >= price:
+            index += 1
             count += 1
-        return count
+        if count:
+            return index, self.array[index], count
+
+        while index > 0 and self.array[index - 1] <= price:
+            index -= 1
+            count -= 1
+        return index, self.array[index], count
 
 
 class LoopBack:
-    def __init__(self, code: str, grid: Grid, start_date: str = ''):
+    def __init__(self, grid: Grid, code: str, quantity: int, start_date: str = ''):
         if len(code) == 8 and code[: 2] in ['sh', 'sz', 'SH', 'SZ'] and code[2:].isnumeric():
             code = code.upper()
         elif len(code) == 6 and code.isnumeric():
@@ -47,12 +56,13 @@ class LoopBack:
         if start_date:
             data = data[data['date'] >= start_date]
 
+        self.grid = grid
         self.code = code
         self.name = name
         self.data = data
-        self.grid = grid
-        self.index = 0
+        self.quantity = quantity
         self.benchmark = grid.high
+        self.index = 0
         self.cost = 0
         self.value = 0
         self.trans = []
@@ -61,47 +71,21 @@ class LoopBack:
         return 'index(%d), benchmark(%.2f), value(%.2f), cost(%.2f), profit(%.2f)' %\
                (self.index, self.benchmark, self.value, self.cost, self.value - self.cost)
 
-    def trade(self, day: str, price: float, opt: int, count: int):
-        self.index += count * opt
-        if not self.grid.is_percent:
-            assert self.benchmark == self.grid.high - self.grid.change * self.index
-        else:
-            self.benchmark = price
-        volume = self.grid.quantity * count
-        self.cost += price * volume * opt
-        self.value = price * self.grid.quantity * self.index
-        dic = {'date': day,
-               'opt': opt,
-               'price': price,
-               'volume': volume,
-               'index': self.index,
-               'value': self.value,
-               'cost': self.cost,
-               'profit': self.value - self.cost}
-        self.trans.append(dic.copy())
-
     def trade_open(self, day: str, price: float):
-        count = 0
-        change = self.grid.change if not self.grid.is_percent else self.benchmark * self.grid.change
-
-        while price <= self.benchmark - change and self.index + count < self.grid.number:
-            self.benchmark -= change
-            change = self.grid.change if self.grid.change > 0.1 else self.benchmark * self.grid.change
-            count += 1
+        self.index, self.benchmark, count = self.grid.get_count(price, self.benchmark)
+        self.value = price * self.quantity * self.index
         if count:
-            self.trade(day, price, 1, count)
-            return
-
-        while price >= self.benchmark + change and self.index - count > 0:
-            self.benchmark += change
-            change = self.grid.change if not self.grid.is_percent else self.benchmark * self.grid.change
-            count += 1
-        if count:
-            self.trade(day, price, -1, count)
-            return
-
-        if self.index:
-            self.value = price * self.grid.quantity * self.index
+            volume = self.quantity * count
+            self.cost += price * volume
+            dic = {'date': day,
+                   'opt': 1 if count > 0 else -1,
+                   'price': price,
+                   'volume': volume,
+                   'index': self.index,
+                   'value': self.value,
+                   'cost': self.cost,
+                   'profit': round(self.value - self.cost, 2)}
+            self.trans.append(dic.copy())
 
     def draw(self, data: pd.DataFrame, trans: pd.DataFrame):
         data = data[['date', 'open']]
@@ -136,7 +120,7 @@ class LoopBack:
             pyplot.figtext(0.9, 0.65, ' 涨跌幅 %.2f' % self.grid.change)
         else:
             pyplot.figtext(0.9, 0.65, ' 涨跌幅 %.2f' % (self.grid.change * 100) + '%')
-        pyplot.figtext(0.9, 0.60, ' 数量 %d' % self.grid.quantity)
+        pyplot.figtext(0.9, 0.60, ' 数量 %d' % self.quantity)
         pyplot.figtext(0.9, 0.55, ' Trade')
         pyplot.figtext(0.9, 0.50, ' 开盘买(绿)')
         pyplot.figtext(0.9, 0.45, ' 开盘卖(红)')
@@ -155,10 +139,10 @@ class LoopBack:
             # print(row['date'], row['open'])
             self.trade_open(row['date'], row['open'])
 
-        if len(sys.argv) < 7 or sys.argv[6] == '0':
+        if 'pic' not in sys.argv:
             return '%s(%s) %s_%s %d %d %.2f %.2f %.2f %.2f' \
                    % (self.code, self.name, self.data.iloc[0]['date'], self.data.iloc[-1]['date'], len(self.trans),
-                      self.index * self.grid.quantity, self.benchmark, self.value, self.cost, self.value - self.cost)
+                      self.index * self.quantity, self.benchmark, self.value, self.cost, self.value - self.cost)
         else:
             trans = pd.DataFrame(self.trans)
             print(trans)
@@ -180,22 +164,20 @@ def get_codes(file: str) -> list:
     return sorted(list(set(l1 + l5 + l6)))
 
 
-def trade_codes(codes: list, low: float, high: float, change: float, quantity: int, start_date: str)\
-        -> pd.DataFrame:
+def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.DataFrame:
     result = []
-    grid = Grid(low, high, change < 0.1, change, quantity)
     for code in codes:
-        s = LoopBack(code, grid, start_date).trade_daily()
+        s = LoopBack(grid, code, quantity, start_date).trade_daily()
         s = s.split()
         result.append([s[0], float(s[-1])])
-    return pd.DataFrame(result, columns=['name', '%d_%.1f' % (low, change)])
+    return pd.DataFrame(result, columns=['name', '%d_%.1f' % (grid.low, grid.change)])
 
 
-def batch(file: str, start_date: str) -> pd.DataFrame:
+def batch(file: str, quantity: int, start_date: str) -> pd.DataFrame:
     codes = get_codes(file)
-    df1 = trade_codes(codes, 115, 135, 5, 80, start_date)
-    df2 = trade_codes(codes, 120, 150, 7.5, 80, start_date)
-    df3 = trade_codes(codes, 125, 165, 10, 80, start_date)
+    df1 = trade_codes(Grid(115, 135, 4, False), codes, quantity, start_date)
+    df2 = trade_codes(Grid(120, 150, 4, False), codes, quantity, start_date)
+    df3 = trade_codes(Grid(125, 165, 4, False), codes, quantity, start_date)
     df = pd.merge(df1, df2, on='name')
     df = pd.merge(df, df3, on='name')
     df['max_col_name'] = df.iloc[:, -3:].idxmax(axis=1)
@@ -205,27 +187,34 @@ def batch(file: str, start_date: str) -> pd.DataFrame:
     return df
 
 
+def usage():
+    print('Usage: {} grid low,high,number,is_percent price benchmark'.format(sys.argv[0]))
+    print('       {} loopback low,high,number,is_percent code quantity [pic start_date(%Y-%m-%d)]'.
+          format(sys.argv[0]))
+    print('       {} batch cvt_file quantity start_date(%Y-%m-%d)'.format(sys.argv[0]))
+
+
 def main():
-    if len(sys.argv) > 7:
-        grid = Grid(float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]) < 0.1, float(sys.argv[4]),
-                    int(sys.argv[5]))
-        loopback = LoopBack(sys.argv[1], grid, sys.argv[7])
-        print(loopback.trade_daily())
-    elif len(sys.argv) == 7:
-        grid = Grid(float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]) < 0.1, float(sys.argv[4]),
-                    int(sys.argv[5]))
-        loopback = LoopBack(sys.argv[1], grid)
-        print(loopback.trade_daily())
-    elif len(sys.argv) == 5:
-        grid = Grid(float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]) < 0.1, float(sys.argv[4]), 10)
-        print(grid.get_count(float(sys.argv[1])))
-    elif len(sys.argv) == 3:
-        print(batch(sys.argv[1], sys.argv[2]))
+    if len(sys.argv) > 4:
+        if sys.argv[1] == 'grid':
+            a = sys.argv[2].split(',')
+            grid = Grid(float(a[0]), float(a[1]), int(a[2]), True if int(a[3]) else False)
+            print(grid)
+            print(grid.get_count(float(sys.argv[3]), float(sys.argv[4])))
+        elif sys.argv[1] == 'loopback':
+            a = sys.argv[2].split(',')
+            grid = Grid(float(a[0]), float(a[1]), int(a[2]), True if int(a[3]) else False)
+            if re.match(r'\d\d\d\d-\d\d-\d\d', sys.argv[-1]):
+                loopback = LoopBack(grid, sys.argv[3], int(sys.argv[4]), sys.argv[-1])
+            else:
+                loopback = LoopBack(grid, sys.argv[3], int(sys.argv[4]))
+            print(loopback.trade_daily())
+        elif sys.argv[1] == 'batch':
+            print(batch(sys.argv[2], int(sys.argv[3]), sys.argv[4]))
+        else:
+            usage()
     else:
-        print('Usage: {} code low high change quantity 0|1 [start_date(%Y-%m-%d)]'.format(sys.argv[0]))
-        print('       {} price low high change'.format(sys.argv[0]))
-        print('       {} cvt_file start_date(%Y-%m-%d)'.format(sys.argv[0]))
-        sys.exit(1)
+        usage()
 
 
 if __name__ == "__main__":
