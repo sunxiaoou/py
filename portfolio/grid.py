@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 import re
 import sys
+import time
 
 import pandas as pd
 from matplotlib import pyplot, ticker
@@ -170,16 +171,19 @@ def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.D
         s = LoopBack(grid, code, quantity, start_date).trade_daily()
         s = s.split()
         result.append([s[0], float(s[-1])])
-    return pd.DataFrame(result, columns=['name', '%d_%.1f' % (grid.low, grid.change)])
+        time.sleep(0.1)
+    change = round(grid.change * 100, 2) if grid.is_percent else grid.change
+    return pd.DataFrame(result, columns=['code_name', '%d_%.2f' % (grid.low, change)])
 
 
 def batch(file: str, quantity: int, start_date: str) -> pd.DataFrame:
     codes = get_codes(file)
-    df1 = trade_codes(Grid(115, 135, 4, False), codes, quantity, start_date)
-    df2 = trade_codes(Grid(120, 150, 4, False), codes, quantity, start_date)
-    df3 = trade_codes(Grid(125, 165, 4, False), codes, quantity, start_date)
-    df = pd.merge(df1, df2, on='name')
-    df = pd.merge(df, df3, on='name')
+    df1 = trade_codes(Grid(115, 135, 4, True), codes, quantity, start_date)
+    df2 = trade_codes(Grid(120, 150, 4, True), codes, quantity, start_date)
+    df3 = trade_codes(Grid(125, 165, 4, True), codes, quantity, start_date)
+    key = df1.columns[0]
+    df = pd.merge(df1, df2, on=key)
+    df = pd.merge(df, df3, on=key)
     df['max_col_name'] = df.iloc[:, -3:].idxmax(axis=1)
     df['max_value'] = df[df.columns[-4: -1]].max(axis=1)
     df = df.sort_values(by='max_value', ascending=False)
