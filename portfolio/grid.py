@@ -3,6 +3,7 @@ import re
 import sys
 import time
 
+import numpy as np
 import pandas as pd
 from matplotlib import pyplot, ticker
 
@@ -17,14 +18,15 @@ class Grid:
         self.number = number
         if not self.is_percent:
             self.change = round((high - low) / number, 2)
+            self.change2 = - self.change
             self.array = [high - self.change * i for i in range(self.number + 1)]
         else:
             self.change = round((high / low) ** (1 / number) - 1, 4)
+            self.change2 = round((low / high) ** (1 / number) - 1, 4)
             self.array = [round(high / (1 + self.change) ** i, 2) for i in range(self.number + 1)]
-            pass
 
     def __str__(self):
-        return str(self.change) + ' ' + str(self.array)
+        return str([self.change, self.change2]) + ' ' + str(self.array)
 
     def get_count(self, price: float, benchmark: float) -> tuple:
         index = self.array.index(benchmark)
@@ -39,6 +41,18 @@ class Grid:
             index -= 1
             count -= 1
         return index, self.array[index], count
+
+    def show_grid(self, quantity: int) -> pd.DataFrame:
+        df = pd.DataFrame([self.array, [0] + [quantity] * self.number],
+                          index=['price', 'quantity']).T
+        df['quantity'] = df['quantity'].apply(lambda x: int(x))
+        df['q_sum'] = df['quantity'].cumsum()
+        df['amount'] = df['price'] * df['quantity']
+        df['cost'] = df['amount'].cumsum()
+        df['value'] = df['price'] * df['q_sum']
+        df['loss'] = df['value'] - df['cost']
+        df['loss(%)'] = round(df['loss'] / df['cost'] * 100, 2)
+        return df
 
 
 class LoopBack:
@@ -178,9 +192,9 @@ def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.D
 
 def batch(file: str, quantity: int, start_date: str) -> pd.DataFrame:
     codes = get_codes(file)
-    df1 = trade_codes(Grid(115, 135, 4, True), codes, quantity, start_date)
-    df2 = trade_codes(Grid(120, 150, 4, True), codes, quantity, start_date)
-    df3 = trade_codes(Grid(125, 165, 4, True), codes, quantity, start_date)
+    df1 = trade_codes(Grid(115, 135, 4, False), codes, quantity, start_date)
+    df2 = trade_codes(Grid(120, 150, 4, False), codes, quantity, start_date)
+    df3 = trade_codes(Grid(125, 165, 4, False), codes, quantity, start_date)
     key = df1.columns[0]
     df = pd.merge(df1, df2, on=key)
     df = pd.merge(df, df3, on=key)
@@ -192,7 +206,8 @@ def batch(file: str, quantity: int, start_date: str) -> pd.DataFrame:
 
 
 def usage():
-    print('Usage: {} grid low,high,number,is_percent price benchmark'.format(sys.argv[0]))
+    print('Usage: {} grid low,high,number,is_percent price benchmark [quantity]'.
+          format(sys.argv[0]))
     print('       {} loopback low,high,number,is_percent code quantity [pic start_date(%Y-%m-%d)]'.
           format(sys.argv[0]))
     print('       {} batch cvt_file quantity start_date(%Y-%m-%d)'.format(sys.argv[0]))
@@ -204,6 +219,8 @@ def main():
             a = sys.argv[2].split(',')
             grid = Grid(float(a[0]), float(a[1]), int(a[2]), True if int(a[3]) else False)
             print(grid)
+            if len(sys.argv) > 5:
+                print(grid.show_grid(int(sys.argv[5])))
             print(grid.get_count(float(sys.argv[3]), float(sys.argv[4])))
         elif sys.argv[1] == 'loopback':
             a = sys.argv[2].split(',')
