@@ -352,7 +352,7 @@ def get_valuation_with_star(dic: dict, star: float) -> dict:
 
     snowball = Xueqiu()
     dic2 = snowball.last_close('sh000985')
-    assert date == dic2['date'].replace('-', '')
+    assert date == dic2['date'].strftime('%Y%m%d')
     dic['timestamp'] = int(time.mktime(time.strptime(date, "%Y%m%d")))
     dic['sh000985'] = dic2['中证全指']
     dic['star'] = star
