@@ -1,5 +1,6 @@
 #! /usr/bin/python3
 import json
+import os
 import sys
 import time
 from datetime import datetime
@@ -94,7 +95,7 @@ class Xueqiu:
         db.from_frame('cvtbone_daily', df)
 
 
-def draw(df: pd.DataFrame, name: str, start_date: str):
+def draw(df: pd.DataFrame, name: str, start_date: str = ''):
     df = df[['date', 'close']]
     df = df.rename({'close': name}, axis=1)
     if start_date:
@@ -106,25 +107,60 @@ def draw(df: pd.DataFrame, name: str, start_date: str):
     plt.show()
 
 
+def get_codes(file: str) -> list:
+    with open(file) as f:
+        text = f.read()
+    blocks = text.split('代码')
+    lines1 = blocks[1].split('\n')
+    l1 = [row.split()[1] for row in lines1[1: -2]]
+    lines5 = blocks[5].split('\n')
+    l5 = [row.split()[1] for row in lines5[1: -2]]
+    lines6 = blocks[6].split('\n')
+    l6 = [row.split()[1] for row in lines6[1: -2]]
+    lst = list(set(l1 + l5 + l6))
+    lst = ['SH' + i if i.startswith('11') else 'SZ' + i for i in lst]
+    return sorted(lst)
+
+
+def batch(file: str):
+    codes = get_codes(file)
+    print(codes)
+    snowball = Xueqiu()
+    db = MySql(database='portfolio')
+    for code in codes:
+        snowball.full_to_mysql(code, db)
+        time.sleep(0.2)
+
+
 def main():
     if len(sys.argv) > 2:
         start, code = sys.argv[2], sys.argv[1]
+        snowball = Xueqiu()
+        print(snowball.get_name(code))
+        df = snowball.get_full(code)
+        print(df)
+        draw(df, code, start)
     elif len(sys.argv) == 2:
-        start, code = '', sys.argv[1]
+        if not os.path.isfile(sys.argv[1]):
+            code = sys.argv[1]
+            snowball = Xueqiu()
+            print(snowball.get_name(code))
+            df = snowball.get_full(code)
+            print(df)
+        else:
+            batch(sys.argv[1])
     else:
-        print('Usage: %s code [yyyy-mm-dd]' % sys.argv[0])   # 'SZ128040' '2021-07-01'
+        print('Usage: %s code|file [yyyy-mm-dd]' % sys.argv[0])   # 'SZ128040' '2021-07-01'
+        print('       %s file' % sys.argv[0])   # '/tmp/cvt.txt'
         sys.exit(1)
 
-    snowball = Xueqiu()
-    # print(snowball.get_name(code))
-    # df = snowball.get_full(code)
-    # print(df)
-    # draw(df, code, start)
+    # snowball = Xueqiu()
     # print(snowball.last_close(code))
     # print(snowball.get_data('SZ127007', begin_date='2022-01-01', end_date='2023-01-06'))
     # print(snowball.get_data('SZ127007', end_date='2023-01-06'))
-    db = MySql(database='portfolio')
-    snowball.full_to_mysql('SZ127007', db)
+    # snowball = Xueqiu()
+    # db = MySql(database='portfolio')
+    # snowball.full_to_mysql('SZ127007', db)
 
 
 if __name__ == "__main__":
