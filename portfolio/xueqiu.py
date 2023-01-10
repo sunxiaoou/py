@@ -64,23 +64,23 @@ class Xueqiu:
         resp.encoding = 'utf-8'
         data = json.loads(resp.text)
         columns = data['data']['column'][: 8]
-        columns[0] = 'timestamp'
+        columns[0] = 'date'
         items = []
         for i in data['data']['item']:
             item = i[: 8]
-            item[0] //= 1000
+            item[0] = datetime.fromtimestamp(item[0] // 1000)
             items.append(item)
         return pd.DataFrame(items, columns=columns)
 
-    def get_full(self, code: str, period: str = 'day') -> pd.DataFrame:
-        df = self.get_data(code, period)
-        df = df.rename({'timestamp': 'date'}, axis=1)
-        df['date'] = df['date'].apply(lambda x: datetime.fromtimestamp(x).strftime('%Y-%m-%d'))
-        return df
+    # def get_full(self, code: str, period: str = 'day') -> pd.DataFrame:
+    #     df = self.get_data(code, period)
+    #     df = df.rename({'timestamp': 'date'}, axis=1)
+    #     df['date'] = df['date'].apply(lambda x: datetime.fromtimestamp(x).strftime('%Y-%m-%d'))
+    #     return df
 
     def last_close(self, code: str) -> dict:
         name = self.get_name(code)
-        df = self.get_full(code)
+        df = self.get_data(code)
         df = df[['date', 'close']]
         dic = df.iloc[-1].to_dict()
         dic[name] = round(dic.pop('close'), 2)
@@ -90,7 +90,7 @@ class Xueqiu:
         df = self.get_data(code)
         df['code'] = code
         df['name'] = self.get_name(code)
-        df = df[['timestamp', 'code', 'name', 'open', 'high', 'low', 'close', 'volume']]
+        df = df[['date', 'code', 'name', 'open', 'high', 'low', 'close', 'volume']]
         print(df)
         db.from_frame('cvtbone_daily', df)
 
@@ -144,9 +144,11 @@ def main():
         if not os.path.isfile(sys.argv[1]):
             code = sys.argv[1]
             snowball = Xueqiu()
-            print(snowball.get_name(code))
-            df = snowball.get_full(code)
-            print(df)
+            # print(snowball.get_name(code))
+            # df = snowball.get_full(code)
+            # print(df)
+            db = MySql(database='portfolio')
+            snowball.full_to_mysql(code, db)
         else:
             batch(sys.argv[1])
     else:
@@ -158,9 +160,6 @@ def main():
     # print(snowball.last_close(code))
     # print(snowball.get_data('SZ127007', begin_date='2022-01-01', end_date='2023-01-06'))
     # print(snowball.get_data('SZ127007', end_date='2023-01-06'))
-    # snowball = Xueqiu()
-    # db = MySql(database='portfolio')
-    # snowball.full_to_mysql('SZ127007', db)
 
 
 if __name__ == "__main__":

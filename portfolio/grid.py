@@ -2,11 +2,13 @@
 import re
 import sys
 import time
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot, ticker
 
+from mysql import MySql
 from xueqiu import Xueqiu
 
 
@@ -65,11 +67,16 @@ class LoopBack:
             elif code.startswith('12'):
                 code = 'SZ' + code
 
-        snowball = Xueqiu()
-        name = snowball.get_name(code)
-        data = snowball.get_full(code)
+        # snowball = Xueqiu()
+        # name = snowball.get_name(code)
+        # data = snowball.get_full(code)
+
+        db = MySql(database='portfolio')
+        where = 'code = "%s"' % code
         if start_date:
-            data = data[data['date'] >= start_date]
+            where += ' AND date >= "%s"' % start_date
+        data = db.to_frame('cvtbone_daily', ['date', 'name', 'open'], where)
+        name = data['name'].iloc[0]
 
         self.grid = grid
         self.code = code
@@ -192,9 +199,9 @@ def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.D
 
 def batch(file: str, quantity: int, start_date: str) -> pd.DataFrame:
     codes = get_codes(file)
-    df1 = trade_codes(Grid(115, 135, 4, False), codes, quantity, start_date)
-    df2 = trade_codes(Grid(120, 150, 4, False), codes, quantity, start_date)
-    df3 = trade_codes(Grid(125, 165, 4, False), codes, quantity, start_date)
+    df1 = trade_codes(Grid(115, 135, 4, True), codes, quantity, start_date)
+    df2 = trade_codes(Grid(120, 150, 4, True), codes, quantity, start_date)
+    df3 = trade_codes(Grid(125, 165, 4, True), codes, quantity, start_date)
     key = df1.columns[0]
     df = pd.merge(df1, df2, on=key)
     df = pd.merge(df, df3, on=key)

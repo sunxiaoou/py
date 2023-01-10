@@ -30,14 +30,17 @@ class MySql:
     def insert(self, table: str, row: dict):
         session = sessionmaker(bind=self.db)()
         val_str = ', '.join(["'{}'".format(x) if isinstance(x, str) else str(x) for x in row.values()])
-        stmt = 'INSERT INTO %s (%s) VALUES (%s)' % (table, ', '.join(row.keys()), val_str)
-        print(stmt)
-        session.execute(stmt)
+        sql = 'INSERT INTO %s (%s) VALUES (%s)' % (table, ', '.join(row.keys()), val_str)
+        print(sql)
+        session.execute(sql)
         session.commit()
 
-    def to_frame(self, table: str, fields: list = None) -> pd.DataFrame:
+    def to_frame(self, table: str, fields: list = None, where: str = '') -> pd.DataFrame:
         s = ','.join(fields) if fields else '*'
-        return pd.read_sql('select %s from %s' % (s, table), self.db)
+        sql = 'select %s from %s' % (s, table)
+        if where:
+            sql += ' where ' + where
+        return pd.read_sql(sql, self.db)
 
     def from_frame(self, table: str, frame: pd.DataFrame):
         frame.to_sql(table, con=self.db, if_exists='append', index=False)
@@ -138,13 +141,14 @@ def main():
     # df = valuation()
     # print(df.columns)
     # print(df)
-    # db = MySql(database='portfolio')
+    db = MySql(database='portfolio')
     # db.from_frame('valuation', df)
     # # df = db.to_frame('instant_price')
-    # df = db.to_frame('instant_price', ['code', 'price'])
-    db = MySql(database='portfolio')
-    print(db.last_row('valuation', 'timestamp'))
-    # db = MySql(database='manga')
+    print(db.to_frame('cvtbone_daily', ['timestamp', 'name', 'open'],
+                      'code = "%s"' % 'SZ127007'))
+    # db = MySql(database='portfolio')
+    # print(db.last_row('valuation', 'timestamp'))
+    # # db = MySql(database='manga')
     # db.insert('export', {'export_id': 27, 'name': '费沙自治领'})
 
 
