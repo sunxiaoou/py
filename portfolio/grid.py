@@ -67,7 +67,7 @@ class LoopBack:
 
         snowball = Xueqiu()
         name = snowball.get_name(code)
-        data = snowball.get_data(code)
+        data = snowball.get_full(code)
         if start_date:
             data = data[data['date'] >= start_date]
 

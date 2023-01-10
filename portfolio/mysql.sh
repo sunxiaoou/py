@@ -68,6 +68,24 @@ mysql -u $user -p$pass $db << EOF
 EOF
 }
 
+createTable2() {
+mysql -u $user -p$pass $db << EOF
+  DROP TABLE IF EXISTS $table;
+  SET character_set_client = utf8mb4;
+  CREATE TABLE $table (
+    timestamp INT NOT NULL,
+    code VARCHAR(10) NOT NULL,
+    name VARCHAR(20) NOT NULL,
+    open FLOAT NOT NULL,
+    high FLOAT NOT NULL,
+    low FLOAT NOT NULL,
+    close FLOAT NOT NULL,
+    volume INT NOT NULL,
+    PRIMARY KEY (timestamp, code)
+  ) engine = innodb default charset = utf8mb4;
+EOF
+}
+
 insertTable() {
 mysql -u $user -p$pass $db << EOF
   INSERT INTO $table (code, name, reference, lowest, low, high, highest, onsite, offsite)
@@ -97,10 +115,11 @@ pass=$2
 db=$3
 table=$4
 
-# createTable
+createTable2
 # insertTable
-selectTable
+# selectTable
 
 # echo $db.$table.sql
 # mysqldump -u $user -p$pass -h localhost $db $table > /tmp/$db.$table.sql
+
 # mysql -u $user -p$pass -h centos1 $db < /tmp/$db.$table.sql
