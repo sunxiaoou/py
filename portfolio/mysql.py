@@ -1,5 +1,6 @@
 #! /usr/bin/python3
 import json
+from pprint import pprint
 
 from sqlalchemy import create_engine, MetaData, Table
 from sqlalchemy.orm import sessionmaker
@@ -17,15 +18,18 @@ class MySql:
     # def close(self):
     #     self.db.close()
 
-    def last_row(self, table: str, column: str) -> dict:
+    def last_row(self, table: str, column: str, where: str = '') -> dict:
         metadata = MetaData(self.db)
         tab = Table(table, metadata, autoload=True)
         columns = [c.name for c in tab.columns]
         # print(columns)
-        query = 'SELECT * FROM %s ORDER BY %s DESC LIMIT 1' % (table, column)
+        if not where:
+            query = 'SELECT * FROM %s ORDER BY %s DESC LIMIT 1' % (table, column)
+        else:
+            query = 'SELECT * FROM %s WHERE %s ORDER BY %s DESC LIMIT 1' %\
+                    (table, where, column)
         values = self.db.execute(query).fetchone()
-        # print(values)
-        return dict(zip(columns, values))
+        return dict(zip(columns, values)) if values else None
 
     def insert(self, table: str, row: dict):
         session = sessionmaker(bind=self.db)()
@@ -142,10 +146,9 @@ def main():
     # print(df.columns)
     # print(df)
     db = MySql(database='portfolio')
-    # db.from_frame('valuation', df)
-    # # df = db.to_frame('instant_price')
-    print(db.to_frame('cvtbone_daily', ['timestamp', 'name', 'open'],
-                      'code = "%s"' % 'SZ127007'))
+    # print(db.to_frame('cvtbone_daily', ['timestamp', 'name', 'open'],
+    #                   'code = "%s"' % 'SZ127007'))
+    pprint(db.last_row('cvtbone_daily', 'date', 'code = "%s"' % 'SZ127007'))
     # db = MySql(database='portfolio')
     # print(db.last_row('valuation', 'timestamp'))
     # # db = MySql(database='manga')

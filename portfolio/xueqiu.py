@@ -72,12 +72,6 @@ class Xueqiu:
             items.append(item)
         return pd.DataFrame(items, columns=columns)
 
-    # def get_full(self, code: str, period: str = 'day') -> pd.DataFrame:
-    #     df = self.get_data(code, period)
-    #     df = df.rename({'timestamp': 'date'}, axis=1)
-    #     df['date'] = df['date'].apply(lambda x: datetime.fromtimestamp(x).strftime('%Y-%m-%d'))
-    #     return df
-
     def last_close(self, code: str) -> dict:
         name = self.get_name(code)
         df = self.get_data(code)
@@ -86,20 +80,10 @@ class Xueqiu:
         dic[name] = round(dic.pop('close'), 2)
         return dic
 
-    def full_to_mysql(self, code: str, db: MySql):
-        df = self.get_data(code)
-        df['code'] = code
-        df['name'] = self.get_name(code)
-        df = df[['date', 'code', 'name', 'open', 'high', 'low', 'close', 'volume']]
-        print(df)
-        db.from_frame('cvtbone_daily', df)
 
-
-def draw(df: pd.DataFrame, name: str, start_date: str = ''):
+def draw(df: pd.DataFrame, name: str):
     df = df[['date', 'close']]
     df = df.rename({'close': name}, axis=1)
-    if start_date:
-        df = df[df['date'] >= start_date]
     df = df.dropna().set_index('date')
     print(df)
     df.index.name = None
@@ -122,33 +106,45 @@ def get_codes(file: str) -> list:
     return sorted(lst)
 
 
-def batch(file: str):
+def get_data(code: str, db: MySql, snowball: Xueqiu) -> pd.DataFrame:
+    dic = db.last_row('cvtbone_daily', 'date', 'code = "%s"' % code)
+    if not dic:
+        df = snowball.get_data(code)
+    else:
+        begin_date = (dic['date'] + pd.Timedelta(days=1)).strftime('%Y-%m-%d')
+        df = snowball.get_data(code, begin_date)
+    # print(df)
+    if not df.empty:
+        df['code'] = code
+        df['name'] = dic['name']
+        df = df[['date', 'code', 'name', 'open', 'high', 'low', 'close', 'volume']]
+    return None if df.empty else df
+
+
+def batch(file: str,):
     codes = get_codes(file)
     print(codes)
-    snowball = Xueqiu()
     db = MySql(database='portfolio')
+    snowball = Xueqiu()
     for code in codes:
-        snowball.full_to_mysql(code, db)
+        df = get_data(code, db, snowball)
+        db.from_frame('cvtbone_daily', df)
         time.sleep(0.2)
 
 
 def main():
     if len(sys.argv) > 2:
-        start, code = sys.argv[2], sys.argv[1]
+        begin_date, code = sys.argv[2], sys.argv[1]
         snowball = Xueqiu()
         print(snowball.get_name(code))
-        df = snowball.get_full(code)
+        df = snowball.get_data(code, begin_date)
         print(df)
-        draw(df, code, start)
+        draw(df, code)
     elif len(sys.argv) == 2:
         if not os.path.isfile(sys.argv[1]):
-            code = sys.argv[1]
-            snowball = Xueqiu()
-            # print(snowball.get_name(code))
-            # df = snowball.get_full(code)
-            # print(df)
             db = MySql(database='portfolio')
-            snowball.full_to_mysql(code, db)
+            snowball = Xueqiu()
+            print(get_data(sys.argv[1], db, snowball))
         else:
             batch(sys.argv[1])
     else:
