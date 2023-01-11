@@ -2,14 +2,15 @@
 import re
 import sys
 import time
-from datetime import datetime
 
-import numpy as np
 import pandas as pd
 from matplotlib import pyplot, ticker
 
 from mysql import MySql
 from xueqiu import Xueqiu
+
+# pd.set_option('display.max_rows', 4000)
+pd.set_option('display.max_columns', 10)
 
 
 class Grid:
@@ -198,18 +199,23 @@ def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.D
 
 
 def batch(file: str, quantity: int, start_date: str) -> pd.DataFrame:
+    args_list = [
+        (115, 135, 4, False), (120, 150, 4, False), (125, 165, 4, False),
+        (115, 135, 4, True), (120, 150, 4, True), (125, 165, 4, True)
+    ]
+
     codes = get_codes(file)
-    df1 = trade_codes(Grid(115, 135, 4, True), codes, quantity, start_date)
-    df2 = trade_codes(Grid(120, 150, 4, True), codes, quantity, start_date)
-    df3 = trade_codes(Grid(125, 165, 4, True), codes, quantity, start_date)
-    key = df1.columns[0]
-    df = pd.merge(df1, df2, on=key)
-    df = pd.merge(df, df3, on=key)
-    df['max_col_name'] = df.iloc[:, -3:].idxmax(axis=1)
-    df['max_value'] = df[df.columns[-4: -1]].max(axis=1)
-    df = df.sort_values(by='max_value', ascending=False)
-    df.reset_index(drop=True, inplace=True)
-    return df
+    result = pd.DataFrame()
+    i = 0
+    for i in range(len(args_list)):
+        df = trade_codes(Grid(*args_list[i]), codes, quantity, start_date)
+        result = result.merge(df, on=df.columns[0], how='inner') if i else df
+
+    result['max_col_name'] = result.iloc[:, -i - 1:].idxmax(axis=1)
+    result['max_value'] = result[result.columns[-i - 2: -1]].max(axis=1)
+    result = result.sort_values(by='max_value', ascending=False)
+    result.reset_index(drop=True, inplace=True)
+    return result
 
 
 def usage():
