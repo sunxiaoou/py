@@ -64,6 +64,8 @@ class Xueqiu:
         resp.encoding = 'utf-8'
         data = json.loads(resp.text)
         columns = data['data']['column'][: 8]
+        if len(columns) == 0:
+            return pd.DataFrame()
         columns[0] = 'date'
         items = []
         for i in data['data']['item']:
@@ -110,6 +112,7 @@ def get_data(code: str, db: MySql, snowball: Xueqiu) -> pd.DataFrame:
     dic = db.last_row('cvtbone_daily', 'date', 'code = "%s"' % code)
     if not dic:
         df = snowball.get_data(code)
+        dic['name'] = snowball.get_name(code)
     else:
         begin_date = (dic['date'] + pd.Timedelta(days=1)).strftime('%Y-%m-%d')
         df = snowball.get_data(code, begin_date)
@@ -121,7 +124,7 @@ def get_data(code: str, db: MySql, snowball: Xueqiu) -> pd.DataFrame:
     return df
 
 
-def batch(file: str,):
+def batch(file: str):
     codes = get_codes(file)
     print(codes)
     db = MySql(database='portfolio')

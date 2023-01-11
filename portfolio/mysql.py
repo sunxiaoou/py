@@ -29,7 +29,7 @@ class MySql:
             query = 'SELECT * FROM %s WHERE %s ORDER BY %s DESC LIMIT 1' %\
                     (table, where, column)
         values = self.db.execute(query).fetchone()
-        return dict(zip(columns, values)) if values else None
+        return dict(zip(columns, values)) if values else {}
 
     def insert(self, table: str, row: dict):
         session = sessionmaker(bind=self.db)()
