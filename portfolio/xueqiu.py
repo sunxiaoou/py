@@ -118,7 +118,7 @@ def get_data(code: str, db: MySql, snowball: Xueqiu) -> pd.DataFrame:
         df['code'] = code
         df['name'] = dic['name']
         df = df[['date', 'code', 'name', 'open', 'high', 'low', 'close', 'volume']]
-    return None if df.empty else df
+    return df
 
 
 def batch(file: str,):
@@ -128,7 +128,9 @@ def batch(file: str,):
     snowball = Xueqiu()
     for code in codes:
         df = get_data(code, db, snowball)
-        db.from_frame('cvtbone_daily', df)
+        if not df.empty:
+            print(df)
+            db.from_frame('cvtbone_daily', df)
         time.sleep(0.2)
 
 
