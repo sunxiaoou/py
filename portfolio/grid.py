@@ -244,7 +244,9 @@ def main():
                 loopback = LoopBack(grid, sys.argv[3], int(sys.argv[4]))
             print(loopback.trade_daily())
         elif sys.argv[1] == 'batch':
-            print(batch(sys.argv[2], int(sys.argv[3]), sys.argv[4]))
+            df = batch(sys.argv[2], int(sys.argv[3]), sys.argv[4])
+            with open('grid.html', 'w') as f:
+                f.write(df.to_html(classes='table table-stripped'))
         else:
             usage()
     else:
