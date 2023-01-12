@@ -68,15 +68,17 @@ class LoopBack:
             elif code.startswith('12'):
                 code = 'SZ' + code
 
-        # snowball = Xueqiu()
-        # name = snowball.get_name(code)
-        # data = snowball.get_full(code)
-
         db = MySql(database='portfolio')
         where = 'code = "%s"' % code
         if start_date:
             where += ' AND date >= "%s"' % start_date
         data = db.to_frame('cvtbone_daily', ['date', 'name', 'open'], where)
+        if data.empty:
+            snowball = Xueqiu()
+            data = snowball.get_data(code, start_date)
+            data['code'] = code
+            data['name'] = snowball.get_name(code)
+            data = data[['date', 'name', 'open']]
         name = data['name'].iloc[0]
 
         self.grid = grid
@@ -246,7 +248,7 @@ def main():
         elif sys.argv[1] == 'batch':
             df = batch(sys.argv[2], int(sys.argv[3]), sys.argv[4])
             with open('grid.html', 'w') as f:
-                f.write(df.to_html(classes='table table-stripped'))
+                f.write(df.to_html())
         else:
             usage()
     else:
