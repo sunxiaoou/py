@@ -153,7 +153,7 @@ def main():
         else:
             batch(sys.argv[1])
     else:
-        print('Usage: %s code|file [yyyy-mm-dd]' % sys.argv[0])   # 'SZ128040' '2021-07-01'
+        print('Usage: %s code [yyyy-mm-dd]' % sys.argv[0])   # 'SZ128040' '2021-07-01'
         print('       %s file' % sys.argv[0])   # '/tmp/cvt.txt'
         sys.exit(1)
 

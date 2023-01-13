@@ -29,7 +29,11 @@ class Grid:
             self.array = [round(high / (1 + self.change) ** i, 2) for i in range(self.number + 1)]
 
     def __str__(self):
-        return str([self.change, self.change2]) + ' ' + str(self.array)
+        if self.is_percent:
+            changes = '({}%, {}%)'.format(round(self.change * 100, 2), round(self.change2 * 100, 2))
+        else:
+            changes = '(%d, %d)' % (self.change, self.change2)
+        return str(changes) + ' ' + str(self.array)
 
     def get_count(self, price: float, benchmark: float) -> tuple:
         index = self.array.index(benchmark)
@@ -220,9 +224,21 @@ def batch(file: str, quantity: int, start_date: str) -> pd.DataFrame:
     return result
 
 
+def show_grids():
+    args_list = [
+        (115, 135, 4, False), (120, 150, 4, False), (125, 165, 4, False),
+        (115, 135, 4, True), (120, 150, 4, True), (125, 165, 4, True)
+    ]
+    for args in args_list:
+        grid = Grid(*args)
+        print(grid)
+        # print(grid.show_grid(int(sys.argv[5])))
+
+
 def usage():
     print('Usage: {} grid low,high,number,is_percent price benchmark [quantity]'.
           format(sys.argv[0]))
+    print('       %s grid' % sys.argv[0])
     print('       {} loopback low,high,number,is_percent code quantity [pic start_date(%Y-%m-%d)]'.
           format(sys.argv[0]))
     print('       {} batch cvt_file quantity start_date(%Y-%m-%d)'.format(sys.argv[0]))
@@ -251,6 +267,8 @@ def main():
                 f.write(df.to_html())
         else:
             usage()
+    elif len(sys.argv) == 2 and sys.argv[1] == 'grid':
+        show_grids()
     else:
         usage()
 

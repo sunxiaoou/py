@@ -143,13 +143,14 @@ def main():
     elif sys.argv[1] == 'fund':
         result = get_funds(fund_base, funds)
     elif sys.argv[1] == 'cvtb':
-        result = get_cvtbones(get_list(1, 8) + get_list(1, 11))
+        # result = get_cvtbones(get_list(1, 8) + get_list(1, 11))
+        result = get_cvtbones(get_list(1, 8) + get_list(1, 12))
     elif sys.argv[1] == 'misc':
         result = get_cvtbones(get_list(1, 4))
-    elif sys.argv[1] == 'grid':
-        result = get_cvtbones(get_list(1, 12))
+    # elif sys.argv[1] == 'grid':
+    #     result = get_cvtbones(get_list(1, 12))
     else:
-        print("Usage: {} a!hk|us|fund".format(sys.argv[0]))
+        print("Usage: {} a!cvtb|hk|us|fund".format(sys.argv[0]))
         sys.exit(1)
 
     # print(len(result))
