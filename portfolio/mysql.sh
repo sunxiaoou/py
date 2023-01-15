@@ -86,6 +86,26 @@ mysql -u $user -p$pass $db << EOF
 EOF
 }
 
+createTable3() {
+mysql -u $user -p$pass $db << EOF
+  DROP TABLE IF EXISTS $table;
+  SET character_set_client = utf8mb4;
+  CREATE TABLE $table (
+    date TIMESTAMP NOT NULL,
+    code VARCHAR(10) NOT NULL,
+    name VARCHAR(20) NOT NULL,
+    platform VARCHAR(10),
+    currency VARCHAR(10) NOT NULL,
+    type VARCHAR(10) NOT NULL,
+    risk INT NOT NULL,
+    nav FLOAT,
+    market_value FLOAT NOT NULL,
+    hold_gain FLOAT NOT NULL,
+    PRIMARY KEY (date, code)
+  ) engine = innodb default charset = utf8mb4;
+EOF
+}
+
 insertTable() {
 mysql -u $user -p$pass $db << EOF
   INSERT INTO $table (code, name, reference, lowest, low, high, highest, onsite, offsite)
@@ -115,7 +135,7 @@ pass=$2
 db=$3
 table=$4
 
-createTable2
+createTable3
 # insertTable
 # selectTable
 
