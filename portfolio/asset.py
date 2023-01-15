@@ -2,8 +2,10 @@
 import os
 import re
 import sys
+from datetime import datetime
 from pprint import pprint
 
+import numpy as np
 import openpyxl
 import pandas as pd
 import pyperclip
@@ -14,13 +16,14 @@ from openpyxl import load_workbook
 from openpyxl.chart import PieChart, Reference
 from openpyxl.utils import get_column_letter
 
+from mysql import MySql
 from securities import *
 
-# pd.set_option('display.max_rows', 1000)
+pd.set_option('display.max_rows', 200)
 # pd.set_option('display.max_columns', 10)
 
 
-columns = ['platform', 'currency', 'code', 'name', 'type', 'risk', 'market_value', 'hold_gain']
+COLUMNS = ['platform', 'currency', 'code', 'name', 'type', 'risk', 'market_value', 'hold_gain']
 
 
 def verify(row: pd.Series):
@@ -35,7 +38,7 @@ def verify(row: pd.Series):
 
 
 def zhaoshang_bank(datafile: str) -> pd.DataFrame:
-    bonds = ['招银理财招智睿远平衡二十七期']
+    # bonds = ['招银理财招智睿远平衡二十七期']
 
     with open(datafile) as fp:
         lines = [re.sub(r'[,，]', '', line).rstrip('\n') for line in fp.readlines()]
@@ -52,18 +55,19 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
     i += 2
     try:
         while lines[i]:
-            name = lines[i]
+            code = lines[i][4:] if lines[i].startswith('招银理财') else lines[i]
             i += 1
             while not re.match(r'.*[\d.]+', lines[i]):
                 i += 1
             hold_gain = float(re.sub('[^\d.]+', '', lines[i]))
             market_value = float(lines[i + 1])
-            type, risk = ('债券', 1) if name in bonds else ('货币', 0)
-            result.append(('招商银行', 'cny', 'product', name, type, risk, market_value, hold_gain))
+            # type, risk = ('债券', 1) if name in bonds else ('货币', 0)
+            name, type, risk = SECURITIES[code]
+            result.append(('招商银行', 'cny', code, name, type, risk, market_value, hold_gain))
             i += 4
     except IndexError:
         pass
-    df = pd.DataFrame(result, columns=columns)
+    df = pd.DataFrame(result, columns=COLUMNS)
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
     return df
@@ -88,11 +92,11 @@ def hangseng_bank(datafile: str) -> pd.DataFrame:
     i += 1
     while i < len(lines) and re.match(r'\d{6}.*', lines[i]):
         if len(lines[i]) == 6:
-            code = lines[i]
+            code = 'F' + lines[i]
             i += 1
         else:
-            code = lines[i][: 6]
-        name, type, risk = off_market[code]
+            code = 'F' + lines[i][: 6]
+        name, type, risk = SECURITIES[code]
         i += 1
         if not re.match(r'.*[\d.]+', lines[i]):
             i += 1
@@ -105,7 +109,7 @@ def hangseng_bank(datafile: str) -> pd.DataFrame:
             market_value = float(lines[i])
         result.append(('恒生银行', 'cny', code, name, type, risk, market_value, hold_gain))
         i += 1
-    df = pd.DataFrame(result, columns=columns)
+    df = pd.DataFrame(result, columns=COLUMNS)
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
     sum_hg = round(df['hold_gain'].sum(), 2)
@@ -146,7 +150,7 @@ def yinhe(datafile: str) -> pd.DataFrame:
         elif code[0] == '2':
             type, risk = '货币', 0
         else:
-            name, type, risk = on_market[code]
+            name, type, risk = SECURITIES[code]
 
         hold_gain = float(lines[i])
         i += 1
@@ -170,7 +174,7 @@ def yinhe(datafile: str) -> pd.DataFrame:
         assert market_value == round(nav * volume, 2),\
             print("mv({}) != nav({}) * volume({})".format(market_value, nav, volume))
         result.append(('银河', 'cny', code, name, type, risk, market_value, hold_gain, volume, nav, cost))
-    df = pd.DataFrame(result, columns=columns + ['volume', 'nav', 'cost'])
+    df = pd.DataFrame(result, columns=COLUMNS + ['volume', 'nav', 'cost'])
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
     sum_hg = round(df['hold_gain'].sum(), 2)
@@ -232,12 +236,12 @@ def huabao(datafile: str) -> pd.DataFrame:
             if code[0] == '1':
                 typ, risk = '转债', 2
             else:
-                name, typ, risk = on_market[code]
+                name, typ, risk = SECURITIES[code]
             i += 6
             result.append(('华宝', 'cny', code, name, typ, risk, market_value, hold_gain, volume, nav, cost))
     except IndexError:
         pass
-    df = pd.DataFrame(result, columns=columns + ['volume', 'nav', 'cost'])
+    df = pd.DataFrame(result, columns=COLUMNS + ['volume', 'nav', 'cost'])
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
     sum_hg = round(df['hold_gain'].sum(), 2)
@@ -273,7 +277,7 @@ def huasheng(datafile: str) -> pd.DataFrame:
             hold_gain = float(lines[i + 2])
             nav = float(lines[i + 3])
             code = re.search(r'[0-9A-Z]+', lines[i + 4]).group()
-            name, type, risk = on_market[code]
+            name, type, risk = SECURITIES[code]
             market_value = float(lines[i + 5])
             i += 6
             while not re.match(r'.*[\d.]+$', lines[i]):
@@ -283,7 +287,7 @@ def huasheng(datafile: str) -> pd.DataFrame:
             result.append(('华盛', currency, code, name, type, risk, market_value, hold_gain, volume, nav, cost))
         except ValueError:
             break
-    df = pd.DataFrame(result, columns=columns + ['volume', 'nav', 'cost'])
+    df = pd.DataFrame(result, columns=COLUMNS + ['volume', 'nav', 'cost'])
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
     sum_hg = round(df['hold_gain'].sum(), 2)
@@ -323,13 +327,13 @@ def futu(datafile: str) -> pd.DataFrame:
         code = lines[i + 4]
         volume = lines[i + 5]
         # name = lines[i]
-        name, type, risk = on_market[code]
+        name, type, risk = SECURITIES[code]
         market_value = float(lines[i + 1])
         hold_gain = float(lines[i + 2])
         nav = round(market_value / int(volume), 2)
         result.append(('富途', currency, code, name, type, risk, market_value, hold_gain, nav))
         i += 7
-    df = pd.DataFrame(result, columns=columns + ['nav'])
+    df = pd.DataFrame(result, columns=COLUMNS + ['nav'])
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
     sum_hg = round(df['hold_gain'].sum(), 2)
@@ -345,12 +349,12 @@ def danjuan(datafile: str) -> pd.DataFrame:
         result = []
         for i in resp.json()['data']['items']:
             plan_code = i['plan_code']
-            code = i['fd_code']
+            code = 'F' + i['fd_code']
             market_value = float(i['market_value'])
             hold_gain = float(i['hold_gain'])
             nav = float(i['nav'])
             if market_value:
-                name, type, risk = off_market[code]
+                name, type, risk = SECURITIES[code]
                 result.append(('蛋卷' + plan_code, 'cny', code, name, type, risk, market_value, hold_gain, nav))
         return result
 
@@ -375,6 +379,8 @@ def danjuan(datafile: str) -> pd.DataFrame:
     result = []
     for i in response.json()['data']['items']:
         code = i['fd_code']
+        if code.isnumeric():
+            code = 'F' + code
         # if code in ['TIA06020', 'TIA06028']:  # 螺丝钉金钉宝主动优选, 螺丝钉金钉宝指数增强
         #     result.extend(get_plan(code))
         #     name, type, risk = i['fd_name'], '债券', 1
@@ -382,12 +388,12 @@ def danjuan(datafile: str) -> pd.DataFrame:
         #     if code == 'TIA06019':      # 螺丝钉银钉宝365天
         #         name, type, risk = i['fd_name'], '债券', 1
         #     else:
-        name, type, risk = off_market[code]
+        name, type, risk = SECURITIES[code]
         market_value = float(i['market_value'])
         hold_gain = float(i['hold_gain'])
         nav = float(i['nav'])
         result.append(('蛋卷', 'cny', code, name, type, risk, market_value, hold_gain, nav))
-    df = pd.DataFrame(result, columns=columns + ['nav'])
+    df = pd.DataFrame(result, columns=COLUMNS + ['nav'])
     sum_mv = round(df['market_value'].sum(), 2)
     assert abs(sum_mv - asset) <= 1, print("sum_mv({}) != asset({})".format(sum_mv, asset))
     sum_hg = round(df['hold_gain'].sum(), 2)
@@ -419,8 +425,8 @@ def tonghs(datafile: str) -> pd.DataFrame:
     assert response.status_code == 200, print('status_code({}) != 200'.format(response.status_code))
     items = response.json()['singleData']['IncomeShareListResult']
     for i in items:
-        code = i['fundCode']
-        name, type, risk = off_market[code]
+        code = 'F' + i['fundCode']
+        name, type, risk = SECURITIES[code]
         market_value = float(i['totalVol'])
         hold_gain = float(i['sumIncome'])
         nav = 1.0
@@ -429,13 +435,13 @@ def tonghs(datafile: str) -> pd.DataFrame:
     assert response.status_code == 200, print('status_code({}) != 200'.format(response.status_code))
     items = response.json()['singleData']['currentShareList']
     for i in items:
-        code = i['fundCode']
-        name, type, risk = off_market[code]
+        code = 'F' + i['fundCode']
+        name, type, risk = SECURITIES[code]
         market_value = float(i['currentValueText'])
         hold_gain = float(i['totalprofitlossText'])
         nav = float(i['navText'])
         result.append(('同花顺', 'cny', code, name, type, risk, market_value, hold_gain, nav))
-    df = pd.DataFrame(result, columns=columns + ['nav'])
+    df = pd.DataFrame(result, columns=COLUMNS + ['nav'])
     df.to_csv(datafile)
     return df
 
@@ -591,6 +597,64 @@ def to_execl(xlsx: str, sheet: str, df: pd.DataFrame):
     wb.save(xlsx)
 
 
+def excel_pd(xlsx: str):
+    db = MySql(database='portfolio')
+    book = load_workbook(xlsx, data_only=True)
+    for sheet in book.worksheets:
+        columns = []
+        items = []
+        total_market_value = 0
+        for row in sheet.iter_rows(min_row=1, min_col=1, max_row=sheet.max_row, max_col=sheet.max_column):
+            cells = [cell.value for cell in row]
+            if cells[0] == 'platform':
+                columns = cells[: -1].copy()
+                continue
+            if cells[0] == 'sum':
+                total_market_value = cells[1]
+                continue
+            if cells[1] not in ['rmb', 'cny', 'hkd', 'usd']:
+                continue
+            if (cells[0] in ['恒生银行', '同花顺'] or cells[0].startswith('蛋卷')) and cells[2].isnumeric():
+                cells[2] = 'F' + cells[2]
+            if cells[0] not in ['华宝', '银河'] or cells[2][0] not in ['1', '7']:
+                if cells[2] == 'product':
+                    cells[2] = cells[3][4:] if cells[3].startswith('招银理财') else cells[3]
+                    if cells[2].startswith('招智睿远..'):
+                        cells[2] = '招智睿远平衡二十七期'
+                    elif cells[2].startswith('招赢日日盈'):
+                        cells[2] = '招赢日日盈'
+                cells[3], cells[4], cells[5] = SECURITIES[cells[2]]
+            items.append(cells[: -1])
+
+        df = pd.DataFrame(items, columns=columns)
+        # duplicates = df[df.duplicated(['code'], keep=False)]
+
+        names = ['蛋卷CSI666', '蛋卷CSI1033', '蛋卷TIA06020', '蛋卷TIA06028']
+        items = []
+        for name in names:
+            df1 = df[df['platform'] == name]
+            if not df1.empty:
+                code = name[2:]
+                market_value = round(df1['market_value'].sum(), 2)
+                hold_gain = round(df1['hold_gain'].sum(), 2)
+                # gain_rate = round(hold_gain / market_value, 4)
+                items.append(['蛋卷', 'cny', code, *SECURITIES[code], np.nan, market_value, hold_gain])
+        df2 = pd.DataFrame(items, columns=columns)
+        df = df.loc[~df['platform'].isin(names)]
+        df = pd.concat([df, df2], ignore_index=True)
+
+        dic = {k: 'first' for k in columns}
+        dic['market_value'] = dic['hold_gain'] = 'sum'
+        df = df.groupby('code', as_index=False).agg(dic)
+        df = df.sort_values(by=['platform'])
+
+        df['date'] = datetime.strptime(sheet.title, '%y%m%d')
+        assert round(total_market_value, 2) == round(df['market_value'].sum(), 2)
+        print(df)
+        db.from_frame('asset', df)
+    return
+
+
 def main():
     if len(sys.argv) < 2:
         print('Usage: {} txt'.format(sys.argv[0]))
@@ -612,6 +676,8 @@ def main():
             print(df)
         else:
             to_execl(sys.argv[2], path, df)
+    elif path.endswith('.xlsx'):
+        excel_pd(path)
     else:
         assert False
 
