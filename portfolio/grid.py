@@ -32,7 +32,7 @@ class Grid:
         if self.is_percent:
             changes = '({}%, {}%)'.format(round(self.change * 100, 2), round(self.change2 * 100, 2))
         else:
-            changes = '(%d, %d)' % (self.change, self.change2)
+            changes = '(%.2f, %.2f)' % (self.change, self.change2)
         return str(changes) + ' ' + str(self.array)
 
     def get_count(self, price: float, benchmark: float) -> tuple:
@@ -224,7 +224,7 @@ def batch(file: str, quantity: int, start_date: str) -> pd.DataFrame:
     return result
 
 
-def show_grids():
+def show_grids(quantity: int):
     args_list = [
         (115, 135, 4, False), (120, 150, 4, False), (125, 165, 4, False),
         (115, 135, 4, True), (120, 150, 4, True), (125, 165, 4, True)
@@ -232,7 +232,8 @@ def show_grids():
     for args in args_list:
         grid = Grid(*args)
         print(grid)
-        # print(grid.show_grid(int(sys.argv[5])))
+        if quantity:
+            print(grid.show_grid(quantity))
 
 
 def usage():
@@ -267,8 +268,11 @@ def main():
                 f.write(df.to_html())
         else:
             usage()
-    elif len(sys.argv) == 2 and sys.argv[1] == 'grid':
-        show_grids()
+    elif len(sys.argv) > 1 and sys.argv[1] == 'grid':
+        if len(sys.argv) > 2:
+            show_grids(int(sys.argv[2]))
+        else:
+            show_grids(0)
     else:
         usage()
 
