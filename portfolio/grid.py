@@ -4,7 +4,7 @@ import sys
 import time
 
 import pandas as pd
-from matplotlib import pyplot, ticker
+from matplotlib import dates, pyplot, ticker
 
 from mysql import MySql
 from xueqiu import Xueqiu
@@ -80,6 +80,7 @@ class LoopBack:
         if data.empty:
             snowball = Xueqiu()
             data = snowball.get_data(code, start_date)
+            data['date'] = data['date'].apply(lambda x: x.date())
             data['code'] = code
             data['name'] = snowball.get_name(code)
             data = data[['date', 'name', 'open']]
@@ -107,7 +108,6 @@ class LoopBack:
             volume = self.quantity * count
             self.cost += price * volume
             dic = {'date': day,
-                   'opt': 1 if count > 0 else -1,
                    'price': price,
                    'volume': volume,
                    'index': self.index,
@@ -121,12 +121,12 @@ class LoopBack:
         data = data.rename({'open': self.code}, axis=1)
         data = data.dropna().set_index('date')
         data.index.name = None
-        # print(date)
+        # print(data)
 
-        buy = trans[trans['opt'] == 1][['date', 'price']]
+        buy = trans[trans['volume'] > 0][['date', 'price']]
         buy = buy.dropna().set_index('date', drop=True)
         buy.index.name = None
-        sell = trans[trans['opt'] == -1][['date', 'price']]
+        sell = trans[trans['volume'] < 0][['date', 'price']]
         sell = sell.dropna().set_index('date', drop=True)
         sell.index.name = None
 
@@ -136,6 +136,7 @@ class LoopBack:
         pyplot.ylabel('开盘价(元)')
         pyplot.grid()
         pyplot.gca().xaxis.set_major_locator(ticker.MultipleLocator(data.shape[0] // 8))
+        pyplot.gca().xaxis.set_major_formatter(dates.DateFormatter('%y-%m-%d'))
         pyplot.xticks(rotation=30)
         pyplot.plot(data.index, data[self.code])
         pyplot.plot(buy.index, buy['price'], 'og')
@@ -143,23 +144,25 @@ class LoopBack:
 
         pyplot.figtext(0.9, 0.85, ' Grid')
         pyplot.figtext(0.9, 0.80, ' 格数 %d' % (self.grid.number + 1))
-        pyplot.figtext(0.9, 0.75, ' 最高 %.2f' % self.grid.high)
-        pyplot.figtext(0.9, 0.70, ' 最低 %.2f' % self.grid.low)
-        if self.grid.change > 0.1:
-            pyplot.figtext(0.9, 0.65, ' 涨跌幅 %.2f' % self.grid.change)
+        pyplot.figtext(0.9, 0.76, ' 最高 %.2f' % self.grid.high)
+        pyplot.figtext(0.9, 0.72, ' 最低 %.2f' % self.grid.low)
+        if not self.grid.is_percent:
+            pyplot.figtext(0.9, 0.68, ' 涨幅 %.2f' % self.grid.change)
+            pyplot.figtext(0.9, 0.64, ' 跌幅 %.2f' % self.grid.change2)
         else:
-            pyplot.figtext(0.9, 0.65, ' 涨跌幅 %.2f' % (self.grid.change * 100) + '%')
+            pyplot.figtext(0.9, 0.68, ' 涨幅 %.2f' % (self.grid.change * 100) + '%')
+            pyplot.figtext(0.9, 0.64, ' 跌幅 %.2f' % (self.grid.change2 * 100) + '%')
         pyplot.figtext(0.9, 0.60, ' 数量 %d' % self.quantity)
         pyplot.figtext(0.9, 0.55, ' Trade')
         pyplot.figtext(0.9, 0.50, ' 开盘买(绿)')
-        pyplot.figtext(0.9, 0.45, ' 开盘卖(红)')
-        pyplot.figtext(0.9, 0.40, ' Result')
-        pyplot.figtext(0.9, 0.35, ' 剩余网格 %d' % self.index)
-        pyplot.figtext(0.9, 0.30, ' 基准 %.2f' % self.benchmark)
-        pyplot.figtext(0.9, 0.25, ' 市值 %.2f' % self.value)
-        pyplot.figtext(0.9, 0.20, ' 成本 %.2f' % self.cost)
-        pyplot.figtext(0.9, 0.15, ' 盈亏 %.2f' % (self.value - self.cost))
-        pyplot.figtext(0.9, 0.05, '- 同光和尘')
+        pyplot.figtext(0.9, 0.46, ' 开盘卖(红)')
+        pyplot.figtext(0.9, 0.41, ' Result')
+        pyplot.figtext(0.9, 0.36, ' 剩余网格 %d' % self.index)
+        pyplot.figtext(0.9, 0.32, ' 基准 %.2f' % self.benchmark)
+        pyplot.figtext(0.9, 0.28, ' 市值 %.2f' % self.value)
+        pyplot.figtext(0.9, 0.24, ' 成本 %.2f' % self.cost)
+        pyplot.figtext(0.9, 0.20, ' 盈亏 %.2f' % (self.value - self.cost))
+        pyplot.figtext(0.9, 0.12, ' - 同光和尘')
         pyplot.savefig('%s_%s.png' % (self.code, self.name), dpi=400, bbox_inches='tight')
         pyplot.show()
 
