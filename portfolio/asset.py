@@ -38,8 +38,6 @@ def verify(row: pd.Series):
 
 
 def zhaoshang_bank(datafile: str) -> pd.DataFrame:
-    # bonds = ['招银理财招智睿远平衡二十七期']
-
     with open(datafile) as fp:
         lines = [re.sub(r'[,，]', '', line).rstrip('\n') for line in fp.readlines()]
     i = 0
@@ -56,12 +54,13 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
     try:
         while lines[i]:
             code = lines[i][4:] if lines[i].startswith('招银理财') else lines[i]
+            if code.startswith('招赢日日盈'):
+                code = '招赢日日盈'
             i += 1
             while not re.match(r'.*[\d.]+', lines[i]):
                 i += 1
             hold_gain = float(re.sub('[^\d.]+', '', lines[i]))
             market_value = float(lines[i + 1])
-            # type, risk = ('债券', 1) if name in bonds else ('货币', 0)
             name, type, risk = SECURITIES[code]
             result.append(('招商银行', 'cny', code, name, type, risk, market_value, hold_gain))
             i += 4
@@ -118,9 +117,11 @@ def hangseng_bank(datafile: str) -> pd.DataFrame:
 
 
 def yinhe(datafile: str) -> pd.DataFrame:
+    s = re.sub(r'.+_', '', datafile[: -4])
+    cash2 = float(s) if s else 0
+
     with open(datafile) as fp:
         lines = [re.sub('－', '-', line).rstrip('\n') for line in fp.readlines()]
-
     i = 0
     while lines[i] != '场内资产（人民币）':
         i += 1
@@ -130,7 +131,7 @@ def yinhe(datafile: str) -> pd.DataFrame:
     cash = float(lines[i + 7])
     assert round(total_mv + cash, 2) == asset,\
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
-    result = [('银河', 'cny', 'cash', '现金', '货币', 0, cash, 0)]
+    result = [('银河', 'cny', 'cash', '现金', '货币', 0, cash + cash2, 0)]
     i += 8
     while not lines[i].startswith('参考盈亏'):
         i += 1
@@ -252,6 +253,9 @@ def huabao(datafile: str) -> pd.DataFrame:
 
 
 def huasheng(datafile: str) -> pd.DataFrame:
+    s = re.sub(r'.+_', '', datafile[: -4])
+    cash2 = float(s) if s else 0
+
     with open(datafile) as fp:
         lines = [re.sub(r'[,＋]', '', re.sub('－', '-', line)).rstrip('\n') for line in fp.readlines()]
 
@@ -292,6 +296,7 @@ def huasheng(datafile: str) -> pd.DataFrame:
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
     sum_hg = round(df['hold_gain'].sum(), 2)
     assert sum_hg == total_hg, print("sum_hg({}) != total_hg({})".format(sum_hg, total_hg))
+    df.at[0, 'market_value'] += cash2
     df.apply(verify, axis=1)
     df.drop(columns=['volume', 'cost'], inplace=True)
     return df
@@ -405,7 +410,7 @@ def danjuan(datafile: str) -> pd.DataFrame:
 def tonghs(datafile: str) -> pd.DataFrame:
     if os.path.isfile(datafile):
         df = pd.read_csv(datafile, index_col=0)
-        df['code'] = df['code'].apply(lambda x: '{0:06d}'.format(x))
+        # df['code'] = df['code'].apply(lambda x: '{0:06d}'.format(x))
         return df
 
     with open('auth/ths_cookie.txt', 'r') as f:
@@ -481,9 +486,9 @@ def hkd_usd_rate() -> tuple:
     for tr in trs:
         tds = tr.find_all("td")
         if tds[0].text == '港币':
-            dic['港币'] = float(tds[4].text) / 100
+            dic['港币'] = round(float(tds[4].text) / 100, 4)
         elif tds[0].text == '美元':
-            dic['美元'] = float(tds[4].text) / 100
+            dic['美元'] = round(float(tds[4].text) / 100, 4)
     return dic['港币'], dic['美元']
 
 
