@@ -602,7 +602,22 @@ def to_execl(xlsx: str, sheet: str, df: pd.DataFrame):
     wb.save(xlsx)
 
 
-def excel_pd(xlsx: str):
+def to_mysql(date_str: str, df: pd.DataFrame):
+    total = df['market_value'].sum()
+    df = df.drop(columns=['gain_rate'])
+    dic = {k: 'first' for k in df.columns}
+    dic['market_value'] = dic['hold_gain'] = 'sum'
+    df = df.groupby('code', as_index=False).agg(dic)
+    df = df.sort_values(by=['platform'])
+
+    df['date'] = datetime.strptime(date_str, '%y%m%d')
+    assert round(total, 2) == round(df['market_value'].sum(), 2)
+    print(df)
+    db = MySql(database='portfolio')
+    db.from_frame('asset', df)
+
+
+def excel_mysql(xlsx: str):
     db = MySql(database='portfolio')
     book = load_workbook(xlsx, data_only=True)
     for sheet in book.worksheets:
@@ -663,7 +678,8 @@ def excel_pd(xlsx: str):
 def main():
     if len(sys.argv) < 2:
         print('Usage: {} txt'.format(sys.argv[0]))
-        print('       {} dir [xlsx]'.format(sys.argv[0]))
+        print('       {} date_str [xlsx]'.format(sys.argv[0]))
+        print('       {} xlsx'.format(sys.argv[0]))
         sys.exit(1)
 
     path = sys.argv[1]
@@ -678,11 +694,11 @@ def main():
         path = path.rstrip('/')
         df = run_all([os.path.join(path, file) for file in os.listdir(path)])
         if len(sys.argv) == 2:
-            print(df)
+            to_mysql(path, df)
         else:
             to_execl(sys.argv[2], path, df)
     elif path.endswith('.xlsx'):
-        excel_pd(path)
+        excel_mysql(path)
     else:
         assert False
 
