@@ -5,12 +5,14 @@ import sys
 
 
 def rename(dir: str, file: str, ext: str):
-    for count, filename in enumerate(sorted(os.listdir(dir))):
-        src = dir + filename
-        dst = '{}_{:02d}.{}'.format(file, count, ext)
-        dst = dir + dst
-        print(src, dst)
-        os.rename(src, dst)
+    for i, filename in enumerate(sorted(os.listdir(dir))):
+        if filename.endswith(ext):
+            src = filename if dir == '.' else dir + filename
+            dst = '{}_{:02d}.{}'.format(file, i + 1, ext)
+            if dir != '.':
+                dst = dir + dst
+            print('mv "%s" %s' % (src, dst))
+            os.rename(src, dst)
 
 
 def main():
