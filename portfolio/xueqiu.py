@@ -3,7 +3,8 @@ import json
 import os
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, date
+from urllib.parse import urlencode
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -81,6 +82,31 @@ class Xueqiu:
         dic = df.iloc[-1].to_dict()
         dic[name] = round(dic.pop('close'), 2)
         return dic
+
+    def get_cvtbones(self, codes: list) -> pd.DataFrame:
+        params = {
+            'symbol': ','.join(codes),
+            'extend': 'detail',
+            'is_delay_hk': 'true'
+        }
+        url = 'https://stock.xueqiu.com/v5/stock/batch/quote.json?' + urlencode(params)
+        resp = request("GET", url, headers=self.headers, cookies=self.cookies)
+        resp.raise_for_status()
+        result = []
+        items = resp.json()['data']['items']
+        for i in items:
+            quote = i['quote']
+            dic = {
+                'code': quote['symbol'],
+                'name': quote['name'],
+                'price': quote['current'],
+                'premium': quote['convert_bond_ratio'],
+                'remains': round(quote['outstanding_amt'] / quote['total_issue_scale'] * 100, 2),
+                'days': (datetime.fromtimestamp(quote['maturity_date'] / 1000).date() - date.today()).days,
+                'pc': quote['percent']
+            }
+            result.append(dic.copy())
+        return pd.DataFrame(result)
 
 
 def draw(df: pd.DataFrame, name: str):

@@ -63,7 +63,8 @@ class Grid:
 
 
 class LoopBack:
-    def __init__(self, grid: Grid, code: str, quantity: int, start_date: str = ''):
+    @staticmethod
+    def complete_code(code: str) -> str:
         if len(code) == 8 and code[: 2] in ['sh', 'sz', 'SH', 'SZ'] and code[2:].isnumeric():
             code = code.upper()
         elif len(code) == 6 and code.isnumeric():
@@ -71,7 +72,10 @@ class LoopBack:
                 code = 'SH' + code
             elif code.startswith('12'):
                 code = 'SZ' + code
+        return code
 
+    def __init__(self, grid: Grid, code: str, quantity: int, start_date: str = ''):
+        code = LoopBack.complete_code(code)
         db = MySql(database='portfolio')
         where = 'code = "%s"' % code
         if start_date:
@@ -207,21 +211,40 @@ def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.D
     return pd.DataFrame(result, columns=['code_name', '%d_%.2f' % (grid.low, change)])
 
 
+GRID_ARGS = {
+    '115_5.00': (115, 135, 4, False),
+    '120_7.50': (120, 150, 4, False),
+    '125_10.00': (125, 165, 4, False),
+    "115_4.09": (115, 135, 4, True),
+    "120_5.74": (120, 150, 4, True),
+    "125_7.19": (125, 165, 4, True)
+}
+
+
+def get_count(row: pd.Series) -> tuple:
+    arg = GRID_ARGS[row['max_col_name']]
+    return Grid(*arg).get_count(row['price'], arg[1])
+
+
 def batch(file: str, quantity: int, start_date: str) -> pd.DataFrame:
-    args_list = [
-        (115, 135, 4, False), (120, 150, 4, False), (125, 165, 4, False),
-        (115, 135, 4, True), (120, 150, 4, True), (125, 165, 4, True)
-    ]
+    codes = [LoopBack.complete_code(i) for i in get_codes(file)]
+    df = Xueqiu().get_cvtbones(codes)
+    result = df[['code', 'price']]
 
-    codes = get_codes(file)
-    result = pd.DataFrame()
-    i = 0
-    for i in range(len(args_list)):
-        df = trade_codes(Grid(*args_list[i]), codes, quantity, start_date)
-        result = result.merge(df, on=df.columns[0], how='inner') if i else df
+    for i, args in enumerate(GRID_ARGS.values()):
+        df = trade_codes(Grid(*args), codes, quantity, start_date)
+        if i == 0:
+            df['code'] = df.apply(lambda x: x['code_name'][: 8], axis=1)
+            result = result.merge(df, on='code', how='inner')
+        else:
+            result = result.merge(df, on='code_name', how='inner')
 
-    result['max_col_name'] = result.iloc[:, -i - 1:].idxmax(axis=1)
-    result['max_value'] = result[result.columns[-i - 2: -1]].max(axis=1)
+    n = len(GRID_ARGS)
+    result['max_col_name'] = result.iloc[:, -n:].idxmax(axis=1)
+    result['max_value'] = result[result.columns[-n - 1: -1]].max(axis=1)
+    result = result[['code_name', 'max_col_name', 'max_value', 'price']]
+    result['benchmark'] = result.apply(lambda x: get_count(x)[1], axis=1)
+    result['count'] = result.apply(lambda x: get_count(x)[2], axis=1)
     result = result.sort_values(by='max_value', ascending=False)
     result.reset_index(drop=True, inplace=True)
     return result
@@ -280,5 +303,5 @@ def main():
         usage()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
