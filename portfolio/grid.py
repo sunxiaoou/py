@@ -3,6 +3,7 @@ import re
 import sys
 import time
 
+import numpy as np
 import pandas as pd
 from matplotlib import dates, pyplot, ticker
 
@@ -42,12 +43,12 @@ class Grid:
             index += 1
             count += 1
         if count:
-            return index, self.array[index], count
+            return index, np.nan if index > len(self.array) - 2 else self.array[index + 1], self.array[index], count
 
         while index > 0 and self.array[index - 1] <= price:
             index -= 1
             count -= 1
-        return index, self.array[index], count
+        return index, np.nan if index > len(self.array) - 2 else self.array[index + 1], self.array[index], count
 
     def show_grid(self, quantity: int) -> pd.DataFrame:
         df = pd.DataFrame([self.array, [0] + [quantity] * self.number],
@@ -106,7 +107,7 @@ class LoopBack:
                (self.index, self.benchmark, self.value, self.cost, self.value - self.cost)
 
     def trade_open(self, day: str, price: float):
-        self.index, self.benchmark, count = self.grid.get_count(price, self.benchmark)
+        self.index, _, self.benchmark, count = self.grid.get_count(price, self.benchmark)
         self.value = price * self.quantity * self.index
         if count:
             volume = self.quantity * count
@@ -223,7 +224,10 @@ GRID_ARGS = {
 
 def get_count(row: pd.Series) -> tuple:
     arg = GRID_ARGS[row['max_col_name']]
-    return Grid(*arg).get_count(row['price'], arg[1])
+    _, bm, bm2, count = Grid(*arg).get_count(row['price'], arg[1])
+    if bm2 < row['price']:
+        bm, bm2 = bm2, np.nan
+    return bm, bm2, count
 
 
 def batch(file: str, quantity: int, start_date: str) -> pd.DataFrame:
@@ -242,9 +246,11 @@ def batch(file: str, quantity: int, start_date: str) -> pd.DataFrame:
     n = len(GRID_ARGS)
     result['max_col_name'] = result.iloc[:, -n:].idxmax(axis=1)
     result['max_value'] = result[result.columns[-n - 1: -1]].max(axis=1)
-    result = result[['code_name', 'max_col_name', 'max_value', 'price']]
-    result['benchmark'] = result.apply(lambda x: get_count(x)[1], axis=1)
-    result['count'] = result.apply(lambda x: get_count(x)[2], axis=1)
+    result['BM'] = result.apply(lambda x: get_count(x)[0], axis=1)
+    result = result[['code_name', 'max_value', 'max_col_name', 'BM', 'price']]
+    result['BM2'] = result.apply(lambda x: get_count(x)[1], axis=1)
+    result['count'] = result.apply(lambda x: quantity * get_count(x)[2], axis=1)
+
     result = result.sort_values(by='max_value', ascending=False)
     result.reset_index(drop=True, inplace=True)
     return result
