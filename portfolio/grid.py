@@ -303,8 +303,12 @@ def main():
             print(loopback.trade_daily())
         elif sys.argv[1] == 'batch':
             df = batch(sys.argv[2], int(sys.argv[3]), sys.argv[4])
-            with open('grid.html', 'w') as f:
-                f.write(df.to_html())
+            # with open('grid.html', 'w') as f:
+            #     f.write(df.to_html())
+            df = df.reset_index()       # convert index to column
+            df['amount'] = df.apply(lambda x: '=E%d*G%d' % (x['index'] + 2, x['index'] + 2), axis=1)
+            # print(df)
+            df.to_excel('grid.xlsx', index=False)
         else:
             usage()
     elif len(sys.argv) > 1 and sys.argv[1] == 'grid':
