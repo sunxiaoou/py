@@ -34,10 +34,10 @@ class Grid:
             changes = '({}%, {}%)'.format(round(self.change * 100, 2), round(self.change2 * 100, 2))
         else:
             changes = '(%.2f, %.2f)' % (self.change, self.change2)
-        return str(changes) + ' ' + str(self.array)
+        return self.to_str() + ': ' + str(changes) + ' ' + str(self.array)
 
-    def get_count(self, price: float, benchmark: float) -> tuple:
-        index = self.array.index(benchmark)
+    def get_count(self, price: float, benchmark: float = -1) -> tuple:
+        index = 0 if benchmark == -1 else self.array.index(benchmark)
         count = 0
         while index < self.number and self.array[index + 1] >= price:
             index += 1
@@ -61,6 +61,15 @@ class Grid:
         df['loss'] = df['value'] - df['cost']
         df['loss(%)'] = round(df['loss'] / df['cost'] * 100, 2)
         return df
+
+    def to_str(self) -> str:
+        return "%d_%d_%d_%d" % (self.low, self.high, self.number, 1 if self.is_percent else 0)
+
+    @classmethod
+    def make(cls, s: str):
+        args = [int(i) for i in s.split('_')]
+        args[-1] = True if args[-1] else False
+        return cls(*args)
 
 
 class LoopBack:
@@ -188,6 +197,20 @@ class LoopBack:
             return ''
 
 
+GRID_ARGS = [
+    (105, 115, 5, False),
+    (105, 115, 5, True),
+    (110, 125, 5, False),
+    (110, 125, 5, True),
+    (115, 135, 5, False),
+    (115, 135, 5, True),
+    (120, 150, 5, False),
+    (120, 150, 5, True),
+    (125, 165, 5, False),
+    (125, 165, 5, True)
+]
+
+
 def get_codes(file: str) -> list:
     with open(file) as f:
         text = f.read()
@@ -207,24 +230,12 @@ def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.D
         s = LoopBack(grid, code, quantity, start_date).trade_daily()
         s = s.split()
         result.append([s[0], float(s[-1])])
-        time.sleep(0.1)
-    change = round(grid.change * 100, 2) if grid.is_percent else grid.change
-    return pd.DataFrame(result, columns=['code_name', '%d_%.2f' % (grid.low, change)])
-
-
-GRID_ARGS = {
-    '115_5.00': (115, 135, 4, False),
-    '120_7.50': (120, 150, 4, False),
-    '125_10.00': (125, 165, 4, False),
-    "115_4.09": (115, 135, 4, True),
-    "120_5.74": (120, 150, 4, True),
-    "125_7.19": (125, 165, 4, True)
-}
+        # time.sleep(0.1)
+    return pd.DataFrame(result, columns=['code_name', grid.to_str()])
 
 
 def get_count(row: pd.Series) -> tuple:
-    arg = GRID_ARGS[row['max_col_name']]
-    _, bm, bm2, count = Grid(*arg).get_count(row['price'], arg[1])
+    _, bm, bm2, count = Grid.make(row['max_col_name']).get_count(row['price'])
     if bm2 < row['price']:
         bm, bm2 = bm2, np.nan
     return bm, bm2, count
@@ -235,7 +246,7 @@ def batch(file: str, quantity: int, start_date: str) -> pd.DataFrame:
     df = Xueqiu().get_cvtbones(codes)
     result = df[['code', 'price']]
 
-    for i, args in enumerate(GRID_ARGS.values()):
+    for i, args in enumerate(GRID_ARGS):
         df = trade_codes(Grid(*args), codes, quantity, start_date)
         if i == 0:
             df['code'] = df.apply(lambda x: x['code_name'][: 8], axis=1)
@@ -257,11 +268,7 @@ def batch(file: str, quantity: int, start_date: str) -> pd.DataFrame:
 
 
 def show_grids(quantity: int):
-    args_list = [
-        (115, 135, 4, False), (120, 150, 4, False), (125, 165, 4, False),
-        (115, 135, 4, True), (120, 150, 4, True), (125, 165, 4, True)
-    ]
-    for args in args_list:
+    for args in GRID_ARGS:
         grid = Grid(*args)
         print(grid)
         if quantity:
@@ -271,7 +278,7 @@ def show_grids(quantity: int):
 def usage():
     print('Usage: {} grid low,high,number,is_percent price benchmark [quantity]'.
           format(sys.argv[0]))
-    print('       %s grid' % sys.argv[0])
+    print('       %s grid [quantity]' % sys.argv[0])
     print('       {} loopback low,high,number,is_percent code quantity [pic start_date(%Y-%m-%d)]'.
           format(sys.argv[0]))
     print('       {} batch cvt_file quantity start_date(%Y-%m-%d)'.format(sys.argv[0]))
