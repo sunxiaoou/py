@@ -221,7 +221,9 @@ def get_codes(file: str) -> list:
     l5 = [row.split()[1] for row in lines5[1: -2]]
     lines6 = blocks[6].split('\n')
     l6 = [row.split()[1] for row in lines6[1: -2]]
-    return sorted(list(set(l1 + l5 + l6)))
+    lines7 = blocks[7].split('\n')
+    l7 = [row.split()[1] for row in lines7[1: -1]]
+    return sorted(list(set(l1 + l5 + l6 + l7)))
 
 
 def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.DataFrame:
@@ -306,7 +308,7 @@ def main():
             # with open('grid.html', 'w') as f:
             #     f.write(df.to_html())
             df = df.reset_index()       # convert index to column
-            df['amount'] = df.apply(lambda x: '=E%d*G%d' % (x['index'] + 2, x['index'] + 2), axis=1)
+            df['amount'] = df.apply(lambda x: '=F%d*H%d' % (x['index'] + 2, x['index'] + 2), axis=1)
             # print(df)
             df.to_excel('grid.xlsx', index=False)
         else:

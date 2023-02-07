@@ -129,7 +129,9 @@ def get_codes(file: str) -> list:
     l5 = [row.split()[1] for row in lines5[1: -2]]
     lines6 = blocks[6].split('\n')
     l6 = [row.split()[1] for row in lines6[1: -2]]
-    lst = list(set(l1 + l5 + l6))
+    lines7 = blocks[7].split('\n')
+    l7 = [row.split()[1] for row in lines7[1: -1]]
+    lst = list(set(l1 + l5 + l6 + l7))
     lst = ['SH' + i if i.startswith('11') else 'SZ' + i for i in lst]
     return sorted(lst)
 
