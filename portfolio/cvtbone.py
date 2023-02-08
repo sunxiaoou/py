@@ -190,12 +190,12 @@ def main():
     to_sell = pd.concat([inner[['代码', '名称']], mine]).drop_duplicates(keep=False)
     inner = pd.merge(new130[['代码', '名称']], to_sell, on=['代码', '名称'])
     to_sell = pd.concat([to_sell, inner]).drop_duplicates(keep=False)
-    to_sell_1 = pd.merge(to_sell, b2, on=['代码', '名称'], how='left')
-    to_sell_2 = pd.merge(to_sell, n2, on=['代码', '名称'], how='left')
-    to_sell = to_sell_1.combine_first(to_sell_2)
-    to_sell = to_sell[['代码', '名称', '价格', '涨幅', '无阈值排名', '170排名', '150排名', '130排名', 'n130排名', '强赎天计数']]
     print('持有的未上榜转债({})'.format(len(to_sell)))
-    if len(to_sell):
+    if to_sell.shape[0]:
+        to_sell_1 = pd.merge(to_sell, b2, on=['代码', '名称'], how='left')
+        to_sell_2 = pd.merge(to_sell, n2, on=['代码', '名称'], how='left')
+        to_sell = to_sell_1.combine_first(to_sell_2)
+        to_sell = to_sell[['代码', '名称', '价格', '涨幅', '无阈值排名', '170排名', '150排名', '130排名', 'n130排名', '强赎天计数']]
         print(to_sell)
 
 

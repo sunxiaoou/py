@@ -222,8 +222,11 @@ def get_codes(file: str) -> list:
     l5 = [row.split()[1] for row in lines5[1: -2]]
     lines6 = blocks[6].split('\n')
     l6 = [row.split()[1] for row in lines6[1: -2]]
-    lines7 = blocks[7].split('\n')
-    l7 = [row.split()[1] for row in lines7[1: -1]]
+    if len(blocks) > 7:
+        lines7 = blocks[7].split('\n')
+        l7 = [row.split()[1] for row in lines7[1: -1]]
+    else:
+        l7 = []
     return sorted(list(set(l1 + l5 + l6 + l7)))
 
 
