@@ -166,6 +166,11 @@ def batch(file: str):
 
 
 def main():
+    # snowball = Xueqiu()
+    # print(snowball.last_close('SZ127007'))
+    # print(snowball.get_data('SZ127007', begin_date='2022-01-01', end_date='2023-01-06'))
+    # print(snowball.get_data('SZ127007', end_date='2023-01-06'))
+
     if len(sys.argv) > 2:
         begin_date, code = sys.argv[2], sys.argv[1]
         snowball = Xueqiu()
@@ -185,10 +190,6 @@ def main():
         print('       %s file' % sys.argv[0])   # '/tmp/cvt.txt'
         sys.exit(1)
 
-    # snowball = Xueqiu()
-    # print(snowball.last_close(code))
-    # print(snowball.get_data('SZ127007', begin_date='2022-01-01', end_date='2023-01-06'))
-    # print(snowball.get_data('SZ127007', end_date='2023-01-06'))
 
 
 if __name__ == "__main__":

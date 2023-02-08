@@ -6,6 +6,7 @@ import time
 import numpy as np
 import pandas as pd
 from matplotlib import dates, pyplot, ticker
+from openpyxl import load_workbook
 
 from mysql import MySql
 from xueqiu import Xueqiu
@@ -243,9 +244,33 @@ def get_count(row: pd.Series) -> tuple:
     return bm, bm2, count
 
 
-def batch(file: str, quantity: int, start_date: str) -> pd.DataFrame:
+def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
+    try:
+        wb = load_workbook(xlsx)
+    except FileNotFoundError:
+        df.to_excel(xlsx, sheet_name=sheet, index=False)
+        print(xlsx + ' created')
+        return
+
+    ws = wb.copy_worksheet(wb.worksheets[-1])       # copy a old sheet as template to avoid adjust size
+    if df.shape[0] < ws.max_row:
+        ws.delete_rows(df.shape[0], ws.max_row - 1)
+    ws.title = sheet
+    wb.active = len(wb.worksheets) - 1
+
+    writer = pd.ExcelWriter(xlsx, engine='openpyxl')
+    writer.book = wb
+    writer.sheets = {worksheet.title: worksheet for worksheet in wb.worksheets}
+    df.to_excel(writer, sheet_name=sheet, index=False)
+    writer.save()
+
+
+def batch(file: str, quantity: int, start_date: str):
     codes = [LoopBack.complete_code(i) for i in get_codes(file)]
-    df = Xueqiu().get_cvtbones(codes)
+    snowball = Xueqiu()
+    dic = snowball.last_close(codes[0])
+    date = dic['date'].strftime('%y%m%d')
+    df = snowball.get_cvtbones(codes)
     result = df[['code', 'price']]
 
     for i, args in enumerate(GRID_ARGS):
@@ -266,7 +291,12 @@ def batch(file: str, quantity: int, start_date: str) -> pd.DataFrame:
 
     result = result.sort_values(by='max_value', ascending=False)
     result.reset_index(drop=True, inplace=True)
-    return result
+    result = result.reset_index()       # convert index to column
+    # with open('grid.html', 'w') as f:
+    #     f.write(df.to_html())
+    result['amount'] = result.apply(lambda x: '=F%d*H%d' % (x['index'] + 2, x['index'] + 2), axis=1)
+    # print(df)
+    to_excel('grid.xlsx', date, result)
 
 
 def show_grids(quantity: int):
@@ -304,13 +334,7 @@ def main():
                 loopback = LoopBack(grid, sys.argv[3], int(sys.argv[4]))
             print(loopback.trade_daily())
         elif sys.argv[1] == 'batch':
-            df = batch(sys.argv[2], int(sys.argv[3]), sys.argv[4])
-            # with open('grid.html', 'w') as f:
-            #     f.write(df.to_html())
-            df = df.reset_index()       # convert index to column
-            df['amount'] = df.apply(lambda x: '=F%d*H%d' % (x['index'] + 2, x['index'] + 2), axis=1)
-            # print(df)
-            df.to_excel('grid.xlsx', index=False)
+            batch(sys.argv[2], int(sys.argv[3]), sys.argv[4])
         else:
             usage()
     elif len(sys.argv) > 1 and sys.argv[1] == 'grid':
