@@ -2,8 +2,6 @@
 import json
 import re
 import sys
-from datetime import datetime
-from pprint import pprint
 from urllib.parse import urlencode
 
 import numpy as np
@@ -14,8 +12,10 @@ from requests import request
 pd.set_option('display.max_rows', 200)
 pd.set_option('display.max_columns', 100)
 
+MAX_COLUMN = 29
 
-def get_bones(xlsx: str) -> (pd.DataFrame, pd.DataFrame):
+
+def get_bones(xlsx: str) -> (dict, pd.DataFrame):
     wb = load_workbook(xlsx, data_only=True)
 
     ws = wb['强赎预警']
@@ -26,20 +26,21 @@ def get_bones(xlsx: str) -> (pd.DataFrame, pd.DataFrame):
             dic[title] = j
             if(len(dic)) == 2:
                 break
-    dic2 = {}
+    warning = {}
     for i in range(2, ws.max_row):
         code = ws.cell(row=i, column=dic['代码']).value
         if not isinstance(code, int):
             break
-        dic2[str(code)] = ws.cell(row=i, column=dic['强赎天计数']).value
+        warning[str(code)] = ws.cell(row=i, column=dic['强赎天计数']).value
 
     ws = wb['今天可转债']
-    for j in range(1, ws.max_column):
-        if not ws.cell(row=2, column=j).value:
-            break
-    j = 31
+    # for j in range(1, ws.max_column):
+    #     if not ws.cell(row=2, column=j).value:
+    #         break
+    # j = 31
+
     data = []
-    for row in ws.iter_rows(min_row=1, min_col=1, max_row=ws.max_row - 2, max_col=j):
+    for row in ws.iter_rows(min_row=1, min_col=1, max_row=ws.max_row - 2, max_col=MAX_COLUMN):
         cells = [cell.value for cell in row]
         if not cells[0]:
             break
@@ -54,11 +55,11 @@ def get_bones(xlsx: str) -> (pd.DataFrame, pd.DataFrame):
     cols = ['代码', '名称', '价格', '涨幅']
     frame = pd.DataFrame(data[2:], columns=[data[0], data[1]])
     # print(frame)
-    n130 = frame[titles.pop()][cols]      # .head(int(sys.argv[2]))
-    n130.index = np.arange(1, len(n130) + 1)
-    n130['代码'] = n130['代码'].apply(lambda x: str(x))
-    n130['n130排名'] = n130.index
-    n130['强赎天计数'] = n130['代码'].apply(lambda x: dic2[x] if x in dic2 else None)
+    # n130 = frame[titles.pop()][cols]      # .head(int(sys.argv[2]))
+    # n130.index = np.arange(1, len(n130) + 1)
+    # n130['代码'] = n130['代码'].apply(lambda x: str(x))
+    # n130['n130排名'] = n130.index
+    # n130['强赎天计数'] = n130['代码'].apply(lambda x: warning[x] if x in warning else None)
 
     df = pd.concat([frame[i][cols] for i in titles]).drop_duplicates()
     df = df[df['价格'] != '#N/A']
@@ -70,11 +71,12 @@ def get_bones(xlsx: str) -> (pd.DataFrame, pd.DataFrame):
     df['150阈值排名'] = df['170阈值排名'][df['价格'] < 150].rank()
     df['130阈值排名'] = df['150阈值排名'][df['价格'] < 130].rank()
     # print(df.dtypes)
-    df['强赎天计数'] = df['代码'].apply(lambda x: dic2[x] if x in dic2 else None)
+    df['强赎天计数'] = df['代码'].apply(lambda x: warning[x] if x in warning else np.nan)
     df.rename({'170阈值排名': '170排名', '150阈值排名': '150排名', '130阈值排名': '130排名'}, axis=1, inplace=True)
     # print(df)
 
-    return n130, df
+    # return n130, df
+    return warning, df
 
 
 def get_my_list(xlsx: str) -> pd.DataFrame:
@@ -154,14 +156,16 @@ def main():
     mine = get_xq_list()
 
     xlsx = sys.argv[1]
-    new130, bones = get_bones(xlsx)
-    n2, b2 = new130, bones
+    # new130, bones = get_bones(xlsx)
+    # n2, b2 = new130, bones
+    warning, bones = get_bones(xlsx)
+    b2 = bones
 
     if len(sys.argv) > 2:
         rank130 = int(sys.argv[2])
-        new130 = new130.head(rank130)
-        print('新版130排名({})'.format(rank130))
-        print(new130)
+        # new130 = new130.head(rank130)
+        # print('新版130排名({})'.format(rank130))
+        # print(new130)
         df = bones.loc[bones['130排名'] == rank130]
         r = df.iloc[0, df.columns.get_loc('无阈值排名')]
         bones = bones[bones['无阈值排名'] <= r]
@@ -170,13 +174,13 @@ def main():
         if len(sys.argv) == 4 and sys.argv[3].endswith('.xlsx'):
             to_excel(sys.argv[3], re.search(r'\d{8}', xlsx)[0], bones)
 
-    inner = pd.merge(new130, mine, on=['代码', '名称'])
-    print('已持有的新版130转债({})'.format(len(inner)))
-    print(inner)
+    # inner = pd.merge(new130, mine, on=['代码', '名称'])
+    # print('已持有的新版130转债({})'.format(len(inner)))
+    # print(inner)
 
-    to_buy = pd.concat([new130, inner]).drop_duplicates(keep=False)
-    print('未持有的新版130转债({})'.format(len(to_buy)))
-    print(to_buy)
+    # to_buy = pd.concat([new130, inner]).drop_duplicates(keep=False)
+    # print('未持有的新版130转债({})'.format(len(to_buy)))
+    # print(to_buy)
 
     inner = pd.merge(bones, mine, on=['代码', '名称'])
     print('已持有的上榜转债({})'.format(len(inner)))
@@ -188,14 +192,15 @@ def main():
     print(to_buy)
 
     to_sell = pd.concat([inner[['代码', '名称']], mine]).drop_duplicates(keep=False)
-    inner = pd.merge(new130[['代码', '名称']], to_sell, on=['代码', '名称'])
-    to_sell = pd.concat([to_sell, inner]).drop_duplicates(keep=False)
+    # inner = pd.merge(new130[['代码', '名称']], to_sell, on=['代码', '名称'])
+    # to_sell = pd.concat([to_sell, inner]).drop_duplicates(keep=False)
     print('持有的未上榜转债({})'.format(len(to_sell)))
     if to_sell.shape[0]:
-        to_sell_1 = pd.merge(to_sell, b2, on=['代码', '名称'], how='left')
-        to_sell_2 = pd.merge(to_sell, n2, on=['代码', '名称'], how='left')
-        to_sell = to_sell_1.combine_first(to_sell_2)
-        to_sell = to_sell[['代码', '名称', '价格', '涨幅', '无阈值排名', '170排名', '150排名', '130排名', 'n130排名', '强赎天计数']]
+        to_sell = pd.merge(to_sell, b2, on=['代码', '名称'], how='left')
+        to_sell['强赎天计数'] = to_sell.apply(lambda x: warning[x['代码']] if x['代码'] in warning else np.nan, axis=1)
+        # to_sell_2 = pd.merge(to_sell, n2, on=['代码', '名称'], how='left')
+        # to_sell = to_sell_1.combine_first(to_sell_2)
+        # to_sell = to_sell[['代码', '名称', '价格', '涨幅', '无阈值排名', '170排名', '150排名', '130排名', 'n130排名', '强赎天计数']]
         print(to_sell)
 
 

@@ -123,18 +123,15 @@ def get_codes(file: str) -> list:
     with open(file) as f:
         text = f.read()
     blocks = text.split('代码')
-    lines1 = blocks[1].split('\n')
-    l1 = [row.split()[1] for row in lines1[1: -2]]
-    lines5 = blocks[5].split('\n')
-    l5 = [row.split()[1] for row in lines5[1: -2]]
-    lines6 = blocks[6].split('\n')
-    l6 = [row.split()[1] for row in lines6[1: -2]]
-    if len(blocks) > 7:
-        lines7 = blocks[7].split('\n')
-        l7 = [row.split()[1] for row in lines7[1: -1]]
-    else:
-        l7 = []
-    lst = list(set(l1 + l5 + l6 + l7))
+    lines2 = blocks[2].split('\n')
+    inner = [row.split()[1] for row in lines2[1: -2]]
+    lines3 = blocks[3].split('\n')
+    to_buy = [row.split()[1] for row in lines3[1: -2]]
+    to_sell = []
+    if len(blocks) > 4:
+        lines4 = blocks[4].split('\n')
+        to_sell = [row.split()[1] for row in lines4[1: -1]]
+    lst = list(set(inner + to_buy + to_sell))
     lst = ['SH' + i if i.startswith('11') else 'SZ' + i for i in lst]
     return sorted(lst)
 
