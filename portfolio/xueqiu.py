@@ -26,6 +26,8 @@ class Xueqiu:
         resp = request("GET", url, headers=self.headers)
         resp.raise_for_status()
         self.cookies = resp.cookies
+        with open('auth/xq_cookie.txt', 'r') as f:
+            self.my_cookies = f.read()
 
     def get_name(self, code: str) -> str:
         url = 'https://stock.xueqiu.com/v5/stock/quote.json?symbol=%s' % code.upper()
@@ -83,7 +85,7 @@ class Xueqiu:
         dic[name] = round(dic.pop('close'), 2)
         return dic
 
-    def get_cvtbones(self, codes: list) -> pd.DataFrame:
+    def get_cvt_bones(self, codes: list) -> pd.DataFrame:
         params = {
             'symbol': ','.join(codes),
             'extend': 'detail',
@@ -97,16 +99,33 @@ class Xueqiu:
         for i in items:
             quote = i['quote']
             dic = {
-                'code': quote['symbol'],
-                'name': quote['name'],
-                'price': quote['current'],
-                'premium': quote['convert_bond_ratio'],
-                'remains': round(quote['outstanding_amt'] / quote['total_issue_scale'] * 100, 2),
-                'days': (datetime.fromtimestamp(quote['maturity_date'] / 1000).date() - date.today()).days,
-                'pc': quote['percent']
+                '代码': quote['symbol'][2:],
+                '名称': quote['name'],
+                '价格': quote['current'],
+                '涨跌幅%': quote['percent'],
+                '溢价率%': quote['premium_rate'],
+                '剩余规模%': round(quote['outstanding_amt'] / quote['total_issue_scale'] * 100, 2),
+                '剩余天数': (datetime.fromtimestamp(quote['maturity_date'] / 1000).date() - date.today()).days
             }
             result.append(dic.copy())
         return pd.DataFrame(result)
+
+    def my_list(self, category: int, pid: int) -> list:
+        params = {
+            'size': 1000,
+            'category': category,
+            'pid': pid
+        }
+        url = 'https://stock.xueqiu.com/v5/stock/portfolio/stock/list.json?' + urlencode(params)
+        header = self.headers.copy()
+        header['Cookie'] = self.my_cookies
+        resp = request("GET", url, headers=header)
+        resp.raise_for_status()
+        stocks = resp.json()['data']['stocks']
+        return [x['symbol'] for x in stocks]
+
+    def my_cvt_bones(self):
+        return self.get_cvt_bones(self.my_list(1, 8) + self.my_list(1, 12))
 
 
 def draw(df: pd.DataFrame, name: str):
@@ -167,6 +186,8 @@ def batch(file: str):
 
 def main():
     # snowball = Xueqiu()
+    # print(snowball.my_cvt_bones())
+    # sys.exit(0)
     # print(snowball.last_close('SZ127007'))
     # print(snowball.get_data('SZ127007', begin_date='2022-01-01', end_date='2023-01-06'))
     # print(snowball.get_data('SZ127007', end_date='2023-01-06'))
