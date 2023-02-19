@@ -91,6 +91,10 @@ def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
         print(xlsx + ' created')
         return
 
+    if sheet in wb.sheetnames:
+        print("%s has '%s' already" % (xlsx, sheet))
+        return
+
     ws = wb.copy_worksheet(wb.worksheets[-1])       # copy a old sheet as template to avoid adjust size
     if df.shape[0] < ws.max_row:
         ws.delete_rows(df.shape[0], ws.max_row - 1)
@@ -109,28 +113,28 @@ def main():
         print('Usage: {} ref_rank_list.xlsx [rank130] [out_xlsx]'.format(sys.argv[0]))
         sys.exit(1)
 
-    mine = Xueqiu().my_cvt_bones()
-    # mine = mine[['代码', '名称', '价格', '涨跌幅%', '溢价率%']]
-
-    xlsx = sys.argv[1]
-    warning, bones = get_bones(xlsx)
-
+    in_xlsx = sys.argv[1]
+    warning, bones = get_bones(in_xlsx)
     out_xlsx = None
     title = '无阈值排名'
     if len(sys.argv) > 3:
         assert sys.argv[3].endswith('.xlsx')
         out_xlsx = sys.argv[3]
     elif len(sys.argv) > 2:
-        rank130 = int(sys.argv[2])
-        df = bones.loc[bones['130排名'] == rank130]
-        r = df.iloc[0, df.columns.get_loc('无阈值排名')]
-        bones = bones[bones['无阈值排名'] <= r]
-        title += '(截止到<130的第{}名)'.format(rank130)
+        if sys.argv[2].endswith('.xlsx'):
+            out_xlsx = sys.argv[2]
+        else:
+            rank130 = int(sys.argv[2])
+            df = bones.loc[bones['130排名'] == rank130]
+            r = df.iloc[0, df.columns.get_loc('无阈值排名')]
+            bones = bones[bones['无阈值排名'] <= r]
+            title += '(截止到<130的第{}名)'.format(rank130)
     print(title)
     print(bones)
     if out_xlsx:
-        to_excel(out_xlsx, re.search(r'\d{8}', xlsx)[0], bones)
+        to_excel(out_xlsx, re.search(r'\d{8}', in_xlsx)[0], bones)
 
+    mine = Xueqiu().my_cvt_bones()
     inner = pd.merge(bones, mine[['代码']], on=['代码'])
     print('已持有的上榜转债({})'.format(len(inner)))
     print(inner)
