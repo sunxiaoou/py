@@ -270,8 +270,9 @@ def batch(file: str, quantity: int, start_date: str):
     snowball = Xueqiu()
     dic = snowball.last_close(codes[0])
     date = dic['date'].strftime('%y%m%d')
-    df = snowball.get_cvtbones(codes)
-    result = df[['code', 'price']]
+    df = snowball.get_cvt_bones(codes)
+    result = df[['代码', '价格']].rename({'代码': 'code', '价格': 'price'}, axis=1)
+    result['code'] = result['code'].apply(lambda x: LoopBack.complete_code(x))
 
     for i, args in enumerate(GRID_ARGS):
         df = trade_codes(Grid(*args), codes, quantity, start_date)
