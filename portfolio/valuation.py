@@ -107,8 +107,8 @@ def parse_valuations(file: str) -> list:
 
     reg_date = re.compile(r'20\d{6}')
     result = []
+    i = 0
     try:
-        i = 0
         while True:
             while reg_date.search(lines[i]) is None:
                 i += 1
@@ -152,6 +152,8 @@ def parse_valuations(file: str) -> list:
                     continue
                 break               # break out of multiple loops as encountered '注：'
             result.append(dic)
+    except AttributeError:
+        raise AttributeError("[i - 1] = %s, [i] = %s" % (lines[i - 1], lines[1]))
     except IndexError:
         pass
     return result

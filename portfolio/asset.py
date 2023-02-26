@@ -266,7 +266,7 @@ def huasheng(datafile: str) -> pd.DataFrame:
     asset = float(lines[i + 3])
     total_mv = float(lines[i + 8])
     total_hg = float(lines[i + 10])
-    cash = float(lines[i + 14])
+    cash = float(lines[i + 14]) + float(lines[i + 15])
     assert round(total_mv + cash, 2) == asset,\
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
     result = [('华盛', currency, 'cash', '现金', '货币', 0, cash, 0)]
