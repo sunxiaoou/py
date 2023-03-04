@@ -29,6 +29,7 @@ class Grid:
             self.change = round((high / low) ** (1 / number) - 1, 4)
             self.change2 = round((low / high) ** (1 / number) - 1, 4)
             self.array = [round(high / (1 + self.change) ** i, 2) for i in range(self.number + 1)]
+            self.array[-1] = round(self.array[-1])
 
     def __str__(self):
         if self.is_percent:
@@ -199,20 +200,21 @@ class LoopBack:
 
 
 GRID_ARGS = [
-    (105, 115, 5, False),
-    (105, 115, 5, True),
-    (110, 125, 5, False),
-    (110, 125, 5, True),
-    (115, 135, 5, False),
-    (115, 135, 5, True),
-    (120, 150, 5, False),
-    (120, 150, 5, True),
-    (125, 165, 5, False),
-    (125, 165, 5, True)
+    # (105, 115, 5, False), (105, 115, 5, True),
+    # (110, 125, 5, False), (110, 125, 5, True),
+    # (115, 135, 5, False), (115, 135, 5, True),
+    # (120, 150, 5, False), (120, 150, 5, True),
+    # (125, 165, 5, False), (125, 165, 5, True)
+
+    (115, 135, 5, False), (115, 135, 5, True),
+    (120, 142, 5, False), (120, 142, 5, True),
+    (125, 149, 5, False), (125, 149, 5, True),
+    (130, 157, 5, False), (130, 157, 5, True),
+    (135, 165, 5, False), (135, 165, 5, True)
 ]
 
 
-def get_codes(file: str) -> list:
+def get_codes(file: str) -> (list, list):
     with open(file) as f:
         text = f.read()
     blocks = text.split('代码')
@@ -224,7 +226,9 @@ def get_codes(file: str) -> list:
     if len(blocks) > 4:
         lines4 = blocks[4].split('\n')
         to_sell = [row.split()[1] for row in lines4[1: -1]]
-    return sorted(list(set(inner + to_buy + to_sell)))
+    codes = sorted(list(set(inner + to_buy + to_sell)))
+    codes_held = sorted(list(set(inner + to_sell)))
+    return codes, codes_held
 
 
 def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.DataFrame:
@@ -266,7 +270,9 @@ def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
 
 
 def batch(file: str, quantity: int, start_date: str):
-    codes = [LoopBack.complete_code(i) for i in get_codes(file)]
+    codes, codes_held = get_codes(file)
+    codes = [LoopBack.complete_code(i) for i in codes]
+    codes_held = [LoopBack.complete_code(i) for i in codes_held]
     snowball = Xueqiu()
     dic = snowball.last_close(codes[0])
     date = dic['date'].strftime('%y%m%d')
@@ -286,6 +292,8 @@ def batch(file: str, quantity: int, start_date: str):
     result['max_col_name'] = result.iloc[:, -n:].idxmax(axis=1)
     result['max_value'] = result[result.columns[-n - 1: -1]].max(axis=1)
     result['BM'] = result.apply(lambda x: get_count(x)[0], axis=1)
+    result['code_name'] = result.apply(
+        lambda x: x['code_name'] if x['code'] in codes_held else x['code_name'] + '*', axis=1)
     result = result[['code_name', 'max_value', 'max_col_name', 'BM', 'price']]
     result['BM2'] = result.apply(lambda x: get_count(x)[1], axis=1)
     result['count'] = result.apply(lambda x: quantity * get_count(x)[2], axis=1)
