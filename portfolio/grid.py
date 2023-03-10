@@ -206,11 +206,11 @@ GRID_ARGS = [
     # (120, 150, 5, False), (120, 150, 5, True),
     # (125, 165, 5, False), (125, 165, 5, True)
 
-    (115, 135, 5, False), (115, 135, 5, True),
-    (120, 142, 5, False), (120, 142, 5, True),
-    (125, 149, 5, False), (125, 149, 5, True),
-    (130, 157, 5, False), (130, 157, 5, True),
-    (135, 165, 5, False), (135, 165, 5, True)
+    (115, 135, 5, False),   # (115, 135, 5, True),
+    (120, 142, 5, False),   # (120, 142, 5, True),
+    (125, 149, 5, True),    # (125, 149, 5, False),
+    (130, 157, 5, True),    # (130, 157, 5, False),
+    (135, 165, 5, True),    # (135, 165, 5, False)
 ]
 
 
@@ -293,7 +293,7 @@ def batch(file: str, quantity: int, start_date: str):
     result['max_value'] = result[result.columns[-n - 1: -1]].max(axis=1)
     result['BM'] = result.apply(lambda x: get_count(x)[0], axis=1)
     result['code_name'] = result.apply(
-        lambda x: x['code_name'] if x['code'] in codes_held else x['code_name'] + '*', axis=1)
+        lambda x: x['code_name'] if x['code'] in codes_held else '*' + x['code_name'], axis=1)
     result = result[['code_name', 'max_value', 'max_col_name', 'BM', 'price']]
     result['BM2'] = result.apply(lambda x: get_count(x)[1], axis=1)
     result['count'] = result.apply(lambda x: quantity * get_count(x)[2], axis=1)
