@@ -1,7 +1,6 @@
 #! /usr/bin/python3
 import re
 import sys
-import time
 
 import numpy as np
 import pandas as pd
@@ -214,23 +213,6 @@ GRID_ARGS = [
 ]
 
 
-def get_codes(file: str) -> (list, list):
-    with open(file) as f:
-        text = f.read()
-    blocks = text.split('代码')
-    lines2 = blocks[2].split('\n')
-    inner = [row.split()[1] for row in lines2[1: -2]]
-    lines3 = blocks[3].split('\n')
-    to_buy = [row.split()[1] for row in lines3[1: -2]]
-    to_sell = []
-    if len(blocks) > 4:
-        lines4 = blocks[4].split('\n')
-        to_sell = [row.split()[1] for row in lines4[1: -1]]
-    codes = sorted(list(set(inner + to_buy + to_sell)))
-    codes_held = sorted(list(set(inner + to_sell)))
-    return codes, codes_held
-
-
 def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.DataFrame:
     result = []
     for code in codes:
@@ -269,10 +251,10 @@ def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
     writer.save()
 
 
-def batch(file: str, quantity: int, start_date: str):
-    codes, codes_held = get_codes(file)
-    codes = [LoopBack.complete_code(i) for i in codes]
-    codes_held = [LoopBack.complete_code(i) for i in codes_held]
+def batch(quantity: int, start_date: str):
+    db = MySql(database='portfolio')
+    ranks = db.to_frame('cvtb_rank_daily', None, 'date = (select max(`date`) from cvtb_rank_daily)')
+    codes = ranks['code'].tolist()
     snowball = Xueqiu()
     dic = snowball.last_close(codes[0])
     date = dic['date'].strftime('%y%m%d')
@@ -292,9 +274,10 @@ def batch(file: str, quantity: int, start_date: str):
     result['max_col_name'] = result.iloc[:, -n:].idxmax(axis=1)
     result['max_value'] = result[result.columns[-n - 1: -1]].max(axis=1)
     result['BM'] = result.apply(lambda x: get_count(x)[0], axis=1)
+    result = pd.merge(ranks[['code', 'rank_170', 'redeem_days', 'status']], result, on=['code'])
     result['code_name'] = result.apply(
-        lambda x: x['code_name'] if x['code'] in codes_held else '*' + x['code_name'], axis=1)
-    result = result[['code_name', 'max_value', 'max_col_name', 'BM', 'price']]
+        lambda x: x['code_name'] if x['status'] == 'unowned' else '*' + x['code_name'], axis=1)
+    result = result[['code_name', 'rank_170', 'redeem_days', 'max_value', 'max_col_name', 'BM', 'price']]
     result['BM2'] = result.apply(lambda x: get_count(x)[1], axis=1)
     result['count'] = result.apply(lambda x: quantity * get_count(x)[2], axis=1)
 
@@ -303,7 +286,7 @@ def batch(file: str, quantity: int, start_date: str):
     result = result.reset_index()       # convert index to column
     # with open('grid.html', 'w') as f:
     #     f.write(df.to_html())
-    result['amount'] = result.apply(lambda x: '=F%d*H%d' % (x['index'] + 2, x['index'] + 2), axis=1)
+    result['amount'] = result.apply(lambda x: '=H%d*J%d' % (x['index'] + 2, x['index'] + 2), axis=1)
     # print(df)
     to_excel('grid.xlsx', date, result)
 
@@ -342,10 +325,10 @@ def main():
             else:
                 loopback = LoopBack(grid, sys.argv[3], int(sys.argv[4]))
             print(loopback.trade_daily())
-        elif sys.argv[1] == 'batch':
-            batch(sys.argv[2], int(sys.argv[3]), sys.argv[4])
         else:
             usage()
+    elif len(sys.argv) > 3 and sys.argv[1] == 'batch':
+        batch(int(sys.argv[2]), sys.argv[3])
     elif len(sys.argv) > 1 and sys.argv[1] == 'grid':
         if len(sys.argv) > 2:
             show_grids(int(sys.argv[2]))

@@ -1,11 +1,13 @@
 #! /usr/bin/python3
 import re
 import sys
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
 from openpyxl import load_workbook
 
+from mysql import MySql
 from xueqiu import Xueqiu
 
 pd.set_option('display.max_rows', 200)
@@ -131,25 +133,38 @@ def main():
             title += '(截止到<130的第{}名)'.format(rank130)
     print(title)
     print(bones)
+    date = re.search(r'\d{8}', in_xlsx)[0]
     if out_xlsx:
-        to_excel(out_xlsx, re.search(r'\d{8}', in_xlsx)[0], bones)
+        to_excel(out_xlsx, date, bones)
 
     mine = Xueqiu().my_cvt_bones()
-    inner = pd.merge(bones, mine[['代码']], on=['代码'])
-    print('已持有的上榜转债({})'.format(len(inner)))
-    print(inner)
+    owned = pd.merge(bones, mine[['代码']], on=['代码'])
+    print('已持有的上榜转债({})'.format(len(owned)))
+    print(owned)
 
-    to_buy = pd.concat([bones, inner]).drop_duplicates(keep=False)
-    to_buy = to_buy[to_buy['价格'] < 170]
-    print('未持有的<170的上榜转债({})'.format(len(to_buy)))
-    print(to_buy)
+    unowned = pd.concat([bones, owned]).drop_duplicates(keep=False)
+    unowned = unowned[unowned['价格'] < 170]
+    print('未持有的<170的上榜转债({})'.format(len(unowned)))
+    print(unowned)
 
-    to_sell = pd.concat([inner[['代码']], mine[['代码']]]).drop_duplicates(keep=False)
+    to_sell = pd.concat([owned[['代码']], mine[['代码']]]).drop_duplicates(keep=False)
     print('持有的未上榜转债({})'.format(len(to_sell)))
     if to_sell.shape[0]:
         to_sell = pd.merge(to_sell, mine, on=['代码'], how='left')
         to_sell['强赎天计数'] = to_sell.apply(lambda x: warning[x['代码']] if x['代码'] in warning else np.nan, axis=1)
         print(to_sell)
+
+    owned['状态'] = 'owned'
+    unowned['状态'] = 'unowned'
+    to_sell['状态'] = 'to_sell'
+    df = pd.concat([owned, unowned, to_sell[['代码', '名称', '价格', '涨跌幅%', '强赎天计数', '状态']]])
+    df['代码'] = df['代码'].apply(lambda x: 'SH' + x if x.startswith('11') else 'SZ' + x)
+    df['date'] = datetime.strptime(date, '%Y%m%d')
+    df = df[['date', '代码', '名称', '170排名', '强赎天计数', '状态']]
+    df = df.rename({'代码': 'code', '名称': 'name', '170排名': 'rank_170', '强赎天计数': 'redeem_days', '状态': 'status'},
+                   axis=1)
+    db = MySql(database='portfolio')
+    db.from_frame('cvtb_rank_daily', df)
 
 
 if __name__ == "__main__":

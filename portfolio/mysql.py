@@ -2,10 +2,10 @@
 import json
 from pprint import pprint
 
+from pymysql import IntegrityError
 from sqlalchemy import create_engine, MetaData, Table
 from sqlalchemy.orm import sessionmaker
 import pandas as pd
-# import pymysql
 
 pd.set_option('display.max_rows', 4000)
 # pd.set_option('display.max_columns', 6)
@@ -47,7 +47,10 @@ class MySql:
         return pd.read_sql(sql, self.db)
 
     def from_frame(self, table: str, frame: pd.DataFrame):
-        frame.to_sql(table, con=self.db, if_exists='append', index=False)
+        try:
+            frame.to_sql(table, con=self.db, if_exists='append', index=False)
+        except IntegrityError as e:
+            print('Error', e.args)
 
 
 def threshold() -> pd.DataFrame:
@@ -146,9 +149,10 @@ def main():
     # print(df.columns)
     # print(df)
     db = MySql(database='portfolio')
+    print(db.to_frame('cvtb_rank_daily', None, 'date = (select max(`date`) from cvtb_rank_daily)'))
     # print(db.to_frame('cvtbone_daily', ['timestamp', 'name', 'open'],
     #                   'code = "%s"' % 'SZ127007'))
-    pprint(db.last_row('cvtbone_daily', 'date', 'code = "%s"' % 'SZ127007'))
+    # pprint(db.last_row('cvtbone_daily', 'date', 'code = "%s"' % 'SZ127007'))
     # db = MySql(database='portfolio')
     # print(db.last_row('valuation', 'timestamp'))
     # # db = MySql(database='manga')
