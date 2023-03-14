@@ -287,7 +287,7 @@ def batch(quantity: int, start_date: str):
     # with open('grid.html', 'w') as f:
     #     f.write(df.to_html())
     result['amount'] = result.apply(lambda x: '=H%d*J%d' % (x['index'] + 2, x['index'] + 2), axis=1)
-    # print(df)
+    # print(result)
     to_excel('grid.xlsx', date, result)
 
 

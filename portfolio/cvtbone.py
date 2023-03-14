@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 import re
 import sys
+import time
 from datetime import datetime
 
 import numpy as np
@@ -110,6 +111,22 @@ def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
     writer.save()
 
 
+def get_data(code: str, db: MySql, snowball: Xueqiu) -> pd.DataFrame:
+    dic = db.last_row('cvtbone_daily', 'date', 'code = "%s"' % code)
+    if not dic:
+        df = snowball.get_data(code)
+        dic['name'] = snowball.get_name(code)
+    else:
+        begin_date = (dic['date'] + pd.Timedelta(days=1)).strftime('%Y-%m-%d')
+        df = snowball.get_data(code, begin_date)
+    # print(df)
+    if not df.empty:
+        df['code'] = code
+        df['name'] = dic['name']
+        df = df[['date', 'code', 'name', 'open', 'high', 'low', 'close', 'volume']]
+    return df
+
+
 def main():
     if len(sys.argv) < 2:
         print('Usage: {} ref_rank_list.xlsx [rank130] [out_xlsx]'.format(sys.argv[0]))
@@ -159,12 +176,22 @@ def main():
     to_sell['状态'] = 'to_sell'
     df = pd.concat([owned, unowned, to_sell[['代码', '名称', '价格', '涨跌幅%', '强赎天计数', '状态']]])
     df['代码'] = df['代码'].apply(lambda x: 'SH' + x if x.startswith('11') else 'SZ' + x)
+    codes = df['代码'].tolist()
     df['date'] = datetime.strptime(date, '%Y%m%d')
     df = df[['date', '代码', '名称', '170排名', '强赎天计数', '状态']]
     df = df.rename({'代码': 'code', '名称': 'name', '170排名': 'rank_170', '强赎天计数': 'redeem_days', '状态': 'status'},
                    axis=1)
     db = MySql(database='portfolio')
-    db.from_frame('cvtb_rank_daily', df)
+    snowball = Xueqiu()
+    for code in codes:
+        df2 = get_data(code, db, snowball)
+        if not df2.empty:
+            print(df2)
+            db.from_frame('cvtbone_daily', df2)
+        time.sleep(0.2)
+    dic = db.last_row('cvtb_rank_daily', 'date')
+    if dic['date'] > df['date'].iloc[0]:
+        db.from_frame('cvtb_rank_daily', df)
 
 
 if __name__ == "__main__":
