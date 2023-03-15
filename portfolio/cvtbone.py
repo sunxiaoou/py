@@ -185,12 +185,13 @@ def main():
     snowball = Xueqiu()
     for code in codes:
         df2 = get_data(code, db, snowball)
-        if not df2.empty:
-            print(df2)
-            db.from_frame('cvtbone_daily', df2)
-        time.sleep(0.2)
+        if df2.empty:
+            break
+        print(df2)
+        db.from_frame('cvtbone_daily', df2)
+        # time.sleep(0.2)
     dic = db.last_row('cvtb_rank_daily', 'date')
-    if dic['date'] > df['date'].iloc[0]:
+    if dic['date'] < df['date'].iloc[0]:
         db.from_frame('cvtb_rank_daily', df)
 
 
