@@ -39,15 +39,18 @@ def request_zsxq(url: str, headers: dict) -> str:
     create = ''
     for i in items:
         if 'images' in i['talk']:
-            for j in i['talk']['images']:
-                if 'original' in j:
-                    pic = j['original']['url']
-                    create = i['create_time']
-                    save_pic(create, pic)
-                elif 'large' in j:
-                    pic = j['large']['url']
-                    create = i['create_time']
-                    save_pic(create, pic)
+            pic = i['talk']['images'][1]['original']['url']
+            create = i['create_time']
+            save_pic(create, pic)
+            # for j in i['talk']['images']:
+            #     if 'original' in j:
+            #         pic = j['original']['url']
+            #         create = i['create_time']
+            #         save_pic(create, pic)
+            #     elif 'large' in j:
+            #         pic = j['large']['url']
+            #         create = i['create_time']
+            #         save_pic(create, pic)
     return create
 
 
@@ -57,7 +60,7 @@ def main():
         print('       {} num [end_time(%Y%m%d)]'.format(sys.argv[0]))
         sys.exit(1)
 
-    with open('zsxq_cookie.txt', 'r') as f:
+    with open('auth/zsxq_cookie.txt', 'r') as f:
         cookie = f.read()[:-1]      # delete last '\n'
     headers = {
         'Cookie': cookie,

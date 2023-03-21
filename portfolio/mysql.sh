@@ -61,6 +61,8 @@ mysql -u $user -p$pass $db << EOF
     SPG120035 FLOAT,
     SPHCMSHP FLOAT,
     SPX FLOAT,
+    cnbone FLOAT,
+    usbone FLOAT,
     sh000985 FLOAT NOT NULL,
     star FLOAT NOT NULL,
     PRIMARY KEY (timestamp)
