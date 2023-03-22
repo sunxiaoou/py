@@ -5,7 +5,7 @@ mysql -u $user -p$pass $db << EOF
   DROP TABLE IF EXISTS $table;
   SET character_set_client = utf8mb4;
   CREATE TABLE $table (
-    timestamp INT NOT NULL,
+    date TIMESTAMP NOT NULL,
     C000010 FLOAT,
     C000015 FLOAT,
     C000016 FLOAT,
@@ -61,11 +61,11 @@ mysql -u $user -p$pass $db << EOF
     SPG120035 FLOAT,
     SPHCMSHP FLOAT,
     SPX FLOAT,
-    cnbone FLOAT,
-    usbone FLOAT,
+    CNBONE FLOAT,
+    USBONE FLOAT,
     sh000985 FLOAT NOT NULL,
     star FLOAT NOT NULL,
-    PRIMARY KEY (timestamp)
+    PRIMARY KEY (date)
   ) engine = innodb default charset = utf8mb4;
 EOF
 }
@@ -153,7 +153,7 @@ pass=$2
 db=$3
 table=$4
 
-createTable4
+createTable
 # insertTable
 # selectTable
 

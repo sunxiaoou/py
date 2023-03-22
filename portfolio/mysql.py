@@ -66,7 +66,7 @@ def threshold() -> pd.DataFrame:
 
 def valuation() -> pd.DataFrame:
     dic = {
-        '_id': 'timestamp',
+        '_id': 'date',
         '上证180': 'C000010',
         '上证红利': 'C000015',
         '上证50': 'C000016',
@@ -122,6 +122,8 @@ def valuation() -> pd.DataFrame:
         '全球医疗': 'SPG120035',
         '香港中小': 'SPHCMSHP',
         '标普500': 'SPX',
+        '10年期国债（A股）': 'CNBONE',
+        '10年期国债（美股）': 'USBONE'
     }
 
     with open('valuation.json') as f:
