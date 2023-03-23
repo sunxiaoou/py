@@ -351,13 +351,13 @@ def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
 def get_valuation_with_star(dic: dict, star: float) -> dict:
     date = dic['_id']
     val_dic = {v: dic[k] for k, v in name_code().items()}
-    val_dic['cnbone'] = dic['10年期国债（A股）']
-    val_dic['usbone'] = dic['10年期国债（美股）']
+    val_dic['CNBONE'] = dic['10年期国债（A股）']
+    val_dic['USBONE'] = dic['10年期国债（美股）']
 
     snowball = Xueqiu()
     dic2 = snowball.last_close('sh000985')
     assert date == dic2['date'].strftime('%Y%m%d')
-    val_dic['timestamp'] = int(time.mktime(time.strptime(date, "%Y%m%d")))
+    val_dic['date'] = datetime.strptime(date, "%Y%m%d")
     val_dic['sh000985'] = dic2['中证全指']
     val_dic['star'] = star
     return val_dic
@@ -365,16 +365,11 @@ def get_valuation_with_star(dic: dict, star: float) -> dict:
 
 def to_mysql(dic: dict):
     db = MySql(database='portfolio')
-    last = db.last_row('valuation', 'timestamp')
+    last = db.last_row('valuation', 'date')
     # print(last)
-    # for key in dic:
-    #     if dic[key] != last[key]:
-    #         print(f"Different value for {key}: {dic[key]} != {last[key]}")
-    if dic['timestamp'] > last['timestamp']:
+    if dic['date'] > last['date']:
         db.insert('valuation', dic)
-        print('inserted row(%s) after row(%s)' %
-              (datetime.fromtimestamp(dic['timestamp']).strftime('%y%m%d'),
-               datetime.fromtimestamp(last['timestamp']).strftime('%y%m%d')))
+        print('inserted row(%s) after row(%s)' % (dic['date'].date(), last['date'].date()))
 
 
 def usage():

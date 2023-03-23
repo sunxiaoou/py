@@ -33,7 +33,8 @@ class MySql:
 
     def insert(self, table: str, row: dict):
         session = sessionmaker(bind=self.db)()
-        val_str = ', '.join(["'{}'".format(x) if isinstance(x, str) else str(x) for x in row.values()])
+        # val_str = ', '.join(["'{}'".format(x) if isinstance(x, str) else str(x) for x in row.values()])
+        val_str = ', '.join([str(x) if isinstance(x, float) else "'{}'".format(x) for x in row.values()])
         sql = 'INSERT INTO %s (%s) VALUES (%s)' % (table, ', '.join(row.keys()), val_str)
         print(sql)
         session.execute(sql)
