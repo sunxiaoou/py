@@ -3,7 +3,7 @@ import json
 import os
 import sys
 import time
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from urllib.parse import urlencode
 
 import matplotlib.pyplot as plt
@@ -184,10 +184,32 @@ def batch(file: str):
         time.sleep(0.2)
 
 
+def get_etf_codes() -> list:
+    db = MySql(database='portfolio')
+    df = db.to_frame('threshold')
+    # df['onsite'] = df['onsite'].apply(lambda x: None if x is None else 'SH' + x if x[0] == '5' else 'SZ' + x)
+    # df['offsite'] = df['offsite'].apply(lambda x: None if x is None else 'F' + x)
+    codes = df['onsite'].tolist()
+    return [x for x in codes if x is not None]
+
+
+def batch_etf():
+    snowball = Xueqiu()
+    db = MySql()
+    for code in get_etf_codes() + ['KWEB', 'TLT', '03033']:
+        df = snowball.get_data(code, '2017-06-15')
+        if not df.empty:
+            df['code'] = code
+            df['name'] = snowball.get_name(code)
+            df = df[['date', 'code', 'name', 'open', 'high', 'low', 'close', 'volume']]
+            print(df)
+            db.from_frame('etf_daily', df)
+        time.sleep(0.2)
+
+
 def main():
-    # snowball = Xueqiu()
-    # print(snowball.my_cvt_bones())
-    # sys.exit(0)
+    batch_etf()
+    sys.exit(0)
     # print(snowball.last_close('SZ127007'))
     # print(snowball.get_data('SZ127007', begin_date='2022-01-01', end_date='2023-01-06'))
     # print(snowball.get_data('SZ127007', end_date='2023-01-06'))

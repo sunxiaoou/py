@@ -82,7 +82,7 @@ mysql -u $user -p$pass $db << EOF
     high FLOAT NOT NULL,
     low FLOAT NOT NULL,
     close FLOAT NOT NULL,
-    volume INT NOT NULL,
+    volume BIGINT NOT NULL,
     PRIMARY KEY (date, code)
   ) engine = innodb default charset = utf8mb4;
 EOF
@@ -153,7 +153,7 @@ pass=$2
 db=$3
 table=$4
 
-createTable
+createTable3
 # insertTable
 # selectTable
 

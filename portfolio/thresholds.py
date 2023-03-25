@@ -1,6 +1,10 @@
 #! /usr/bin/python3
 from pprint import pprint
 
+import pandas as pd
+
+from mysql import MySql
+
 COLUMNS = ['代码', '_id', '参考指标', '最低', '低估', '高估', '最高']
 THRESHOLDS = [
     ('000015', '上证红利', '盈利收益率', 17.5, 10, 6.4, 2.27),
@@ -72,8 +76,18 @@ def name_code() -> dict:
     return dic
 
 
+def from_sql():
+    db = MySql(database='portfolio')
+    df = db.to_frame('threshold_old')
+    df['onsite'] = df['onsite'].apply(lambda x: None if x is None else 'SH' + x if x[0] == '5' else 'SZ' + x)
+    # df['offsite'] = df['offsite'].apply(lambda x: None if x is None else 'F' + x)
+    db.from_frame('threshold', df)
+    print(df)
+
+
 def main():
-    pprint(name_code())
+    # pprint(name_code())
+    from_sql()
 
 
 if __name__ == "__main__":
