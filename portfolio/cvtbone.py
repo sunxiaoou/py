@@ -1,7 +1,6 @@
 #! /usr/bin/python3
 import re
 import sys
-import time
 from datetime import datetime
 
 import numpy as np
@@ -111,20 +110,32 @@ def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
     writer.save()
 
 
-def get_data(code: str, db: MySql, snowball: Xueqiu) -> pd.DataFrame:
-    dic = db.last_row('cvtbone_daily', 'date', 'code = "%s"' % code)
-    if not dic:
-        df = snowball.get_data(code)
-        dic['name'] = snowball.get_name(code)
-    else:
-        begin_date = (dic['date'] + pd.Timedelta(days=1)).strftime('%Y-%m-%d')
-        df = snowball.get_data(code, begin_date)
-    # print(df)
-    if not df.empty:
+def update_price(codes: list, db: MySql):
+    table = 'cvtbone_daily'
+    snowball = Xueqiu()
+    for code in codes:
+        dic = db.last_row(table, 'date', 'code = "%s"' % code)
+        if not dic:
+            df = snowball.get_data(code)
+            dic['name'] = snowball.get_name(code)
+        else:
+            begin_date = (dic['date'] + pd.Timedelta(days=1)).strftime('%Y-%m-%d')
+            df = snowball.get_data(code, begin_date)
+        if not df.empty:
+            break           # maybe continue
         df['code'] = code
         df['name'] = dic['name']
         df = df[['date', 'code', 'name', 'open', 'high', 'low', 'close', 'volume']]
-    return df
+        print(df)
+        db.from_frame(table, df)
+        # time.sleep(0.2)
+
+
+def update_rank(df: pd.DataFrame, db: MySql):
+    table = 'cvtb_rank_daily'
+    dic = db.last_row(table, 'date')
+    if dic['date'] < df['date'].iloc[0]:
+        db.from_frame(table, df)
 
 
 def main():
@@ -182,17 +193,8 @@ def main():
     df = df.rename({'代码': 'code', '名称': 'name', '170排名': 'rank_170', '强赎天计数': 'redeem_days', '状态': 'status'},
                    axis=1)
     db = MySql(database='portfolio')
-    snowball = Xueqiu()
-    for code in codes:
-        df2 = get_data(code, db, snowball)
-        if df2.empty:
-            break
-        print(df2)
-        db.from_frame('cvtbone_daily', df2)
-        # time.sleep(0.2)
-    dic = db.last_row('cvtb_rank_daily', 'date')
-    if dic['date'] < df['date'].iloc[0]:
-        db.from_frame('cvtb_rank_daily', df)
+    update_price(codes, db)
+    update_rank(df, db)
 
 
 if __name__ == "__main__":

@@ -363,12 +363,35 @@ def get_valuation_with_star(dic: dict, star: float) -> dict:
     return val_dic
 
 
-def to_mysql(dic: dict):
-    db = MySql(database='portfolio')
-    last = db.last_row('valuation', 'date')
-    # print(last)
+def to_etf_db(db: MySql):
+    df = db.to_frame('threshold')
+    codes = [x for x in df['onsite'].tolist() if x is not None]
+    codes += ['KWEB', 'TLT', '03033']
+    table = 'etf_daily'
+    snowball = Xueqiu()
+    for code in codes:
+        dic = db.last_row(table, 'date', 'code = "%s"' % code)
+        if not dic:
+            df = snowball.get_data(code)
+            dic['name'] = snowball.get_name(code)
+        else:
+            begin_date = (dic['date'] + pd.Timedelta(days=1)).strftime('%Y-%m-%d')
+            df = snowball.get_data(code, begin_date)
+        if not df.empty:
+            break           # maybe continue
+        df['code'] = code
+        df['name'] = dic['name']
+        df = df[['date', 'code', 'name', 'open', 'high', 'low', 'close', 'volume']]
+        print(df)
+        db.from_frame(table, df)
+        # time.sleep(0.2)
+
+
+def to_valuation_db(dic: dict, db: MySql):
+    table = 'valuation'
+    last = db.last_row(table, 'date')
     if dic['date'] > last['date']:
-        db.insert('valuation', dic)
+        db.insert(table, dic)
         print('inserted row(%s) after row(%s)' % (dic['date'].date(), last['date'].date()))
 
 
@@ -396,7 +419,9 @@ def main():
             if not sys.argv[3].endswith('.xlsx'):
                 usage()
             to_excel(sys.argv[3], date, val_df)
-            to_mysql(val_dict)
+            db = MySql()
+            to_etf_db(db)
+            to_valuation_db(val_dict, db)
         date = datetime.strptime(date, '%Y%m%d').strftime('%Y-%m-%d')
         print('\n%s 中证全指 %.2f 星级 %.1f' % (date, val_dict['sh000985'], val_dict['star']))
     elif len(sys.argv) > 1 and sys.argv[1].endswith('.xlsx'):
