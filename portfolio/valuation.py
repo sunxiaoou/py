@@ -2,9 +2,8 @@
 import os
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pprint import pprint
-import time
 
 import pandas as pd
 import pyperclip
@@ -363,6 +362,12 @@ def get_valuation_with_star(dic: dict, star: float) -> dict:
     return val_dic
 
 
+def date_to_cell(date: datetime) -> datetime:
+    if date.hour or date.minute or date.second or date.microsecond:
+        date = date.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+    return date
+
+
 def to_etf_db(db: MySql):
     df = db.to_frame('threshold')
     codes = [x for x in df['onsite'].tolist() if x is not None]
@@ -375,9 +380,9 @@ def to_etf_db(db: MySql):
             df = snowball.get_data(code)
             dic['name'] = snowball.get_name(code)
         else:
-            begin_date = (dic['date'] + pd.Timedelta(days=1)).strftime('%Y-%m-%d')
+            begin_date = (date_to_cell(dic['date']) + pd.Timedelta(days=1)).strftime('%Y-%m-%d')
             df = snowball.get_data(code, begin_date)
-        if not df.empty:
+        if df.empty:
             break           # maybe continue
         df['code'] = code
         df['name'] = dic['name']

@@ -121,7 +121,7 @@ def update_price(codes: list, db: MySql):
         else:
             begin_date = (dic['date'] + pd.Timedelta(days=1)).strftime('%Y-%m-%d')
             df = snowball.get_data(code, begin_date)
-        if not df.empty:
+        if df.empty:
             break           # maybe continue
         df['code'] = code
         df['name'] = dic['name']
