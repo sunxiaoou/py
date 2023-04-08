@@ -20,6 +20,7 @@ class Grid:
         self.high = high
         self.is_percent = is_percent
         self.number = number
+        self.name = '%d_%d_%d_%d' % (self.low, self.high, self.number, 1 if self.is_percent else 0)
         if not self.is_percent:
             self.change = round((high - low) / number, 2)
             self.change2 = - self.change
@@ -35,7 +36,10 @@ class Grid:
             changes = '({}%, {}%)'.format(round(self.change * 100, 2), round(self.change2 * 100, 2))
         else:
             changes = '(%.2f, %.2f)' % (self.change, self.change2)
-        return self.to_str() + ': ' + str(changes) + ' ' + str(self.array)
+        return self.name + ': ' + str(changes) + ' ' + str(self.array)
+
+    def get_name(self) -> str:
+        return self.name
 
     def get_count(self, price: float, benchmark: float = -1) -> tuple:
         index = 0 if benchmark == -1 else self.array.index(benchmark)
@@ -63,13 +67,10 @@ class Grid:
         df['loss(%)'] = round(df['loss'] / df['cost'] * 100, 2)
         return df
 
-    def to_str(self) -> str:
-        return "%d_%d_%d_%d" % (self.low, self.high, self.number, 1 if self.is_percent else 0)
-
     @classmethod
     def make(cls, s: str):
-        args = [int(i) for i in s.split('_')]
-        args[-1] = True if args[-1] else False
+        a = s.split('_')
+        args = [float(a[0]), float(a[1]), int(a[2]), True if int(a[3]) else False]
         return cls(*args)
 
 
@@ -199,17 +200,16 @@ class LoopBack:
 
 
 GRID_ARGS = [
-    # (105, 115, 5, False), (105, 115, 5, True),
-    # (110, 125, 5, False), (110, 125, 5, True),
-    # (115, 135, 5, False), (115, 135, 5, True),
-    # (120, 150, 5, False), (120, 150, 5, True),
-    # (125, 165, 5, False), (125, 165, 5, True)
-
-    (115, 135, 5, False),   # (115, 135, 5, True),
-    (120, 142, 5, False),   # (120, 142, 5, True),
-    (125, 149, 5, True),    # (125, 149, 5, False),
-    (130, 157, 5, True),    # (130, 157, 5, False),
-    (135, 165, 5, True),    # (135, 165, 5, False)
+    # (115, 135, 5, False),   # (115, 135, 5, True),
+    # (120, 142, 5, False),   # (120, 142, 5, True),
+    # (125, 149, 5, True),    # (125, 149, 5, False),
+    # (130, 157, 5, True),    # (130, 157, 5, False),
+    # (135, 165, 5, True),    # (135, 165, 5, False)
+    '115_135_5_0',
+    '120_142_5_0',
+    '125_149_5_1',
+    '130_157_5_1',
+    '135_165_5_1'
 ]
 
 
@@ -220,7 +220,22 @@ def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.D
         s = s.split()
         result.append([s[0], float(s[-1])])
         # time.sleep(0.1)
-    return pd.DataFrame(result, columns=['code_name', grid.to_str()])
+    return pd.DataFrame(result, columns=['code_name', grid.get_name()])
+
+
+def get_grid_name(row: pd.Series) -> str:
+    n = len(GRID_ARGS)
+    name = str(row.tail(n).astype(float).idxmax())
+    while True:
+        grid = Grid.make(name)
+        idx, bm, bm2, count = grid.get_count(row['price'])
+        if count > 0:
+            break
+        i = GRID_ARGS.index(name)
+        if i == n - 1:
+            break
+        name = GRID_ARGS[i + 1]
+    return name
 
 
 def get_count(row: pd.Series) -> tuple:
@@ -263,16 +278,15 @@ def batch(quantity: int, start_date: str):
     result['code'] = result['code'].apply(lambda x: LoopBack.complete_code(x))
 
     for i, args in enumerate(GRID_ARGS):
-        df = trade_codes(Grid(*args), codes, quantity, start_date)
+        df = trade_codes(Grid.make(args), codes, quantity, start_date)
         if i == 0:
             df['code'] = df.apply(lambda x: x['code_name'][: 8], axis=1)
             result = result.merge(df, on='code', how='inner')
         else:
             result = result.merge(df, on='code_name', how='inner')
 
-    n = len(GRID_ARGS)
-    result['max_col_name'] = result.iloc[:, -n:].idxmax(axis=1)
-    result['max_value'] = result[result.columns[-n - 1: -1]].max(axis=1)
+    result['max_col_name'] = result.apply(get_grid_name, axis=1)
+    result['max_value'] = result.apply(lambda x: x[x['max_col_name']], axis=1)
     result['BM'] = result.apply(lambda x: get_count(x)[0], axis=1)
     result = pd.merge(ranks[['code', 'rank_170', 'redeem_days', 'status']], result, on=['code'])
     result['code_name'] = result.apply(
@@ -293,7 +307,7 @@ def batch(quantity: int, start_date: str):
 
 def show_grids(quantity: int):
     for args in GRID_ARGS:
-        grid = Grid(*args)
+        grid = Grid.make(args)
         print(grid)
         if quantity:
             print(grid.show_grid(quantity))
