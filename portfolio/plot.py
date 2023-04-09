@@ -97,7 +97,16 @@ def plot_code_valuation(code: str, begin: str = ''):
         df = df.merge(df2, on='date', how='inner')
         df = df.rename({'close': code, val_code: reference + '%'}, axis=1)
     else:
-        df = pd.DataFrame()
+        df = db.to_frame('etf_daily', ['date', 'name', 'close'], "code = '%s' and date >= '%s'"
+                         % (code, begin))
+        dic = db.last_row('threshold', 'code', "onsite = '%s'" % code)
+        val_code = dic['code']
+        reference = dic['name'] + dic['reference']
+        title = '近年%s(%s)与%s走势对比' % (code, df['name'].iloc[-1], reference)
+        df.drop(columns=['name'], inplace=True)
+        df2 = db.to_frame('valuation', ['date', val_code], "date >= '%s'" % begin)
+        df = df.merge(df2, on='date', how='inner')
+        df = df.rename({'close': code, val_code: reference + '%'}, axis=1)
     print(df)
     Plot.draw_bilateral(title, df)
     Plot.save('%s.png' % title)
