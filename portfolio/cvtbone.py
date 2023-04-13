@@ -185,8 +185,11 @@ def main():
 
     owned['状态'] = 'owned'
     unowned['状态'] = 'unowned'
-    to_sell['状态'] = 'to_sell'
-    df = pd.concat([owned, unowned, to_sell[['代码', '名称', '价格', '涨跌幅%', '强赎天计数', '状态']]])
+    if to_sell.shape[0]:
+        to_sell['状态'] = 'to_sell'
+        df = pd.concat([owned, unowned, to_sell[['代码', '名称', '价格', '涨跌幅%', '强赎天计数', '状态']]])
+    else:
+        df = pd.concat([owned, unowned])
     df['代码'] = df['代码'].apply(lambda x: 'SH' + x if x.startswith('11') else 'SZ' + x)
     codes = df['代码'].tolist()
     df['date'] = datetime.strptime(date, '%Y%m%d')
