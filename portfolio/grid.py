@@ -274,7 +274,7 @@ def batch(quantity: int, start_date: str):
     dic = snowball.last_close(codes[0])
     date = dic['date'].strftime('%y%m%d')
     df = snowball.get_cvt_bones(codes)
-    result = df[['代码', '价格']].rename({'代码': 'code', '价格': 'price'}, axis=1)
+    result = df[['代码', '价格', '涨跌幅%']].rename({'代码': 'code', '价格': 'price', '涨跌幅%': 'percent'}, axis=1)
     result['code'] = result['code'].apply(lambda x: LoopBack.complete_code(x))
 
     for i, args in enumerate(GRID_ARGS):
@@ -291,11 +291,11 @@ def batch(quantity: int, start_date: str):
     result = pd.merge(ranks[['code', 'rank_170', 'redeem_days', 'status']], result, on=['code'])
     result['code_name'] = result.apply(
         lambda x: x['code_name'] if x['status'] == 'unowned' else '*' + x['code_name'], axis=1)
-    result = result[['code_name', 'rank_170', 'redeem_days', 'max_value', 'max_col_name', 'BM', 'price']]
+    result = result[['code_name', 'rank_170', 'redeem_days', 'max_value', 'max_col_name', 'BM', 'price', 'percent']]
     result['BM2'] = result.apply(lambda x: get_count(x)[1], axis=1)
     result['count'] = result.apply(lambda x: quantity * get_count(x)[2], axis=1)
 
-    result = result.sort_values(by='max_value', ascending=False)
+    result = result.sort_values(by='rank_170')
     result.reset_index(drop=True, inplace=True)
     result = result.reset_index()       # convert index to column
     # with open('grid.html', 'w') as f:
