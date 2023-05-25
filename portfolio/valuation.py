@@ -95,7 +95,7 @@ def save_thresholds(file: str):
 
 
 def parse_valuations(file: str) -> list:
-    if not os.path.isfile(file):
+    if not os.path.isfile(file) or os.path.getsize(file) < 2000:
         with open(file, 'w') as fp:
             fp.write(pyperclip.paste())
 
