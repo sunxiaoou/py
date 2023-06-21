@@ -117,7 +117,8 @@ def parse_valuations(file: str) -> list:
             i += 1
             while True:
                 while lines[i] not in INDEXES and not lines[i].startswith('中概互联') \
-                        and not lines[i].startswith('恒生科技'):
+                        and not lines[i].startswith('恒生科技') \
+                        and not lines[i].startswith('10年期国债'):
                     if lines[i].startswith('永续A') or lines[i].startswith('注'):
                         i += 1
                         break
@@ -127,6 +128,8 @@ def parse_valuations(file: str) -> list:
                         key = '中概互联'
                     elif lines[i].startswith('恒生科技'):
                         key = '恒生科技'
+                    elif lines[i].startswith('10年期国债(A股)'):
+                        key = '10年期国债（A股）'
                     else:
                         key = lines[i]
                     if key == '中概互联':
