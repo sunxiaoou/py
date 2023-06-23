@@ -195,19 +195,19 @@ def huabao(datafile: str) -> pd.DataFrame:
     while not re.match(r'\d+\.\d\d', lines[i]):
         i += 1
     asset = float(lines[i])
-    total_mv = float(lines[i + 1])
-    i += 2
-    while lines[i] != '可取资金':
+    while lines[i] != '银证转账':
         i += 1
-    cash = float(lines[i + 1])
+    total_mv = float(lines[i + 1])
+    cash = float(lines[i + 2])
+    i += 2
     assert round(total_mv + cash, 2) == asset, \
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
     result = [('华宝', 'cny', 'cash', '现金', '货币', 0, cash, 0, None, None, None)]
-    while not lines[i].startswith('今日盈亏'):
+    while not lines[i].startswith('总仓位'):
         i += 1
-    s = lines[i + 2]
+    s = lines[i + 1]
     total_hg = float(re.sub('－', '-', s) if s[0] == '－' else s[1:])
-    i += 3
+    i += 1
     try:
         while lines[i] != '仓位':
             i += 1
