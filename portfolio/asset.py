@@ -54,6 +54,8 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
     try:
         while lines[i]:
             code = lines[i][4:] if lines[i].startswith('招银理财') else lines[i]
+            if code == '保险':
+                break
             if code.startswith('招赢日日盈'):
                 code = '招赢日日盈'
             i += 1
@@ -195,7 +197,7 @@ def huabao(datafile: str) -> pd.DataFrame:
     while not re.match(r'\d+\.\d\d', lines[i]):
         i += 1
     asset = float(lines[i])
-    while lines[i] != '银证转账':
+    while lines[i] != '余额理财':
         i += 1
     total_mv = float(lines[i + 1])
     cash = float(lines[i + 2])
