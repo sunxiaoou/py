@@ -131,7 +131,7 @@ def yinhe(datafile: str) -> pd.DataFrame:
     total_mv = float(lines[i + 3])
     total_hg = float(lines[i + 5])
     cash = float(lines[i + 7])
-    assert round(total_mv + cash, 2) == asset,\
+    assert round(total_mv + cash, 2) == asset, \
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
     result = [('银河', 'cny', 'cash', '现金', '货币', 0, cash + cash2, 0)]
     i += 8
@@ -157,7 +157,7 @@ def yinhe(datafile: str) -> pd.DataFrame:
 
         hold_gain = float(lines[i])
         i += 1
-        if ' ' in lines[i]:     # volume, cost are in same line
+        if ' ' in lines[i]:  # volume, cost are in same line
             l = lines[i].split()
             volume, cost = int(l[0]), float(l[1])
             i += 1
@@ -174,7 +174,7 @@ def yinhe(datafile: str) -> pd.DataFrame:
             v2, nav = int(lines[i]), float(lines[i + 1])
             i += 2
         assert v2 == volume, print("v2{} != volume{}".format(v2, volume))
-        assert market_value == round(nav * volume, 2),\
+        assert market_value == round(nav * volume, 2), \
             print("mv({}) != nav({}) * volume({})".format(market_value, nav, volume))
         result.append(('银河', 'cny', code, name, type, risk, market_value, hold_gain, volume, nav, cost))
     df = pd.DataFrame(result, columns=COLUMNS + ['volume', 'nav', 'cost'])
@@ -197,7 +197,7 @@ def huabao(datafile: str) -> pd.DataFrame:
     while not re.match(r'\d+\.\d\d', lines[i]):
         i += 1
     asset = float(lines[i])
-    while lines[i] != '余额理财':
+    while lines[i] != '银证转账':
         i += 1
     total_mv = float(lines[i + 1])
     cash = float(lines[i + 2])
@@ -269,7 +269,7 @@ def huasheng(datafile: str) -> pd.DataFrame:
     total_mv = float(lines[i + 8])
     total_hg = float(lines[i + 10])
     cash = float(lines[i + 14]) + float(lines[i + 15])
-    assert round(total_mv + cash, 2) == asset,\
+    assert round(total_mv + cash, 2) == asset, \
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
     result = [('华盛', currency, 'cash', '现金', '货币', 0, cash, 0)]
     i += 15
@@ -349,7 +349,6 @@ def futu(datafile: str) -> pd.DataFrame:
 
 
 def danjuan(datafile: str) -> pd.DataFrame:
-
     def get_plan(plan: str) -> list:
         resp = requests.get(url + 'plan/' + plan, headers=headers)
         assert resp.status_code == 200, print('status_code({}) != 200'.format(resp.status_code))
@@ -369,7 +368,7 @@ def danjuan(datafile: str) -> pd.DataFrame:
         return pd.read_csv(datafile, index_col=0)
 
     with open('auth/dj_cookie.txt', 'r') as f:
-        cookie = f.read()[:-1]      # delete last '\n'
+        cookie = f.read()[:-1]  # delete last '\n'
     # url = 'https://danjuanapp.com/djapi/holding/'
     url = 'https://danjuanfunds.com/djapi/holding/'
     headers = {
@@ -416,7 +415,7 @@ def tonghs(datafile: str) -> pd.DataFrame:
         return df
 
     with open('auth/ths_cookie.txt', 'r') as f:
-        cookie = f.read()[:-1]      # delete last '\n'
+        cookie = f.read()[:-1]  # delete last '\n'
     url = 'https://trade.5ifund.com/pc_query/trade_queryIncomeWjZeroList.action?_=1615356614458'
     url2 = 'https://trade.5ifund.com/pc_query/trade_currentShareList.action?_=1615344156640'
     headers = {
@@ -501,7 +500,7 @@ def fill(df: pd.DataFrame) -> pd.DataFrame:
 
     h2c, u2c = hkd_usd_rate()
     print(h2c, u2c)
-    df['name'] = df['name'].apply(lambda s: s if len(s) <= 10 else s[: 8] + '..')   # truncate name
+    df['name'] = df['name'].apply(lambda s: s if len(s) <= 10 else s[: 8] + '..')  # truncate name
     df['market_value'] = df.apply(lambda row: to_cny(row, 'market_value', (h2c, u2c)), axis=1)
     df['hold_gain'] = df.apply(lambda row: to_cny(row, 'hold_gain', (h2c, u2c)), axis=1)
     df['gain_rate'] = df.apply(gain_rate, axis=1)
@@ -510,7 +509,7 @@ def fill(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def run_all(files: list) -> pd.DataFrame:
-    platforms = ['zsb_', 'hsb_', 'yh_', 'hb_', 'hs_', 'ft_', 'dj_', 'ths_']   # to sort files
+    platforms = ['zsb_', 'hsb_', 'yh_', 'hb_', 'hs_', 'ft_', 'dj_']  # , 'ths_']   # to sort files
     fs = sorted(files)
     frames = []
     for p in platforms:
@@ -571,32 +570,32 @@ def to_execl(xlsx: str, sheet: str, df: pd.DataFrame):
         row, col = summary['location']
         le = [get_column_letter(j) for j in range(col, col + 3)]
         for i in range(len(summary['labels'])):
-            ws.cell(row=row+i, column=col).value = summary['labels'][i]
-            c = ws.cell(row=row+i, column=col+1)
+            ws.cell(row=row + i, column=col).value = summary['labels'][i]
+            c = ws.cell(row=row + i, column=col + 1)
             c.number_format = "#,##,0.00"
             c.value = '=SUMIF(${0}$2:${0}${1},{2}{3},$H$2:$H${1})'.format(summary['letter'],
                                                                           last_row, le[0], row + i)
-            c = ws.cell(row=row+i, column=col+2)
+            c = ws.cell(row=row + i, column=col + 2)
             c.number_format = "#,##,0.00"
             c.value = '=SUMIF(${0}$2:${0}${1},{2}{3},$I$2:$I${1})'.format(summary['letter'],
                                                                           last_row, le[0], row + i)
-        ws.cell(row=row+i+1, column=col).value = 'sum'
-        c = ws.cell(row=row+i+1, column=col+1)
+        ws.cell(row=row + i + 1, column=col).value = 'sum'
+        c = ws.cell(row=row + i + 1, column=col + 1)
         c.number_format = "#,##,0.00"
         c.value = '=SUM({0}{1}:{0}{2})'.format(le[1], row, row + i)
-        c = ws.cell(row=row+i+1, column=col+2)
+        c = ws.cell(row=row + i + 1, column=col + 2)
         c.number_format = "#,##,0.00"
         c.value = '=SUM({0}{1}:{0}{2})'.format(le[2], row, row + i)
 
         if summary['letter'] == 'E':
             for j in range(len(summary['labels']) + 1):
-                c = ws.cell(row=row+j, column=col+3)
+                c = ws.cell(row=row + j, column=col + 3)
                 c.number_format = '0.00%'
                 c.value = '={1}{0}/({2}{0}-{1}{0})'.format(row + j, le[2], le[1])
 
         pie = PieChart()
-        labels = Reference(ws, min_col=col, min_row=row, max_row=row+i)
-        data = Reference(ws, min_col=col+1, min_row=row-1, max_row=row+i)
+        labels = Reference(ws, min_col=col, min_row=row, max_row=row + i)
+        data = Reference(ws, min_col=col + 1, min_row=row - 1, max_row=row + i)
         pie.add_data(data, titles_from_data=True)
         pie.set_categories(labels)
         pie.title = summary['category']

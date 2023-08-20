@@ -34,8 +34,8 @@ def get_bones(xlsx: str) -> (dict, pd.DataFrame):
             break
         warning[str(code)] = ws.cell(row=i, column=dic['强赎天计数']).value
 
-    # ws = wb['今天可转债']
-    ws = wb['今天禄得']
+    # ws = wb['今天禄得']
+    ws = wb['今天排名']
     data = []
     for row in ws.iter_rows(min_row=1, min_col=1, max_row=ws.max_row - 2, max_col=MAX_COLUMN):
         cells = [cell.value for cell in row]
