@@ -277,23 +277,25 @@ def huasheng(datafile: str) -> pd.DataFrame:
     while not lines[i].endswith('现价／成本价'):
         i += 1
     i += 1
-    while len(lines) - i >= 8:
-        try:
-            name = lines[i]
-            volume = int(lines[i + 1])
-            hold_gain = float(lines[i + 2])
-            nav = float(lines[i + 3])
-            code = re.search(r'[0-9A-Z]+', lines[i + 4]).group()
-            name, type, risk = SECURITIES[code]
-            market_value = float(lines[i + 5])
-            i += 6
-            while not re.match(r'.*[\d.]+$', lines[i]):
-                i += 1
-            cost = float(lines[i])
+    while lines[i] != '1' or lines[i + 1] != '1':
+        name = lines[i]
+        i += 1
+        volume = int(lines[i])
+        i += 1
+        hold_gain = float(lines[i])
+        i += 1
+        nav = float(lines[i])
+        i += 1
+        code = re.search(r'[0-9A-Z]+', lines[i]).group()
+        i += 1
+        name, type, risk = SECURITIES[code]
+        market_value = float(lines[i])
+        i += 1
+        while not re.match(r'.*[\d.]+$', lines[i]):
             i += 1
-            result.append(('华盛', currency, code, name, type, risk, market_value, hold_gain, volume, nav, cost))
-        except ValueError:
-            break
+        cost = float(lines[i])
+        i += 1
+        result.append(('华盛', currency, code, name, type, risk, market_value, hold_gain, volume, nav, cost))
     df = pd.DataFrame(result, columns=COLUMNS + ['volume', 'nav', 'cost'])
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
