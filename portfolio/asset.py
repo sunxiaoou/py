@@ -277,7 +277,7 @@ def huasheng(datafile: str) -> pd.DataFrame:
     while not lines[i].endswith('现价／成本价'):
         i += 1
     i += 1
-    while lines[i] != '1' or lines[i + 1] != '1':
+    while len(lines) - i >= 8 and (lines[i] != '1' or lines[i + 1] != '1'):
         name = lines[i]
         i += 1
         volume = int(lines[i])

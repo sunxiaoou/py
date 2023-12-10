@@ -12,6 +12,13 @@ from pymongo import MongoClient
 
 from mysql import MySql
 
+PID_ETF_A = 0
+PID_HK = -7
+PID_US = -6
+PID_CVT = 8
+PID_CVT_2 = 12
+PID_MISC = 4
+
 
 class Market:
     fund_base = 'https://fund.xueqiu.com/dj/open/fund/deriveds?'
@@ -40,10 +47,10 @@ class Market:
         return [x['symbol'] for x in stocks]
 
     @staticmethod
-    def get_stocks(codes: list) -> list:
+    def get_stocks(pid: int) -> list:
         Market.HEADERS['Host'] = Market.URL_STOCK.split('/')[2]
         params = {
-            'symbol': ','.join(codes),
+            'symbol': ','.join(Market.get_list(1, pid)),
             'extend': 'detail',
             'is_delay_hk': 'true'
         }
@@ -64,8 +71,12 @@ class Market:
         return result
 
     @staticmethod
-    def get_cvtbones(codes: list) -> list:
+    def get_cvtbones(pid: int = None) -> list:
         Market.HEADERS['Host'] = Market.URL_STOCK.split('/')[2]
+        if pid == PID_MISC:
+            codes = Market.get_list(1, pid)
+        else:
+            codes = Market.get_list(1, PID_CVT) + Market.get_list(1, PID_CVT_2)
         params = {
             'symbol': ','.join(codes),
             'extend': 'detail',
@@ -123,15 +134,12 @@ def main():
         print('Usage: {} "a|cvtb|hk|us|fund"'.format(sys.argv[0]))
         sys.exit(1)
 
-    # with open('auth/xq_cookie.txt', 'r') as f:
-    #     HEADERS['Cookie'] = f.read()[:-1]       # delete last '\n'
-
     if sys.argv[1] == 'a':
-        result = Market.get_stocks(Market.get_list(1, 0))
+        result = Market.get_stocks(PID_ETF_A)
     elif sys.argv[1] == 'hk':
-        result = Market.get_stocks(Market.get_list(1, -7))
+        result = Market.get_stocks(PID_HK)
     elif sys.argv[1] == 'us':
-        result = Market.get_stocks(Market.get_list(1, -6))
+        result = Market.get_stocks(PID_US)
     elif sys.argv[1] == 'fund':
         funds = [
             '001556', '001594', '001810', '003318', '004069', '005259',
@@ -141,9 +149,9 @@ def main():
             '501050', '519671', '540003', '540006']
         result = Market.get_funds(Market.fund_base, funds)
     elif sys.argv[1] == 'cvtb':
-        result = Market.get_cvtbones(Market.get_list(1, 8) + Market.get_list(1, 12))
+        result = Market.get_cvtbones()
     elif sys.argv[1] == 'misc':
-        result = Market.get_cvtbones(Market.get_list(1, 4))
+        result = Market.get_cvtbones(PID_MISC)
     # elif sys.argv[1] == 'grid':
     #     result = get_cvtbones(get_list(1, 12))
     else:
