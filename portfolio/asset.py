@@ -512,7 +512,7 @@ def fill(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def run_all(files: list) -> pd.DataFrame:
-    platforms = ['zsb_', 'hsb_', 'yh_', 'hb_', 'hs_', 'ft_', 'dj_']  # , 'ths_']   # to sort files
+    platforms = ['zsb_', 'hsb_', 'yh_', 'hb_', 'hs_', 'ft_', 'dj_', 'ths_']   # to sort files
     fs = sorted(files)
     frames = []
     for p in platforms:
@@ -549,7 +549,8 @@ def to_execl(xlsx: str, sheet: str, df: pd.DataFrame):
     summaries = [
         {'location': (last_row + 2, 1),
          'letter': 'A',
-         'labels': ['招商银行', '恒生银行', '银河', '华宝', '华盛*', '富途*', '蛋卷*', '同花顺'],
+         # 'labels': ['招商银行', '恒生银行', '银河', '华宝', '华盛*', '富途*', '蛋卷*', '同花顺'],
+         'labels': ['招商银行', '恒生银行', '银河', '华盛*', '富途*', '蛋卷*'],
          'category': 'platform',
          'anchor': 'K1'},
         {'location': (last_row + 2, 4),
