@@ -386,7 +386,8 @@ def to_etf_db(db: MySql):
             begin_date = (date_to_cell(dic['date']) + pd.Timedelta(days=1)).strftime('%Y-%m-%d')
             df = snowball.get_data(code, begin_date)
         if df.empty:
-            break           # maybe continue
+            print('{}:{} is updated'.format(code, dic['name']))
+            continue
         df['code'] = code
         df['name'] = dic['name']
         df = df[['date', 'code', 'name', 'open', 'high', 'low', 'close', 'volume']]
