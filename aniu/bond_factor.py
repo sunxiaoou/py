@@ -13,6 +13,7 @@ plt.rcParams['axes.unicode_minus'] = False  # 用来在图中正常显示负号
 class Factor(ABC):
     PRICE = 'close_price'
     PREMIUM = 'bond_prem'
+    REMAIN = 'remain_size'
 
     def __init__(self, quantity: int, freq: int, cost: float, data: pd.DataFrame):
         self.quantity = quantity
@@ -28,6 +29,7 @@ class Factor(ABC):
         df = df.set_index(['trade_date', 'bond_code']).unstack()[column_name]
         if fill:
             df = df.fillna(method='pad')
+        df.index.name = None
         return df
 
     @abstractmethod
@@ -56,7 +58,7 @@ class Factor(ABC):
 
     def loop_back(self):
         signal = self.get_signal()
-        print(self.get_codes(signal))
+        # print(self.get_codes(signal))
         pnl = self.calc_pnl(signal)
         tp = (1 + pnl).cumprod()  # 计算每天累计收益
         tp = pd.DataFrame({'date': tp.index, 'value': tp.values})  # 将日期和每天累计收益对应起来
@@ -79,11 +81,17 @@ class LowPremium(Factor):
         return self.filter(self.get_factor(self.PREMIUM))
 
 
-class DoubleLow(Factor):
+class LowRemain(Factor):
+    def get_signal(self) -> pd.DataFrame:
+        return self.filter(self.get_factor(self.REMAIN))
+
+
+class TriangleLow(Factor):
     def get_signal(self) -> pd.DataFrame:
         price_rank = self.prices.apply(lambda x: x.rank(), axis=1)
         premium_rank = self.get_factor(self.PREMIUM).apply(lambda x: x.rank(), axis=1)
-        return self.filter(price_rank + premium_rank)
+        remain_rank = self.get_factor(self.REMAIN).apply(lambda x: x.rank(), axis=1)
+        return self.filter(price_rank + premium_rank + remain_rank)
 
 
 def main():
@@ -93,12 +101,14 @@ def main():
     e_date = pd.to_datetime('20231231')  # 初始化结束日期
     # stat_days=(e_date-s_date).days # 回测统计天数
     data = data[data['trade_date'] >= s_date]  # 设置回测开始日期 大于上面的开始日期
-    low_price = LowPrice(10, 10, 0.001, data)
-    low_price.loop_back()
-    low_premium = LowPremium(10, 10, 0.001, data)
-    low_premium.loop_back()
-    double_low = DoubleLow(10, 10, 0.001, data)
-    double_low.loop_back()
+    print('================== 低价 ==================')
+    LowPrice(10, 10, 0.001, data).loop_back()
+    print('================== 低溢价 ==================')
+    LowPremium(10, 10, 0.001, data).loop_back()
+    print('================== 小盘 ==================')
+    LowRemain(10, 10, 0.001, data).loop_back()
+    print('================== 双低+小盘 ==================')
+    TriangleLow(10, 10, 0.001, data).loop_back()
 
 
 if __name__ == "__main__":
