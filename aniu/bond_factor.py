@@ -73,7 +73,10 @@ class Factor(ABC):
         return date, round((1 - remains) * 100, 2)
 
     def plot(self):
-        self.cum_prod.plot(figsize=(8, 4), grid=True)
+        df = self.cum_prod[['date', 'value']]
+        df = df.dropna().set_index(df.columns[0])
+        df.index.name = None
+        df.plot(figsize=(8, 4), grid=True)
 
     def loop_back(self):
         # print(self.get_codes())
@@ -112,13 +115,19 @@ def main():
     # stat_days=(e_date-s_date).days # 回测统计天数
     data = data[data['trade_date'] >= s_date]  # 设置回测开始日期 大于上面的开始日期
     print('================== 低价 ==================')
-    LowPrice(10, 10, 0.001, data).loop_back()
+    factor = LowPrice(10, 10, 0.001, data)
+    factor.loop_back()
     print('================== 低溢价 ==================')
-    LowPremium(10, 10, 0.001, data).loop_back()
+    factor = LowPremium(10, 10, 0.001, data)
+    factor.loop_back()
     print('================== 小盘 ==================')
-    LowRemain(10, 10, 0.001, data).loop_back()
+    factor = LowRemain(10, 10, 0.001, data)
+    factor.loop_back()
     print('================== 双低+小盘 ==================')
-    TriangleLow(10, 10, 0.001, data).loop_back()
+    factor = TriangleLow(10, 10, 0.001, data)
+    factor.loop_back()
+    factor.plot()
+    plt.show()
 
 
 if __name__ == "__main__":
