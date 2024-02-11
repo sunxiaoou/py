@@ -493,14 +493,14 @@ def hkd_usd_rate() -> tuple:
             dic['港币'] = round(float(tds[4].text) / 100, 4)
         elif tds[0].text == '美元':
             dic['美元'] = round(float(tds[4].text) / 100, 4)
+    if '港币' not in dic or '美元' not in dic:
+        rates = CurrencyRates()
+        dic['港币'] = round(rates.get_rate('HKD', 'CNY'), 4)
+        dic['美元'] = round(rates.get_rate('USD', 'CNY'), 4)
     return dic['港币'], dic['美元']
 
 
 def fill(df: pd.DataFrame) -> pd.DataFrame:
-    # cr = CurrencyRates()
-    # h2c = round(cr.get_rate('HKD', 'CNY'), 2)
-    # u2c = round(cr.get_rate('USD', 'CNY'), 2)
-
     h2c, u2c = hkd_usd_rate()
     print(h2c, u2c)
     df['name'] = df['name'].apply(lambda s: s if len(s) <= 10 else s[: 8] + '..')  # truncate name

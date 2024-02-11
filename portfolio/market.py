@@ -85,7 +85,11 @@ class Market:
         url = Market.URL_STOCK + urlencode(params)
         # print(url)
         response = requests.get(url, headers=Market.HEADERS)
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except Exception as e:
+            print(type(e))
+            return []
         result = []
         items = response.json()['data']['items']
         for i in items:
