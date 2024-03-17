@@ -28,7 +28,7 @@ def get_bones(xlsx: str) -> (dict, pd.DataFrame):
             if(len(dic)) == 2:
                 break
     warning = {}
-    for i in range(2, ws.max_row):
+    for i in range(2, ws.max_row + 1):
         code = ws.cell(row=i, column=dic['代码']).value
         if not isinstance(code, int):
             break

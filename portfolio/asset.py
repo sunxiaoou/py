@@ -39,7 +39,7 @@ def verify(row: pd.Series):
 
 def zhaoshang_bank(datafile: str) -> pd.DataFrame:
     with open(datafile) as fp:
-        lines = [re.sub(r'[,，]', '', line).rstrip('\n') for line in fp.readlines()]
+        lines = [re.sub(r'[,，:>]', '', line).rstrip('\n') for line in fp.readlines()]
     i = 0
     while lines[i] != '尾号8884':
         i += 1
@@ -62,7 +62,10 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
             while not re.match(r'.*[\d.]+', lines[i]):
                 i += 1
             hold_gain = float(re.sub('[^\d.]+', '', lines[i]))
-            market_value = float(lines[i + 1])
+            i += 1
+            while not re.match(r'.*[\d.]+', lines[i]):
+                i += 1
+            market_value = float(lines[i])
             name, type, risk = SECURITIES[code]
             result.append(('招商银行', 'cny', code, name, type, risk, market_value, hold_gain))
             i += 4
@@ -81,7 +84,7 @@ def hangseng_bank(datafile: str) -> pd.DataFrame:
     with open(datafile) as fp:
         lines = [re.sub(r'[,＋]', '', re.sub('－', '-', line)).rstrip('\n') for line in fp.readlines()]
     i = 0
-    while lines[i] != '总市值（元）':
+    while not lines[i].startswith('总市值'):
         i += 1
     total_mv = float(lines[i + 1])
     asset = round(cash + total_mv, 2)
@@ -125,11 +128,11 @@ def yinhe(datafile: str) -> pd.DataFrame:
     with open(datafile) as fp:
         lines = [re.sub('－', '-', line).rstrip('\n') for line in fp.readlines()]
     i = 0
-    while lines[i] != '场内资产（人民币）':
+    while not lines[i].startswith('场内资产'):
         i += 1
     asset = float(lines[i + 1])
     total_mv = float(lines[i + 3])
-    total_hg = float(lines[i + 5])
+    total_hg = float(lines[i + 6])
     cash = float(lines[i + 7])
     assert round(total_mv + cash, 2) == asset, \
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
@@ -259,25 +262,33 @@ def huasheng(datafile: str) -> pd.DataFrame:
     s = re.sub(r'.+_', '', datafile[: -4])
     cash2 = float(s) if s else 0
 
-    with open(datafile) as fp:
-        lines = [re.sub(r'[,＋]', '', re.sub('－', '-', line)).rstrip('\n') for line in fp.readlines()]
+    with open(datafile) as f:
+        lines = []
+        for line in f.readlines():
+            lines += re.sub(r'[,＋]', '', re.sub('－', '-', line)).rstrip('\n').split()
 
     i = 0
     while not lines[i].startswith('资产净值'):
         i += 1
     currency = 'hkd' if '港币' in lines[i] else 'usd'
-    asset = float(lines[i + 3])
-    total_mv = float(lines[i + 8])
-    total_hg = float(lines[i + 10])
-    cash = float(lines[i + 14]) + float(lines[i + 15])
+    asset = float(lines[i + 1])
+    while lines[i] != '持仓盈亏':
+        i += 1
+    total_mv = float(lines[i + 1])
+    total_hg = float(lines[i + 3])
+    i += 4
+    while not re.match(r'.*[\d.]+$', lines[i]):
+        i += 1
+    cash = float(lines[i]) + float(lines[i + 1])
     assert round(total_mv + cash, 2) == asset, \
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
     result = [('华盛', currency, 'cash', '现金', '货币', 0, cash, 0)]
     i += 15
-    while not lines[i].endswith('现价／成本价'):
+    while not lines[i].endswith('成本价'):
         i += 1
     i += 1
-    while len(lines) - i >= 8 and (lines[i] != '1' or lines[i + 1] != '1'):
+    codes = []
+    while len(lines) - i >= 8 and lines[i] != '行情' and lines[i + 1] != '行情':
         name = lines[i]
         i += 1
         volume = int(lines[i])
@@ -287,6 +298,10 @@ def huasheng(datafile: str) -> pd.DataFrame:
         nav = float(lines[i])
         i += 1
         code = re.search(r'[0-9A-Z]+', lines[i]).group()
+        if currency == 'hkd':
+            code = code[:5]
+        else:
+            code = code[:4]
         i += 1
         name, type, risk = SECURITIES[code]
         market_value = float(lines[i])
@@ -295,7 +310,9 @@ def huasheng(datafile: str) -> pd.DataFrame:
             i += 1
         cost = float(lines[i])
         i += 1
-        result.append(('华盛', currency, code, name, type, risk, market_value, hold_gain, volume, nav, cost))
+        if code not in codes:
+            codes.append(code)
+            result.append(('华盛', currency, code, name, type, risk, market_value, hold_gain, volume, nav, cost))
     df = pd.DataFrame(result, columns=COLUMNS + ['volume', 'nav', 'cost'])
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
