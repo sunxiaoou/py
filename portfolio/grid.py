@@ -26,17 +26,16 @@ class Grid:
             self.change2 = - self.change
             self.array = [high - self.change * i for i in range(self.number + 1)]
         else:
-            self.change = round((high / low) ** (1 / number) - 1, 5)
-            self.change2 = round((low / high) ** (1 / number) - 1, 5)
-            self.array = [round(high / (1 + self.change) ** i, 3) for i in range(self.number + 1)]
-        self.array[0] = round(self.array[0])
-        # self.array[-1] = round(self.array[-1])
+            self.change = round((high / low) ** (1 / number) - 1, 4)
+            self.change2 = round((low / high) ** (1 / number) - 1, 4)
+            self.array = [round(high * (1 + self.change2) ** i, 3) for i in range(self.number + 1)]
+            self.array[-1] = round(self.array[-1])
 
     def __str__(self):
         if self.is_percent:
-            changes = '({}%, {}%)'.format(round(self.change * 100, 3), round(self.change2 * 100, 3))
+            changes = '({}%, {}%)'.format(round(self.change * 100, 2), round(self.change2 * 100, 2))
         else:
-            changes = '(%.3f, %.3f)' % (self.change, self.change2)
+            changes = '(%.2f, %.2f)' % (self.change, self.change2)
         return self.name + ': ' + str(changes) + ' ' + str(self.array)
 
     def get_name(self) -> str:
