@@ -38,19 +38,25 @@ def verify(row: pd.Series):
 
 
 def zhaoshang_bank(datafile: str) -> pd.DataFrame:
-    with open(datafile) as fp:
-        lines = [re.sub(r'[,，:>]', '', line).rstrip('\n') for line in fp.readlines()]
+    with open(datafile) as f:
+        lines = []
+        for line in f.readlines():
+            lines += re.sub(r'[,，:>]', '', line).rstrip('\n').split()
+
     i = 0
     while lines[i] != '尾号8884':
         i += 1
     cash = float(lines[i + 1])
     result = [('招商银行', 'cny', 'cash', '现金', '货币', 0, cash, 0)]
     i += 2
-    while lines[i] != '理财':
+    while not lines[i].startswith('理财'):
         i += 1
-    total_mv = float(lines[i + 1].rstrip('>'))
+    i += 1
+    while not re.match(r'^[.\d]+$', lines[i]):
+        i += 1
+    total_mv = float(lines[i])
     asset = round(cash + total_mv, 2)
-    i += 2
+    i += 1
     try:
         while lines[i]:
             code = lines[i][4:] if lines[i].startswith('招银理财') else lines[i]
@@ -125,15 +131,24 @@ def yinhe(datafile: str) -> pd.DataFrame:
     s = re.sub(r'.+_', '', datafile[: -4])
     cash2 = float(s) if s else 0
 
-    with open(datafile) as fp:
-        lines = [re.sub('－', '-', line).rstrip('\n') for line in fp.readlines()]
+    with open(datafile) as f:
+        lines = []
+        for line in f.readlines():
+            lines += re.sub('－', '-', line).rstrip('\n').split()
     i = 0
     while not lines[i].startswith('场内资产'):
         i += 1
-    asset = float(lines[i + 1])
-    total_mv = float(lines[i + 3])
-    total_hg = float(lines[i + 6])
-    cash = float(lines[i + 7])
+    i += 1
+    while not re.match(r'^[.\d]+$', lines[i]):
+        i += 1
+    asset = float(lines[i])
+    total_mv = float(lines[i + 1])
+    i += 2
+    while not re.match(r'^[.\d]+$', lines[i]):
+        i += 1
+    total_hg = float(lines[i])
+    cash = float(lines[i + 1])
+    i += 2
     assert round(total_mv + cash, 2) == asset, \
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
     result = [('银河', 'cny', 'cash', '现金', '货币', 0, cash + cash2, 0)]
@@ -325,8 +340,10 @@ def huasheng(datafile: str) -> pd.DataFrame:
 
 
 def futu(datafile: str) -> pd.DataFrame:
-    with open(datafile) as fp:
-        lines = [re.sub(r'[,，＋]', '', re.sub('－', '-', line)).rstrip('\n') for line in fp.readlines()]
+    with open(datafile) as f:
+        lines = []
+        for line in f.readlines():
+            lines += re.sub(r'[,，＋]', '', re.sub('－', '-', line)).rstrip('\n').split()
 
     i = 0
     while not lines[i].startswith('资产净值'):
@@ -347,16 +364,23 @@ def futu(datafile: str) -> pd.DataFrame:
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
     result = [('富途', currency, 'cash', '现金', '货币', 0, cash, 0)]
     i += 2
-    while not lines[i].startswith('今日盈亏'):
+    while not lines[i].startswith('名称代码'):
         i += 1
     i += 1
     while len(lines) - i >= 7:
-        code = lines[i + 4]
-        volume = lines[i + 5]
-        # name = lines[i]
+        while not re.match(r'^[\d.]+$', lines[i]):
+            i += 1
+        market_value = float(lines[i])
+        hold_gain = float(lines[i + 1])
+        i += 2
+        while not re.match(r'^[A-Z]{4}$', lines[i]):
+            i += 1
+        code = lines[i]
+        i += 1
+        while not re.match(r'^[\d]+$', lines[i]):
+            i += 1
+        volume = lines[i]
         name, type, risk = SECURITIES[code]
-        market_value = float(lines[i + 1])
-        hold_gain = float(lines[i + 2])
         nav = round(market_value / int(volume), 2)
         result.append(('富途', currency, code, name, type, risk, market_value, hold_gain, nav))
         i += 7
@@ -494,8 +518,8 @@ def gain_rate(row: pd.Series) -> float:
     return round(rate, 4)
 
 
-def hkd_usd_rate() -> tuple:
-    res = requests.get('https://www.boc.cn/sourcedb/whpj/')
+def search_boc(url: str) -> dict:
+    res = requests.get(url)
     res.raise_for_status()
     res.encoding = res.apparent_encoding
     soup = BeautifulSoup(res.text, 'lxml')
@@ -514,6 +538,12 @@ def hkd_usd_rate() -> tuple:
         rates = CurrencyRates()
         dic['港币'] = round(rates.get_rate('HKD', 'CNY'), 4)
         dic['美元'] = round(rates.get_rate('USD', 'CNY'), 4)
+    return dic
+
+
+def hkd_usd_rate() -> tuple:
+    base_url = 'https://www.boc.cn/sourcedb/whpj/'
+    dic = search_boc(base_url)
     return dic['港币'], dic['美元']
 
 
