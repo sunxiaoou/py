@@ -16,7 +16,8 @@ PID_ETF_A = 0
 PID_HK = -7
 PID_US = -6
 PID_CVT = 8
-PID_CVT_2 = 12
+PID_CVT_2 = 11
+PID_CVT_3 = 12
 PID_MISC = 4
 
 
@@ -76,7 +77,7 @@ class Market:
         if pid == PID_MISC:
             codes = Market.get_list(1, pid)
         else:
-            codes = Market.get_list(1, PID_CVT) + Market.get_list(1, PID_CVT_2)
+            codes = Market.get_list(1, PID_CVT)     # + Market.get_list(1, PID_CVT_2)
         params = {
             'symbol': ','.join(codes),
             'extend': 'detail',

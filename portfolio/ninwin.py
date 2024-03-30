@@ -9,6 +9,11 @@ import pandas as pd
 # pd.set_option('display.max_rows', 1000)
 # pd.set_option('display.max_columns', 10)
 
+PID_CVT = 8
+PID_CVT_2 = 11
+PID_CVT_3 = 12
+PID_MISC = 4
+
 
 def get_list(category: int, pid: int) -> list:
     url = 'https://stock.xueqiu.com/v5/stock/portfolio/stock/list.json?'
@@ -62,8 +67,8 @@ def ninwin(cbs: list) -> pd.DataFrame:
 
 
 def main():
-    print(ninwin(get_list(1, 8) + get_list(1, 11)))
-    print(ninwin(get_list(1, 4)))
+    print(ninwin(get_list(1, PID_CVT)))
+    print(ninwin(get_list(1, PID_MISC)))
 
 
 if __name__ == "__main__":
