@@ -142,13 +142,19 @@ def yinhe(datafile: str) -> pd.DataFrame:
     while not re.match(r'^[.\d]+$', lines[i]):
         i += 1
     asset = float(lines[i])
-    total_mv = float(lines[i + 1])
-    i += 2
+    i += 1
     while not re.match(r'^[.\d]+$', lines[i]):
         i += 1
+    total_mv = float(lines[i])
+    i += 1
+    while not re.match(r'^[-.\d]+$', lines[i]):
+        i += 1
     total_hg = float(lines[i])
-    cash = float(lines[i + 1])
-    i += 2
+    i += 1
+    while not re.match(r'^[.\d]+$', lines[i]):
+        i += 1
+    cash = float(lines[i])
+    i += 1
     assert round(total_mv + cash, 2) == asset, \
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
     result = [('银河', 'cny', 'cash', '现金', '货币', 0, cash + cash2, 0)]
@@ -286,12 +292,15 @@ def huasheng(datafile: str) -> pd.DataFrame:
     while not lines[i].startswith('资产净值'):
         i += 1
     currency = 'hkd' if '港币' in lines[i] else 'usd'
-    asset = float(lines[i + 1])
-    while lines[i] != '持仓盈亏':
+    while not re.match(r'^[.\d]+$', lines[i]):
         i += 1
-    total_mv = float(lines[i + 1])
-    total_hg = float(lines[i + 3])
-    i += 4
+    asset = float(lines[i + 1])
+    i += 2
+    while not re.match(r'^[.\d]+$', lines[i]):
+        i += 1
+    total_mv = float(lines[i])
+    total_hg = float(lines[i + 2])
+    i += 3
     while not re.match(r'.*[\d.]+$', lines[i]):
         i += 1
     cash = float(lines[i]) + float(lines[i + 1])
@@ -304,8 +313,10 @@ def huasheng(datafile: str) -> pd.DataFrame:
     i += 1
     codes = []
     while len(lines) - i >= 8 and lines[i] != '行情' and lines[i + 1] != '行情':
-        name = lines[i]
-        i += 1
+        # name = lines[i]
+        # i += 1
+        while not re.match(r'^\d+$', lines[i]):
+            i += 1
         volume = int(lines[i])
         i += 1
         hold_gain = float(lines[i])
@@ -319,9 +330,11 @@ def huasheng(datafile: str) -> pd.DataFrame:
             code = code[:4]
         i += 1
         name, type, risk = SECURITIES[code]
+        while not re.match(r'^[\d.]+$', lines[i]):
+            i += 1
         market_value = float(lines[i])
         i += 1
-        while not re.match(r'.*[\d.]+$', lines[i]):
+        while not re.match(r'^[\d.]+$', lines[i]):
             i += 1
         cost = float(lines[i])
         i += 1
