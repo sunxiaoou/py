@@ -80,8 +80,8 @@ def plot_code_valuation(code: str, begin: str = ''):
         title = '近年中证全指与螺丝钉星级走势对比'
         df = db.to_frame('valuation', ['date', 'sh000985', 'star'], "date >= '%s'" % begin)
         df['高估阈值'] = 3
-        df['低估阈值'] = 4
-    elif code == 'TLT':
+        df['低估阈值'] = 4.5
+    elif code == 'TLT':     # TLT 2021-01-01
         df = db.to_frame('etf_daily', ['date', 'name', 'close'], "code = '%s' and date >= '%s'"
                          % (code, begin))
         title = '近年%s与十年期国债利率走势对比' % (df['name'].iloc[-1])

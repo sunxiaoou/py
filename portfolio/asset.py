@@ -292,7 +292,7 @@ def huasheng(datafile: str) -> pd.DataFrame:
     while not lines[i].startswith('资产净值'):
         i += 1
     currency = 'hkd' if '港币' in lines[i] else 'usd'
-    while not re.match(r'^[.\d]+$', lines[i]):
+    while not re.match(r'^[-\d]+\.\d\d$', lines[i]):
         i += 1
     asset = float(lines[i + 1])
     i += 2
@@ -381,7 +381,7 @@ def futu(datafile: str) -> pd.DataFrame:
         i += 1
     i += 1
     while len(lines) - i >= 7:
-        while not re.match(r'^[\d.]+$', lines[i]):
+        while not re.match(r'^[\d]+\.\d\d$', lines[i]):
             i += 1
         market_value = float(lines[i])
         hold_gain = float(lines[i + 1])
@@ -531,7 +531,8 @@ def gain_rate(row: pd.Series) -> float:
     return round(rate, 4)
 
 
-def search_boc(url: str) -> dict:
+def hkd_usd_rate() -> tuple:
+    url = 'https://www.boc.cn/sourcedb/whpj/'
     res = requests.get(url)
     res.raise_for_status()
     res.encoding = res.apparent_encoding
@@ -551,18 +552,11 @@ def search_boc(url: str) -> dict:
         rates = CurrencyRates()
         dic['港币'] = round(rates.get_rate('HKD', 'CNY'), 4)
         dic['美元'] = round(rates.get_rate('USD', 'CNY'), 4)
-    return dic
-
-
-def hkd_usd_rate() -> tuple:
-    base_url = 'https://www.boc.cn/sourcedb/whpj/'
-    dic = search_boc(base_url)
     return dic['港币'], dic['美元']
 
 
-def fill(df: pd.DataFrame) -> pd.DataFrame:
-    h2c, u2c = hkd_usd_rate()
-    print(h2c, u2c)
+def fill(rates: tuple, df: pd.DataFrame) -> pd.DataFrame:
+    h2c, u2c = rates
     df['name'] = df['name'].apply(lambda s: s if len(s) <= 10 else s[: 8] + '..')  # truncate name
     df['market_value'] = df.apply(lambda row: to_cny(row, 'market_value', (h2c, u2c)), axis=1)
     df['hold_gain'] = df.apply(lambda row: to_cny(row, 'hold_gain', (h2c, u2c)), axis=1)
@@ -571,7 +565,7 @@ def fill(df: pd.DataFrame) -> pd.DataFrame:
     return df.reindex(columns=col2)
 
 
-def run_all(files: list) -> pd.DataFrame:
+def run_all(rates: tuple, files: list) -> pd.DataFrame:
     platforms = ['zsb_', 'hsb_', 'yh_', 'hb_', 'hs_', 'ft_', 'dj_', 'ths_']   # to sort files
     fs = sorted(files)
     frames = []
@@ -581,11 +575,11 @@ def run_all(files: list) -> pd.DataFrame:
                 # print(f, p)
                 frames.append(run(f))
     df = pd.concat(frames)
-    df = fill(df)
+    df = fill(rates, df)
     return df
 
 
-def to_execl(xlsx: str, sheet: str, df: pd.DataFrame):
+def to_execl(xlsx: str, rates: tuple, sheet: str, df: pd.DataFrame):
     try:
         wb = load_workbook(xlsx)
     except FileNotFoundError:
@@ -605,6 +599,10 @@ def to_execl(xlsx: str, sheet: str, df: pd.DataFrame):
         for j in range(6, last_col):
             ws.cell(row=i, column=j).number_format = '#,##,0.00'
         ws.cell(row=i, column=last_col).number_format = '0.00%'
+
+    h2c, u2c = rates
+    ws.cell(row=last_row + 1, column=1).value = h2c
+    ws.cell(row=last_row + 1, column=2).value = u2c
 
     summaries = [
         {'location': (last_row + 2, 1),
@@ -756,12 +754,13 @@ def main():
     elif path.endswith('.csv'):
         print(run(path))
     elif os.path.isdir(path):
+        rates = hkd_usd_rate()
         path = path.rstrip('/')
-        df = run_all([os.path.join(path, file) for file in os.listdir(path)])
+        df = run_all(rates, [os.path.join(path, file) for file in os.listdir(path)])
         if len(sys.argv) == 2:
             to_mysql(path, df)
         else:
-            to_execl(sys.argv[2], path, df)
+            to_execl(sys.argv[2], rates, path, df)
     elif path.endswith('.xlsx'):
         excel_mysql(path)
     else:
