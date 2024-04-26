@@ -1,6 +1,7 @@
 #! /usr/bin/python3
 import re
 import sys
+from datetime import datetime, timedelta
 
 import numpy as np
 import pandas as pd
@@ -278,6 +279,8 @@ def batch(quantity: int, start_date: str):
     result['code'] = result['code'].apply(lambda x: LoopBack.complete_code(x))
 
     for i, args in enumerate(GRID_ARGS):
+        if start_date == 'one_year_ago':
+            start_date = (datetime.today() - timedelta(days=365)).strftime('%Y-%m-%d')
         df = trade_codes(Grid.make(args), codes, quantity, start_date)
         if i == 0:
             df['code'] = df.apply(lambda x: x['code_name'][: 8], axis=1)
