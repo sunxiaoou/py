@@ -16,19 +16,21 @@ class Factor(ABC):
     REMAIN = 'remain_size'
 
     def __init__(self, quantity: int, freq: int, cost: float, data: pd.DataFrame):
-        self.quantity = quantity
-        self.freq = freq
-        self.cost = cost
-        self.data = data
-        self.prices = self.get_factor(self.PRICE, True)
-        self.changes = self.prices.pct_change().shift(-1)
+        self.quantity = quantity                                # 策略组合中的标的数，10代表10只转债
+        self.freq = freq                                        # 组合轮动的频率，比如10代表10个交易日
+        self.cost = cost                                        # 交易佣金比率
+        self.data = data                                        # 原始数据表
+        self.prices = self.get_factor(self.PRICE, True)         # 全部标的的日收盘价表
+        self.changes = self.prices.pct_change().shift(-1)       # 全部标的的日涨跌幅表
         self.changes = self.changes.fillna(method='pad')
-        self.signal = self.get_signal()
-        self.codes = self.get_codes()
-        self.cum_prod = self.get_cum_prod()
-        self.roi = self.get_return_on_investment()
-        self.max_dd = self.get_max_draw_down()
+        self.signal = self.get_signal()                         # bool表，标识轮动周期中加入组合的标的
+        self.portfolio_codes = self.get_portfolio_codes()       # 轮动周期中加入组合的标的代码
+        self.portfolio_prices = self.get_portfolio_prices()     # 轮动周期中加入组合的标的价格
+        self.cum_prod = self.get_cum_prod()                     # 每日累计收益
+        self.roi = self.get_return_on_investment()              # 总收益
+        self.max_dd = self.get_max_draw_down()                  # 最大回撤
 
+    # 生成不同因子的数值表
     def get_factor(self, column_name: str, fill: bool = False) -> pd.DataFrame:
         df = self.data[['bond_code', 'trade_date', column_name]]
         df = df.set_index(['trade_date', 'bond_code']).unstack()[column_name]
@@ -37,28 +39,54 @@ class Factor(ABC):
         df.index.name = None
         return df
 
-    # 取排名最小的N个标的
+    # 取排名最小的N个标的，其中N为组合中的标的数，返回bool表，用于标识轮动周期中加入组合的标的
     def filter(self, factor: pd.DataFrame) -> pd.DataFrame:
-        return factor.apply(lambda x: x.rank(method='first') <= self.quantity, axis=1)
+        df = factor.apply(lambda x: x.rank(method='first') <= self.quantity, axis=1)
+        signal = pd.DataFrame(index=df.index)
+        df = df.iloc[range(0, len(df), self.freq)]      # 按轮动周期取样
+        return signal.join(df).fillna(method='pad')     # 填充到本周期
 
+    # 调用不同因子的filter
     @abstractmethod
     def get_signal(self) -> pd.DataFrame:
         pass
 
-    # 取标的的代码
-    def get_codes(self) -> pd.DataFrame:
+    def get_portfolio_codes(self) -> pd.DataFrame:
         df = self.signal.iloc[range(0, len(self.signal), self.freq)]
         return df.apply(lambda row: pd.Series(df.columns[row]), axis=1)
 
-    # 计算每天累计收益
+    def get_portfolio_prices(self) -> pd.DataFrame:
+        df = self.prices[self.signal].apply(lambda row: row.dropna().values, axis=1)
+        df = pd.DataFrame(df.to_list(), index=df.index)
+        return df.iloc[range(0, len(df), self.freq)]
+
+    # 通过本周期组合的涨跌幅表和首日价格序列，算出本周期完整价格表，逐日求和，再算出组合每日的涨跌幅
+    def handle_change(self, change: pd.DataFrame) -> pd.DataFrame:
+        first_price = self.portfolio_prices.loc[change.index[0]]    # 取得本周期组合的首日价格序列
+        prices = (1 + change).cumprod() * first_price               # 计算后续价格表
+        df = pd.DataFrame([first_price])
+        prices = pd.concat([df, prices])                            # 加入首日价格到价格表
+        prices['change'] = prices.sum(axis=1).pct_change()          # 计算组合涨跌幅
+        return prices.iloc[1:]                                      # 去掉首日价格
+
     def get_cum_prod(self) -> pd.DataFrame:
-        df = self.signal.iloc[range(0, len(self.signal), self.freq)]
-        signal_freq = pd.DataFrame(index=self.signal.index)
-        signal_freq = signal_freq.join(df)
-        signal_freq = signal_freq.fillna(method='pad')
-        gross_pnl = self.changes[signal_freq].sum(axis=1) / signal_freq.sum(axis=1)
-        # print(gross_pnl)
-        cost = abs(signal_freq.diff()).sum(axis=1) * self.cost / signal_freq.sum(axis=1)
+        # gross_pnl = self.changes[self.signal].sum(axis=1) / self.signal.sum(axis=1)
+        df = self.changes[self.signal].apply(lambda row: row.dropna().values, axis=1)
+        portfolio_changes = pd.DataFrame(df.to_list(), index=df.index)
+        portfolio_prices = None
+        # 将组合涨跌幅按轮动周期分块，计算组合每日涨跌幅序列
+        for i in range(0, len(portfolio_changes), self.freq):
+            prices = self.handle_change(portfolio_changes.iloc[i: i + self.freq])
+            if portfolio_prices is None:
+                portfolio_prices = prices
+            else:
+                portfolio_prices = pd.concat([portfolio_prices, prices])
+        gross_pnl = portfolio_prices.iloc[:, -1]
+        # df2 = pd.DataFrame({'gross_pnl': gross_pnl, 'gross_pnl2': gross_pnl2})
+        # df2['diff'] = df2['gross_pnl'] - df2['gross_pnl2']
+        # print(df2)
+
+        cost = abs(self.signal.diff()).sum(axis=1) * self.cost / self.signal.sum(axis=1)
         # print(cost)
         series = (gross_pnl - cost + 1).cumprod()
         return pd.DataFrame({'date': series.index, 'value': series.values})
@@ -79,7 +107,7 @@ class Factor(ABC):
         df.plot(figsize=(8, 4), grid=True)
 
     def loop_back(self):
-        # print(self.get_codes())
+        # print(self.get_portfolio_codes())
         print('总收益: {}%'.format(self.roi))
         print('最大回撤: {}% on {}'.format(self.max_dd[1], self.max_dd[0]))
 
