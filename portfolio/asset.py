@@ -10,12 +10,11 @@ import openpyxl
 import pandas as pd
 import pyperclip
 import requests
-from bs4 import BeautifulSoup
-from forex_python.converter import CurrencyRates
 from openpyxl import load_workbook
 from openpyxl.chart import PieChart, Reference
 from openpyxl.utils import get_column_letter
 
+from currency import hkd_usd_rate
 from mysql import MySql
 from securities import *
 
@@ -44,7 +43,7 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
             lines += re.sub(r'[,，:>]', '', line).rstrip('\n').split()
 
     i = 0
-    while lines[i] != '尾号8884':
+    while lines[i] != '活期存款':
         i += 1
     cash = float(lines[i + 1])
     result = [('招商银行', 'cny', 'cash', '现金', '货币', 0, cash, 0)]
@@ -530,30 +529,6 @@ def gain_rate(row: pd.Series) -> float:
         rate = 0
     # return '{:.2%}'.format(rate)
     return round(rate, 4)
-
-
-def hkd_usd_rate() -> tuple:
-    url = 'https://www.boc.cn/sourcedb/whpj/'
-    res = requests.get(url)
-    res.raise_for_status()
-    res.encoding = res.apparent_encoding
-    soup = BeautifulSoup(res.text, 'lxml')
-
-    tab = soup.find_all("table")[1]
-    trs = tab.find_all("tr")
-    trs.pop(0)
-    dic = {}
-    for tr in trs:
-        tds = tr.find_all("td")
-        if tds[0].text == '港币':
-            dic['港币'] = round(float(tds[4].text) / 100, 4)
-        elif tds[0].text == '美元':
-            dic['美元'] = round(float(tds[4].text) / 100, 4)
-    if '港币' not in dic or '美元' not in dic:
-        rates = CurrencyRates()
-        dic['港币'] = round(rates.get_rate('HKD', 'CNY'), 4)
-        dic['美元'] = round(rates.get_rate('USD', 'CNY'), 4)
-    return dic['港币'], dic['美元']
 
 
 def fill(rates: tuple, df: pd.DataFrame) -> pd.DataFrame:
