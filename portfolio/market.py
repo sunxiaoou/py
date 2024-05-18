@@ -100,10 +100,12 @@ class Market:
                 'code': quote['symbol'],
                 'name': quote['name'],
                 'price': quote['current'],
-                'premium': quote['convert_bond_ratio'],
+                'redeem': round(quote['conversion_price'] * 1.3, 3),
+                'share': round(quote['conversion_value'] / 100 * quote['conversion_price'], 3),
+                'premium': quote['premium_rate'],
                 'remains': round(quote['outstanding_amt'] / quote['total_issue_scale'] * 100, 2),
                 'days': (datetime.fromtimestamp(quote['maturity_date'] / 1000).date() - date.today()).days,
-                'pc': quote['percent']
+                'pct': quote['percent']
             }
             result.append(dic.copy())
         return result
@@ -166,10 +168,10 @@ def main():
     # print(len(result))
     df = pd.DataFrame(result)
     if sys.argv[1] == 'cvtb':
-        df = df.sort_values(by='pc', ascending=False)
+        df = df.sort_values(by='pct', ascending=False)
     print(df)
     if sys.argv[1] != 'fund':
-        print('mean({})'.format(round(df['pc'].mean(), 3)))
+        print('mean({})'.format(round(df['pct'].mean(), 3)))
 
     # mysql = MySql()
     # mysql.from_frame('instant_price', df)

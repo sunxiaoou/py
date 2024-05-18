@@ -9,8 +9,8 @@ from wxpusher import WxPusher
 
 def get_volatile_stocks(volatility: float) -> list:
     result = Market.get_cvtbones()
-    return ["{} {} {}%".format(x['name'][:2], x['price'], str(x['pc']))
-            for x in result if x['pc'] is not None and x['pc'] >= volatility]
+    return ["{} {} {}%".format(x['name'][:2], x['price'], str(x['pct']))
+            for x in result if x['pct'] is not None and x['pct'] >= volatility]
 
 
 def main():
