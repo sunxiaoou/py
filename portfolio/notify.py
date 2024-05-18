@@ -7,9 +7,10 @@ from market import Market
 from wxpusher import WxPusher
 
 
-def get_volatile_stocks(volatility: float) -> dict:
+def get_volatile_stocks(volatility: float) -> list:
     result = Market.get_cvtbones()
-    return {x['name'][:2] + str(x['pc']): x['pc'] for x in result if x['pc'] is not None and x['pc'] >= volatility}
+    return ["{} {} {}%".format(x['name'][:2], x['price'], str(x['pc']))
+            for x in result if x['pc'] is not None and x['pc'] >= volatility]
 
 
 def main():
@@ -22,15 +23,13 @@ def main():
     if len(stocks) == 0:
         print(date)
     elif 'iCloud' == sys.argv[2]:
-        keys = list(stocks.keys())
         print(date + ' - ' + str(stocks))
         ic = ICloud()
         sender = ic.login()
-        ic.send(sender, sender, str(keys), str(stocks))
+        ic.send(sender, sender, str(stocks), str(stocks))
     elif 'wxPusher' == sys.argv[2]:
-        keys = list(stocks.keys())
         print(date + ' - ' + str(stocks))
-        WxPusher.push(str(keys), str(stocks))
+        WxPusher.push(str(stocks), str(stocks))
     else:
         print('Usage: {} volatility iCloud|wxPusher'.format(sys.argv[0]))
         sys.exit(1)
