@@ -13,7 +13,7 @@ from openpyxl.styles import PatternFill
 from thresholds import COLUMNS, THRESHOLDS, name_code
 from mysql import MySql
 from mongo import Mongo
-from xueqiu import Xueqiu
+from snowball import Snowball
 
 INDEXES = [
     # PB
@@ -356,7 +356,7 @@ def get_valuation_with_star(dic: dict, star: float) -> dict:
     val_dic['CNBONE'] = dic['10年期国债（A股）']
     val_dic['USBONE'] = dic['10年期国债（美股）']
 
-    snowball = Xueqiu()
+    snowball = Snowball()
     dic2 = snowball.last_close('sh000985')
     assert date == dic2['date'].strftime('%Y%m%d')
     val_dic['date'] = datetime.strptime(date, "%Y%m%d")
@@ -376,7 +376,7 @@ def to_etf_db(db: MySql):
     codes = [x for x in df['onsite'].tolist() if x is not None]
     codes += ['KWEB', 'TLT', '03033']
     table = 'etf_daily'
-    snowball = Xueqiu()
+    snowball = Snowball()
     for code in codes:
         dic = db.last_row(table, 'date', 'code = "%s"' % code)
         if not dic:

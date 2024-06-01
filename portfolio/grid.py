@@ -9,7 +9,7 @@ from matplotlib import dates, pyplot, ticker
 from openpyxl import load_workbook
 
 from mysql import MySql
-from xueqiu import Xueqiu
+from snowball import Snowball
 
 # pd.set_option('display.max_rows', 4000)
 pd.set_option('display.max_columns', 10)
@@ -95,7 +95,7 @@ class LoopBack:
             where += ' AND date >= "%s"' % start_date
         data = db.to_frame('cvtbone_daily', ['date', 'name', 'open'], where)
         if data.empty:
-            snowball = Xueqiu()
+            snowball = Snowball()
             data = snowball.get_data(code, start_date)
             data['date'] = data['date'].apply(lambda x: x.date())
             data['code'] = code
@@ -271,7 +271,7 @@ def batch(quantity: int, start_date: str):
     db = MySql(database='portfolio')
     ranks = db.to_frame('cvtb_rank_daily', None, 'date = (select max(`date`) from cvtb_rank_daily)')
     codes = ranks['code'].tolist()
-    snowball = Xueqiu()
+    snowball = Snowball()
     dic = snowball.last_close(codes[0])
     date = dic['date'].strftime('%y%m%d')
     df = snowball.get_cvt_bones(codes)

@@ -19,7 +19,7 @@ plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
 
 
-class Xueqiu:
+class Snowball:
     def __init__(self):
         url = 'https://xueqiu.com'
         self.headers = {'User-Agent': 'PostmanRuntime/7.29.2'}
@@ -155,7 +155,7 @@ def get_codes(file: str) -> list:
     return sorted(lst)
 
 
-def get_data(code: str, db: MySql, snowball: Xueqiu) -> pd.DataFrame:
+def get_data(code: str, db: MySql, snowball: Snowball) -> pd.DataFrame:
     dic = db.last_row('cvtbone_daily', 'date', 'code = "%s"' % code)
     if not dic:
         df = snowball.get_data(code)
@@ -175,7 +175,7 @@ def batch(file: str):
     codes = get_codes(file)
     print(codes)
     db = MySql(database='portfolio')
-    snowball = Xueqiu()
+    snowball = Snowball()
     for code in codes:
         df = get_data(code, db, snowball)
         if not df.empty:
@@ -194,7 +194,7 @@ def get_etf_codes() -> list:
 
 
 def batch_etf():
-    snowball = Xueqiu()
+    snowball = Snowball()
     db = MySql()
     for code in get_etf_codes() + ['KWEB', 'TLT', '03033']:
         df = snowball.get_data(code, '2017-06-15')
@@ -216,7 +216,7 @@ def main():
 
     if len(sys.argv) > 2:
         begin_date, code = sys.argv[2], sys.argv[1]
-        snowball = Xueqiu()
+        snowball = Snowball()
         print(snowball.get_name(code))
         df = snowball.get_data(code, begin_date)
         print(df)
@@ -224,7 +224,7 @@ def main():
     elif len(sys.argv) == 2:
         if not os.path.isfile(sys.argv[1]):
             db = MySql(database='portfolio')
-            snowball = Xueqiu()
+            snowball = Snowball()
             print(get_data(sys.argv[1], db, snowball))
         else:
             batch(sys.argv[1])

@@ -40,7 +40,7 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
     with open(datafile) as f:
         lines = []
         for line in f.readlines():
-            lines += re.sub(r'[,，:>]', '', line).rstrip('\n').split()
+            lines += re.sub(r'[,，:>＞]', '', line).rstrip('\n').split()
 
     i = 0
     while lines[i] != '活期存款':

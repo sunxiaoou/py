@@ -67,7 +67,7 @@ class Market:
                 'ts': datetime.fromtimestamp(i['quote']['timestamp'] / 1000),
                 'name': i['quote']['name'],
                 'price': i['quote']['current'],
-                'pc': i['quote']['percent']}
+                'pct': i['quote']['percent']}
             result.append(dic.copy())
         return result
 
@@ -95,16 +95,17 @@ class Market:
         items = response.json()['data']['items']
         for i in items:
             quote = i['quote']
+            redeem = quote['conversion_price'] * 1.3                                # redeem trigger price
+            share = quote['conversion_value'] / 100 * quote['conversion_price']     # share price
             dic = {
                 # 'ts': datetime.fromtimestamp(quote['timestamp'] / 1000),
                 'code': quote['symbol'],
                 'name': quote['name'],
                 'price': quote['current'],
-                'redeem': round(quote['conversion_price'] * 1.3, 3),
-                'share': round(quote['conversion_value'] / 100 * quote['conversion_price'], 3),
                 'premium': quote['premium_rate'],
                 'remains': round(quote['outstanding_amt'] / quote['total_issue_scale'] * 100, 2),
                 'days': (datetime.fromtimestamp(quote['maturity_date'] / 1000).date() - date.today()).days,
+                'redeem': round((redeem - share) / share * 100, 2),
                 'pct': quote['percent']
             }
             result.append(dic.copy())

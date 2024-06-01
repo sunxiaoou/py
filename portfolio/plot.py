@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from mysql import MySql
-from xueqiu import Xueqiu
+from snowball import Snowball
 
 
 class Plot:
@@ -57,7 +57,7 @@ def plot_code(code: str, begin: str = ''):
     df = db.to_frame('etf_daily', ['date', 'name', 'close'], "code = '%s' and date >= '%s'" %
                      (code, begin))
     if df.empty:
-        df = Xueqiu().get_data(code, begin)
+        df = Snowball().get_data(code, begin)
         df = df[['date', 'name', 'close']]
     df = df.rename({'close': code}, axis=1)
     print(df)

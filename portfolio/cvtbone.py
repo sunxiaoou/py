@@ -8,7 +8,7 @@ import pandas as pd
 from openpyxl import load_workbook
 
 from mysql import MySql
-from xueqiu import Xueqiu
+from snowball import Snowball
 
 pd.set_option('display.max_rows', 200)
 pd.set_option('display.max_columns', 100)
@@ -113,7 +113,7 @@ def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
 
 def update_price(codes: list, db: MySql):
     table = 'cvtbone_daily'
-    snowball = Xueqiu()
+    snowball = Snowball()
     for code in codes:
         dic = db.last_row(table, 'date', 'code = "%s"' % code)
         if not dic:
@@ -166,7 +166,7 @@ def main():
     if out_xlsx:
         to_excel(out_xlsx, date, bones)
 
-    mine = Xueqiu().my_cvt_bones()
+    mine = Snowball().my_cvt_bones()
     owned = pd.merge(bones, mine[['代码']], on=['代码'])
     print('已持有的上榜转债({})'.format(len(owned)))
     print(owned)
