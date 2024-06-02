@@ -18,6 +18,14 @@ from mysql import MySql
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
 
+PID_ETF_A = 0
+PID_HK = -7
+PID_US = -6
+PID_CVT = 8
+PID_CVT_2 = 11
+PID_CVT_3 = 12
+PID_MISC = 4
+
 
 class Snowball:
     def __init__(self):
@@ -98,14 +106,18 @@ class Snowball:
         items = resp.json()['data']['items']
         for i in items:
             quote = i['quote']
+            redeem = quote['conversion_price'] * 1.3                                # redeem trigger price
+            share = quote['conversion_value'] / 100 * quote['conversion_price']     # share price
             dic = {
+                # 'ts': datetime.fromtimestamp(quote['timestamp'] / 1000),
                 '代码': quote['symbol'][2:],
                 '名称': quote['name'],
                 '价格': quote['current'],
-                '涨跌幅%': quote['percent'],
                 '溢价率%': quote['premium_rate'],
                 '剩余规模%': round(quote['outstanding_amt'] / quote['total_issue_scale'] * 100, 2),
-                '剩余天数': (datetime.fromtimestamp(quote['maturity_date'] / 1000).date() - date.today()).days
+                '剩余天数': (datetime.fromtimestamp(quote['maturity_date'] / 1000).date() - date.today()).days,
+                '距强赎%': round((redeem - share) / share * 100, 2),
+                '涨跌幅%': quote['percent']
             }
             result.append(dic.copy())
         return pd.DataFrame(result)
@@ -125,7 +137,7 @@ class Snowball:
         return [x['symbol'] for x in stocks]
 
     def my_cvt_bones(self):
-        return self.get_cvt_bones(self.my_list(1, 8) + self.my_list(1, 12))
+        return self.get_cvt_bones(self.my_list(1, PID_CVT) + self.my_list(1, 12))
 
 
 def draw(df: pd.DataFrame, name: str):
