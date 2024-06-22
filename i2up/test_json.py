@@ -1,4 +1,7 @@
 import unittest
+import pandas as pd
+
+from json_excel import traverse_save
 
 
 class JsonTestCase(unittest.TestCase):
@@ -37,38 +40,13 @@ class JsonTestCase(unittest.TestCase):
         else:
             print(' ' * indent + str(data))
 
-    # def test_traverse_print(self):
-    #     JsonTestCase.traverse_print(self.json_data)
-
-    @staticmethod
-    def save(string: str, x: int, y: int):
-        print("save %s at(%d,%d)" % (string, y, x))
-
-    @staticmethod
-    def traverse_save(data, x=1, y=1):
-        if isinstance(data, dict):
-            for key, value in data.items():
-                JsonTestCase.save(key, x, y)
-                JsonTestCase.traverse_save(value, x + 1, y)
-                if isinstance(value, dict):
-                    y += len(value)
-                elif isinstance(value, list):
-                    y += len(value[0]) * len(value)
-                else:
-                    y += 1
-        elif isinstance(data, list):
-            JsonTestCase.save("set", x, y)
-            for index, item in enumerate(data):
-                JsonTestCase.traverse_save(item, x + 1, y)
-                if isinstance(item, dict):
-                    y += len(item)
-                else:
-                    y += 1
-        else:
-            JsonTestCase.save(str(data), x, y)
+    def test_traverse_print(self):
+        JsonTestCase.traverse_print(self.json_data)
 
     def test_traverse_save(self):
-        JsonTestCase.traverse_save(self.json_data)
+        df = traverse_save(self.json_data, 0, 0, pd.DataFrame(index=range(5), columns=range(5)))
+        print(df)
+        # df.to_excel("output.xlsx", index=False, header=False)
 
 
 if __name__ == '__main__':
