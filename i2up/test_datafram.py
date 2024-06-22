@@ -23,7 +23,7 @@ class DataFrameTestCase(unittest.TestCase):
         self.save("Pandas", 0, 0)
         self.save("Error", 10, 10)
         print(self.df)
-        self.df.to_excel("df.xlsx", index=False)
+        # self.df.to_excel("df.xlsx", index=False)
 
 
 if __name__ == '__main__':
