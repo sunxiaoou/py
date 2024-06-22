@@ -28,7 +28,7 @@ class JsonTestCase(unittest.TestCase):
     }
 
     @staticmethod
-    def traverse_print(data, indent=0):
+    def traverse_print(data: dict, indent=0):
         if isinstance(data, dict):
             for key, value in data.items():
                 print(' ' * indent + str(key) + ":")
@@ -41,10 +41,29 @@ class JsonTestCase(unittest.TestCase):
             print(' ' * indent + str(data))
 
     def test_traverse_print(self):
+        print("Test traverse print")
         JsonTestCase.traverse_print(self.json_data)
 
+    @staticmethod
+    def traverse_count(data: dict, count=0) -> int:
+        if isinstance(data, dict):
+            for key, value in data.items():
+                count = JsonTestCase.traverse_count(value, count)
+        elif isinstance(data, list):
+            for index, item in enumerate(data):
+                count = JsonTestCase.traverse_count(item, count)
+        else:
+            count += 1
+        return count
+
+    def test_traverse_count(self):
+        print("Test traverse count")
+        print(JsonTestCase.traverse_count(self.json_data))
+
     def test_traverse_save(self):
-        df = traverse_save(self.json_data, 0, 0, pd.DataFrame(index=range(5), columns=range(5)))
+        print("Test traverse save")
+        count, df = traverse_save(self.json_data, 0, 0, pd.DataFrame(index=range(5), columns=range(5)))
+        print("count(%d)" % count)
         print(df)
         # df.to_excel("output.xlsx", index=False, header=False)
 
