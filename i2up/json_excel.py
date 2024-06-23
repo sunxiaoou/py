@@ -17,13 +17,21 @@ def save_df(string: str, x: int, y: int, df: pd.DataFrame) -> pd.DataFrame:
 
 def traverse_save(data, x: int, y: int, df: pd.DataFrame) -> (int, pd.DataFrame):
     if isinstance(data, dict):
-        for key, value in data.items():
-            df = save_df(key, x, y, df)
-            y, df = traverse_save(value, x + 1, y, df)
+        if not data:
+            df = save_df('{}', x, y, df)
+            y += 1
+        else:
+            for key, value in data.items():
+                df = save_df(key, x, y, df)
+                y, df = traverse_save(value, x + 1, y, df)
     elif isinstance(data, list):
-        # df = save_df("set", x, y, df)
-        for index, item in enumerate(data):
-            y, df = traverse_save(item, x, y, df)
+        if not data:
+            df = save_df('[]', x, y, df)
+            y += 1
+        else:
+            for index, item in enumerate(data):
+                df = save_df(f"[{index}]", x, y, df)
+                y, df = traverse_save(item, x + 1, y, df)
     else:
         if isinstance(data, str):
             df = save_df('"' + data + '"', x, y, df)
@@ -34,7 +42,7 @@ def traverse_save(data, x: int, y: int, df: pd.DataFrame) -> (int, pd.DataFrame)
 
 
 def json2excel(json_data: dict, excel: str):
-    count, df = traverse_save(json_data, 0, 0, pd.DataFrame(index=range(5), columns=range(5)))
+    count, df = traverse_save(json_data, 0, 0, pd.DataFrame(index=range(8), columns=range(8)))
     print("count(%d)" % count)
     print(df)
     df.to_excel(excel, index=False, header=False)
