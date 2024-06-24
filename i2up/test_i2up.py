@@ -47,6 +47,72 @@ class I2UPTestCase(unittest.TestCase):
         print("count(%d)" % data['total'])
         pprint(data['info_list'])
 
+    def test_create_db_node(self):
+        print("Test create db node")
+        url = f"{self.base_url}/lic"
+        headers = {
+            'Authorization': self.token
+        }
+        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response.raise_for_status()
+        lic = response.json()['data']['info_list'][0]['lic_uuid']
+        print("lic(%s)" % lic)
+
+        url = f"{self.base_url}/active/db"
+        payload = json.dumps({
+            "db_type": "mysql",
+            "db_name": "msq_c2",
+            "node_uuid": "A230C1E6-C68E-4F4E-A2AB-8E81C3D3288D",
+            "file_open_type": "DIRECT",
+            "deploy_mode": "single",
+            "log_read_type": "file",
+            "config": {
+                "transport": {
+                    "sslmode": "disabled",
+                    "auth": "gmssl",
+                    "ssl_mode": "",
+                    "certificate": ""
+                },
+                "auth": "pass",
+                "db_list": [
+                    {
+                        "ip": "192.168.55.12",
+                        "port": 3306
+                    }
+                ],
+                "user_management": [
+                    {
+                        "user": "manga",
+                        "passwd": "manga",
+                        "default_db": "manga",
+                        "url": "",
+                        "cred_login": 0,
+                        "cred_uuid": "",
+                        "auth_uuid": "",
+                        "enable": True
+                    }
+                ],
+                "role": [
+                    "source"
+                ]
+            },
+            "db_encryed": 2,
+            "db_mode": "normal",
+            "cdb": "",
+            "maintenance": 0,
+            "comment": "",
+            "bind_lic_list": [
+                f"{lic}"
+            ]
+        })
+        headers = {
+            'Authorization': self.token,
+            'Content-Type': 'application/json'
+        }
+        response = requests.request("POST", url, headers=headers, data=payload, verify=self.ca_path)
+        response.raise_for_status()
+        pprint(response.json()['data'])
+
 
 if __name__ == '__main__':
     unittest.main()
