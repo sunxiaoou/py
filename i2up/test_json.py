@@ -1,4 +1,7 @@
+import json
 import unittest
+from pprint import pprint
+
 import pandas as pd
 
 from json_excel import traverse_save
@@ -66,6 +69,16 @@ class JsonTestCase(unittest.TestCase):
         print("count(%d)" % count)
         print(df)
         # df.to_excel("output.xlsx", index=False, header=False)
+
+    def test_restore_json(self):
+        print("Test restore json")
+        _, df = traverse_save(self.json_data, 0, 0, pd.DataFrame(index=range(5), columns=range(5)), True)
+        json_string = ''
+        for _, row in df.iterrows():
+            row_string = " ".join([str(cell) for cell in row if pd.notna(cell)])
+            json_string += row_string + "\n"
+        print(json_string)
+        pprint(json.loads(json_string))
 
 
 if __name__ == '__main__':
