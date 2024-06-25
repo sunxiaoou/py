@@ -80,6 +80,11 @@ class JsonTestCase(unittest.TestCase):
         print(json_string)
         pprint(json.loads(json_string))
 
+    def test_load_json(self):
+        with open("msq_u_c1.json", 'r') as file:
+            json_data = json.load(file)
+        print(json.dumps(json_data, indent=4))
+
 
 if __name__ == '__main__':
     unittest.main()

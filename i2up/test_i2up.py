@@ -141,9 +141,10 @@ class I2UPTestCase(unittest.TestCase):
     def test_delete_db_node(self):
         print("Test create db node")
         url = f"{self.base_url}/active/db"
+        uuid = "C766462E-1DC5-4A06-B325-35951A8738EF"
         payload = json.dumps({
             "uuids": [
-                "C766462E-1DC5-4A06-B325-35951A8738EF"
+                uuid
             ],
             "force": 0
         })
@@ -178,6 +179,24 @@ class I2UPTestCase(unittest.TestCase):
         response.raise_for_status()
         info_list = response.json()['data']['info_list']
         pprint(info_list)
+
+    def test_delete_mysql_rule(self):
+        print("Test delete mysql rule")
+        url = f"{self.base_url}/stream/rule"
+        uuid = 'C1598D48-622D-4BC6-A845-E224DE66AB83'
+        payload = json.dumps({
+            "mysql_uuids": [
+                uuid
+            ],
+            "force": False
+        })
+        headers = {
+            'Authorization': self.token,
+            'Content-Type': 'application/json'
+        }
+        response = requests.request("DELETE", url, headers=headers, data=payload, verify=self.ca_path)
+        response.raise_for_status()
+        pprint(response.json()['data'])
 
 
 if __name__ == '__main__':
