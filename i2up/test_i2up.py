@@ -59,6 +59,18 @@ class I2UPTestCase(unittest.TestCase):
         print("count(%d)" % len(info_list))
         pprint(info_list)
 
+    def test_show_db_node(self):
+        print("Test show db node")
+        uuid = 'C96EDD72-A2D2-4C83-B2A0-91A4D84B13C5'
+        url = f"{self.base_url}/active/db/{uuid}"
+        headers = {
+            'Authorization': self.token
+        }
+        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response.raise_for_status()
+        info_list = response.json()['data']['active_db']
+        pprint(info_list)
+
     def test_create_db_node(self):
         print("Test create db node")
         url = f"{self.base_url}/lic"
@@ -142,6 +154,30 @@ class I2UPTestCase(unittest.TestCase):
         response = requests.request("DELETE", url, headers=headers, data=payload, verify=self.ca_path)
         response.raise_for_status()
         pprint(response.json()['data'])
+
+    def test_list_mysql_rules(self):
+        print("Test list mysql rules")
+        url = f"{self.base_url}/stream/rule"
+        headers = {
+            'Authorization': self.token
+        }
+        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response.raise_for_status()
+        info_list = response.json()['data']['info_list']
+        print("count(%d)" % len(info_list))
+        pprint(info_list)
+
+    def test_show_mysql_rule(self):
+        print("Test show mysql rule")
+        uuid = '6980B753-B134-4D17-A634-FD748F7E9AA6'
+        url = f"{self.base_url}/stream/rule/{uuid}"
+        headers = {
+            'Authorization': self.token
+        }
+        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response.raise_for_status()
+        info_list = response.json()['data']['info_list']
+        pprint(info_list)
 
 
 if __name__ == '__main__':
