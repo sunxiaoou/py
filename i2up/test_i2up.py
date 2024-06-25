@@ -47,6 +47,18 @@ class I2UPTestCase(unittest.TestCase):
         print("count(%d)" % data['total'])
         pprint(data['info_list'])
 
+    def test_list_db_nodes(self):
+        print("Test list db nodes")
+        url = f"{self.base_url}/active/db"
+        headers = {
+            'Authorization': self.token
+        }
+        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response.raise_for_status()
+        info_list = response.json()['data']['info_list']
+        print("count(%d)" % len(info_list))
+        pprint(info_list)
+
     def test_create_db_node(self):
         print("Test create db node")
         url = f"{self.base_url}/lic"
@@ -93,7 +105,8 @@ class I2UPTestCase(unittest.TestCase):
                     }
                 ],
                 "role": [
-                    "source"
+                    "source",
+                    "target"
                 ]
             },
             "db_encryed": 2,
@@ -110,6 +123,23 @@ class I2UPTestCase(unittest.TestCase):
             'Content-Type': 'application/json'
         }
         response = requests.request("POST", url, headers=headers, data=payload, verify=self.ca_path)
+        response.raise_for_status()
+        pprint(response.json()['data'])
+
+    def test_delete_db_node(self):
+        print("Test create db node")
+        url = f"{self.base_url}/active/db"
+        payload = json.dumps({
+            "uuids": [
+                "C766462E-1DC5-4A06-B325-35951A8738EF"
+            ],
+            "force": 0
+        })
+        headers = {
+            'Authorization': self.token,
+            'Content-Type': 'application/json'
+        }
+        response = requests.request("DELETE", url, headers=headers, data=payload, verify=self.ca_path)
         response.raise_for_status()
         pprint(response.json()['data'])
 
