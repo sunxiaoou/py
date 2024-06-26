@@ -26,7 +26,7 @@ class I2UPTestCase(unittest.TestCase):
         print("token(%s)" % cls.token)
 
     def test_get_version(self):
-        print("Test get version")
+        print("Test to get version")
         url = f"{self.base_url}/version"
         headers = {
             'Authorization': self.token
@@ -36,7 +36,7 @@ class I2UPTestCase(unittest.TestCase):
         print("version(%s)" % response.json()['data']['version'])
 
     def test_list_activated_nodes(self):
-        print("Test list activated nodes")
+        print("Test to list activated nodes")
         url = f"{self.base_url}/active/node"
         headers = {
             'Authorization': self.token
@@ -48,7 +48,7 @@ class I2UPTestCase(unittest.TestCase):
         pprint(data['info_list'])
 
     def test_list_db_nodes(self):
-        print("Test list db nodes")
+        print("Test to list db nodes")
         url = f"{self.base_url}/active/db"
         headers = {
             'Authorization': self.token
@@ -60,7 +60,7 @@ class I2UPTestCase(unittest.TestCase):
         pprint(info_list)
 
     def test_show_db_node(self):
-        print("Test show db node")
+        print("Test to show db node")
         uuid = 'C96EDD72-A2D2-4C83-B2A0-91A4D84B13C5'
         url = f"{self.base_url}/active/db/{uuid}"
         headers = {
@@ -72,7 +72,7 @@ class I2UPTestCase(unittest.TestCase):
         pprint(info_list)
 
     def test_create_db_node(self):
-        print("Test create db node")
+        print("Test to create db node")
         url = f"{self.base_url}/lic"
         headers = {
             'Authorization': self.token
@@ -139,7 +139,7 @@ class I2UPTestCase(unittest.TestCase):
         pprint(response.json()['data'])
 
     def test_delete_db_node(self):
-        print("Test create db node")
+        print("Test to create db node")
         url = f"{self.base_url}/active/db"
         uuid = "C766462E-1DC5-4A06-B325-35951A8738EF"
         payload = json.dumps({
@@ -157,7 +157,7 @@ class I2UPTestCase(unittest.TestCase):
         pprint(response.json()['data'])
 
     def test_list_mysql_rules(self):
-        print("Test list mysql rules")
+        print("Test to list mysql rules")
         url = f"{self.base_url}/stream/rule"
         headers = {
             'Authorization': self.token
@@ -169,7 +169,7 @@ class I2UPTestCase(unittest.TestCase):
         pprint(info_list)
 
     def test_show_mysql_rule(self):
-        print("Test show mysql rule")
+        print("Test to show mysql rule")
         uuid = '6980B753-B134-4D17-A634-FD748F7E9AA6'
         url = f"{self.base_url}/stream/rule/{uuid}"
         headers = {
@@ -180,10 +180,28 @@ class I2UPTestCase(unittest.TestCase):
         info_list = response.json()['data']['info_list']
         pprint(info_list)
 
-    def test_delete_mysql_rule(self):
-        print("Test delete mysql rule")
+    @staticmethod
+    def load_json_file(json_file: str) -> str:
+        with open(json_file, 'r') as f:
+            json_data = json.load(f)
+        return json.dumps(json_data)
+
+    def test_create_mysql_rule(self):
+        print("Test to create mysql rule")
         url = f"{self.base_url}/stream/rule"
-        uuid = 'C1598D48-622D-4BC6-A845-E224DE66AB83'
+        payload = I2UPTestCase.load_json_file("msq_rule.json")
+        headers = {
+            'Authorization': self.token,
+            'Content-Type': 'application/json'
+        }
+        response = requests.request("POST", url, headers=headers, data=payload, verify=self.ca_path)
+        response.raise_for_status()
+        pprint(response.json()['data'])
+
+    def test_delete_mysql_rule(self):
+        print("Test to delete mysql rule")
+        url = f"{self.base_url}/stream/rule"
+        uuid = 'A310E048-E7A0-4F5E-9FD1-864E73E59539'
         payload = json.dumps({
             "mysql_uuids": [
                 uuid
