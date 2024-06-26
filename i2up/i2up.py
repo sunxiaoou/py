@@ -5,9 +5,9 @@ import requests
 
 
 class I2UP:
-    def __init__(self):
-        self.base_url = "https://centos1:58086/api"
-        self.ca_path = "ca.crt"
+    def __init__(self, ca_path: str, ip: str, port=58086):
+        self.ca_path = ca_path
+        self.base_url = f"https://{ip}:{port}/api"
         self.token = None
 
         url = f"{self.base_url}/auth/token"
@@ -39,8 +39,7 @@ class I2UP:
         }
         response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
         response.raise_for_status()
-        data = response.json()['data']
-        return data['info_list']
+        return response.json()['data']['info_list']
 
     def get_db_nodes(self) -> list:
         url = f"{self.base_url}/active/db"
@@ -89,11 +88,11 @@ class I2UP:
             json_data = json.load(f)
         return json_data
 
-    def create_db_node(self, dbname: str, file: str) -> dict:
+    def create_db_node(self, node: str, file: str) -> dict:
         url = f"{self.base_url}/active/db"
-        json_obj = self.load_json_file(file)
+        json_obj = I2UP.load_json_file(file)
         json_obj["bind_lic_list"] = [self.get_lic_uuid()]
-        json_obj['node_uuid'] = self.get_node_uuid(dbname)
+        json_obj['node_uuid'] = self.get_node_uuid(node)
         payload = json.dumps(json_obj)
         headers = {
             'Authorization': self.token,
@@ -110,6 +109,61 @@ class I2UP:
                 self.get_db_uuid(dbname)
             ],
             "force": 0
+        })
+        headers = {
+            'Authorization': self.token,
+            'Content-Type': 'application/json'
+        }
+        response = requests.request("DELETE", url, headers=headers, data=payload, verify=self.ca_path)
+        response.raise_for_status()
+        return response.json()['data']
+
+    def get_mysql_rules(self) -> list:
+        url = f"{self.base_url}/stream/rule"
+        headers = {
+            'Authorization': self.token
+        }
+        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response.raise_for_status()
+        return response.json()['data']['info_list']
+
+    def get_mysql_rule_uuid(self, name: str) -> str:
+        for node in self.get_mysql_rules():
+            if name == node['mysql_name']:
+                return node['mysql_uuid']
+        print(f'Cannot find {name}')
+        return ''
+
+    def get_mysql_rule(self, name: str) -> dict:
+        url = f"{self.base_url}/stream/rule/{self.get_mysql_rule_uuid(name)}"
+        headers = {
+            'Authorization': self.token
+        }
+        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response.raise_for_status()
+        return response.json()['data']['info_list']
+
+    def create_mysql_rule(self, src_db: str, tgt_db: str, file: str) -> dict:
+        url = f"{self.base_url}/stream/rule"
+        json_obj = I2UP.load_json_file(file)
+        json_obj['src_db_uuid'] = self.get_db_uuid(src_db)
+        json_obj['tgt_db_uuid'] = self.get_db_uuid(tgt_db)
+        payload = json.dumps(json_obj)
+        headers = {
+            'Authorization': self.token,
+            'Content-Type': 'application/json'
+        }
+        response = requests.request("POST", url, headers=headers, data=payload, verify=self.ca_path)
+        response.raise_for_status()
+        return response.json()['data']
+
+    def delete_mysql_rule(self, name: str) -> dict:
+        url = f"{self.base_url}/stream/rule"
+        payload = json.dumps({
+            "mysql_uuids": [
+                self.get_mysql_rule_uuid(name)
+            ],
+            "force": False
         })
         headers = {
             'Authorization': self.token,
