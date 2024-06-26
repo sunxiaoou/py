@@ -1,0 +1,45 @@
+{
+    "bind_lic_list": [],
+    "cdb": "",
+    "comment": "",
+    "config": {
+        "auth": "pass",
+        "db_list": [
+            {
+                "ip": "192.168.55.12",
+                "port": 3306
+            }
+        ],
+        "role": [
+            "source",
+            "target"
+        ],
+        "transport": {
+            "auth": "gmssl",
+            "certificate": "",
+            "ssl_mode": "",
+            "sslmode": "disabled"
+        },
+        "user_management": [
+            {
+                "auth_uuid": "",
+                "cred_login": 0,
+                "cred_uuid": "",
+                "default_db": "manga",
+                "enable": true,
+                "passwd": "manga",
+                "url": "",
+                "user": "manga"
+            }
+        ]
+    },
+    "db_encryed": 2,
+    "db_mode": "normal",
+    "db_name": "msq_c2",
+    "db_type": "mysql",
+    "deploy_mode": "single",
+    "file_open_type": "DIRECT",
+    "log_read_type": "file",
+    "maintenance": 0,
+    "node_uuid": ""
+}
