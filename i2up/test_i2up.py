@@ -33,7 +33,7 @@ class I2UPTestCase(unittest.TestCase):
 
     def test_create_db_node(self):
         print("Test to create db node")
-        pprint(self.i2up.create_db_node('centos1', 'msq_c2.json'))
+        pprint(self.i2up.create_db_node('json/msq_c1_auto.json'))
 
     def test_delete_db_node(self):
         print("Test to create db node")
@@ -51,7 +51,7 @@ class I2UPTestCase(unittest.TestCase):
 
     def test_create_mysql_rule(self):
         print("Test to create mysql rule")
-        pprint(self.i2up.create_mysql_rule('msq_u', 'msq_c1', 'msq_test.json'))
+        pprint(self.i2up.create_mysql_rule('json/msq_u_c1_auto.json'))
 
     def test_delete_mysql_rule(self):
         print("Test to delete mysql rule")

@@ -80,7 +80,7 @@ def df_to_json(df: pd.DataFrame) -> dict:
 def df_to_excel(df: pd.DataFrame, xlsx: str, sheet: str, overwrite=False):
     if not os.path.exists(xlsx):
         with pd.ExcelWriter(xlsx, engine='openpyxl') as writer:
-            df.to_excel(writer, sheet_name=sheet, index=False)
+            df.to_excel(writer, sheet_name=sheet, index=False, header=False)
         print(f"Created new Excel file with sheet({sheet})")
     else:
         with pd.ExcelWriter(xlsx, engine='openpyxl', mode='a') as writer:

@@ -88,11 +88,11 @@ class I2UP:
             json_data = json.load(f)
         return json_data
 
-    def create_db_node(self, node: str, file: str) -> dict:
+    def create_db_node(self, file: str) -> dict:
         url = f"{self.base_url}/active/db"
         json_obj = I2UP.load_json_file(file)
         json_obj["bind_lic_list"] = [self.get_lic_uuid()]
-        json_obj['node_uuid'] = self.get_node_uuid(node)
+        json_obj['node_uuid'] = self.get_node_uuid(json_obj['node_uuid'])
         payload = json.dumps(json_obj)
         headers = {
             'Authorization': self.token,
@@ -143,11 +143,11 @@ class I2UP:
         response.raise_for_status()
         return response.json()['data']['info_list']
 
-    def create_mysql_rule(self, src_db: str, tgt_db: str, file: str) -> dict:
+    def create_mysql_rule(self, file: str) -> dict:
         url = f"{self.base_url}/stream/rule"
         json_obj = I2UP.load_json_file(file)
-        json_obj['src_db_uuid'] = self.get_db_uuid(src_db)
-        json_obj['tgt_db_uuid'] = self.get_db_uuid(tgt_db)
+        json_obj['src_db_uuid'] = self.get_db_uuid(json_obj['src_db_uuid'])
+        json_obj['tgt_db_uuid'] = self.get_db_uuid(json_obj['tgt_db_uuid'])
         payload = json.dumps(json_obj)
         headers = {
             'Authorization': self.token,
