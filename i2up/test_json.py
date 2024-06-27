@@ -1,10 +1,9 @@
-import json
 import unittest
 from pprint import pprint
 
 import pandas as pd
 
-from json_excel import traverse_save
+from json_tool import json_to_df, df_to_json
 
 
 class JsonTestCase(unittest.TestCase):
@@ -29,6 +28,34 @@ class JsonTestCase(unittest.TestCase):
         ],
         "skills": ["Python", "Excel", "Data Analysis"]
     }
+
+    df_data = [
+        ['{', None, None, None, None],
+        ['"name":', '"John Doe"', ',', None, None],
+        ['"age":', '30', ',', None, None],
+        ['"is_employee":', 'true', ',', None, None],
+        ['"address":', '{', None, None, None],
+        [None, '"street":', '"123 Main St"', ',', None],
+        [None, '"city":', '"Anytown"', ',', None],
+        [None, '"postal_code":', '"12345"', None, None],
+        [None, '}', ',', None, None],
+        ['"phone_numbers":', '[', None, None, None],
+        [None, '{', None, None, None],
+        [None, '"type":', '"home"', ',', None],
+        [None, '"number":', '"555-1234"', None, None],
+        [None, '}', ',', None, None],
+        [None, '{', None, None, None],
+        [None, '"type":', '"work"', ',', None],
+        [None, '"number":', '"555-5678"', None, None],
+        [None, '}', None, None, None],
+        [None, ']', ',', None, None],
+        ['"skills":', '[', None, None, None],
+        [None, '"Python"', ',', None, None],
+        [None, '"Excel"', ',', None, None],
+        [None, '"Data Analysis"', None, None, None],
+        [None, ']', None, None, None],
+        ['}', None, None, None, None]
+    ]
 
     @staticmethod
     def traverse_print(data: dict, indent=0):
@@ -63,27 +90,18 @@ class JsonTestCase(unittest.TestCase):
         print("Test traverse count")
         print(JsonTestCase.traverse_count(self.json_data))
 
-    def test_traverse_save(self):
-        print("Test traverse save")
-        count, df = traverse_save(self.json_data, 0, 0, pd.DataFrame(index=range(5), columns=range(5)))
-        print("count(%d)" % count)
-        print(df)
-        # df.to_excel("output.xlsx", index=False, header=False)
+    def test_json_to_df(self):
+        print("Test to json to df")
+        print(json_to_df(self.json_data))
 
-    def test_restore_json(self):
-        print("Test restore json")
-        _, df = traverse_save(self.json_data, 0, 0, pd.DataFrame(index=range(5), columns=range(5)), True)
-        json_string = ''
-        for _, row in df.iterrows():
-            row_string = " ".join([str(cell) for cell in row if pd.notna(cell)])
-            json_string += row_string + "\n"
-        print(json_string)
-        pprint(json.loads(json_string))
+    def test_df_to_json(self):
+        print("Test to df to json")
+        pprint(df_to_json(pd.DataFrame(self.df_data)))
 
-    def test_load_json(self):
-        with open("msq_u_c1.json", 'r') as file:
-            json_data = json.load(file)
-        print(json.dumps(json_data, indent=4))
+    def test_compare(self):
+        print("Test to compare")
+        data = df_to_json(pd.DataFrame(self.df_data))
+        self.assertEqual(self.json_data, data)
 
 
 if __name__ == '__main__':
