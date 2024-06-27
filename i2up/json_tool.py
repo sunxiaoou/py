@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+import argparse
 import json
 import os
 
@@ -19,6 +20,8 @@ def traverse_save(data, x: int, y: int, df: pd.DataFrame, last=False) -> (int, p
     if isinstance(data, dict):
         if not data:
             df = save_to_df('{}', x, y, df)
+            if not last:
+                df = save_to_df(',', x + 1, y, df)
             y += 1
         else:
             df = save_to_df('{', x, y, df)
@@ -34,6 +37,8 @@ def traverse_save(data, x: int, y: int, df: pd.DataFrame, last=False) -> (int, p
     elif isinstance(data, list):
         if not data:
             df = save_to_df('[]', x, y, df)
+            if not last:
+                df = save_to_df(',', x + 1, y, df)
             y += 1
         else:
             df = save_to_df('[', x, y, df)
@@ -67,7 +72,7 @@ def json_to_df(json_data: dict) -> pd.DataFrame:
 def df_to_json(df: pd.DataFrame) -> dict:
     json_str = ''
     for _, row in df.iterrows():
-        row_str = " ".join([str(cell) for cell in row if pd.notna(cell)])
+        row_str = " ".join(['null' if str(cell) == 'None' else str(cell) for cell in row if pd.notna(cell)])
         json_str += row_str + "\n"
     return json.loads(json_str)
 
@@ -85,16 +90,41 @@ def df_to_excel(df: pd.DataFrame, xlsx: str, sheet: str, overwrite=False):
                     return
                 del writer.book[sheet]
                 print(f"Deleted original sheet({sheet}) in {xlsx}")
-            df.to_excel(writer, sheet_name=sheet, index=False)
+            df.to_excel(writer, sheet_name=sheet, index=False, header=False)
             print(f"Added new sheet({sheet}) to file: {xlsx}")
 
 
 def excel_to_df(xlsx: str, sheet: str) -> pd.DataFrame:
-    return pd.read_excel(xlsx, sheet_name=sheet)
+    return pd.read_excel(xlsx, sheet_name=sheet, header=None)
+
+
+def json_to_excel(json_file: str, xlsx: str, sheet: str):
+    with open(json_file, 'r') as f:
+        json_data = json.load(f)
+    df_to_excel(json_to_df(json_data), xlsx, sheet, True)
+    print(f"Converted {json_file} to sheet({sheet}) in {xlsx}")
+
+
+def excel_to_json(xlsx: str, sheet: str, json_file: str):
+    json_data = df_to_json(excel_to_df(xlsx, sheet))
+    with open(json_file, 'w') as f:
+        json.dump(json_data, f, indent=4)
+    print(f"Converted sheet({sheet}) in {xlsx} to {json_file}")
 
 
 def main():
-    pass
+    parser = argparse.ArgumentParser(description='Convert JSON to Excel or Excel to JSON')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--json-to-excel', action='store_true', help='Convert JSON to Excel')
+    group.add_argument('--excel-to-json', action='store_true', help='Convert Excel to JSON')
+    parser.add_argument('--json-file', required=True, help='JSON filename')
+    parser.add_argument('--excel-file', required=True, help='Excel filename')
+    parser.add_argument('--excel-sheet', required=True, help='Excel sheet')
+    args = parser.parse_args()
+    if args.json_to_excel:
+        json_to_excel(args.json_file, args.excel_file, args.excel_sheet)
+    elif args.excel_to_json:
+        excel_to_json(args.excel_file, args.excel_sheet, args.json_file)
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@ from pprint import pprint
 
 import pandas as pd
 
-from json_tool import json_to_df, df_to_json, df_to_excel, excel_to_df
+from json_tool import json_to_df, df_to_json, df_to_excel, excel_to_df, json_to_excel, excel_to_json
 
 
 class JsonTestCase(unittest.TestCase):
@@ -131,6 +131,14 @@ class JsonTestCase(unittest.TestCase):
     def test_excel_to_df(self):
         print("Test to excel to df")
         print(excel_to_df('test_json.xlsx', 'john_doe'))
+
+    def test_json_to_excel(self):
+        print("Test to json_file to excel")
+        json_to_excel('msq_c2.json', 'test_json.xlsx', 'msq_c2')
+
+    def test_excel_to_json(self):
+        print("Test to excel to json_file")
+        excel_to_json('test_json.xlsx', 'john_doe', 'john_doe.json')
 
 
 if __name__ == '__main__':
