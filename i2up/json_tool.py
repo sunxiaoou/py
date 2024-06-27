@@ -22,7 +22,6 @@ def traverse_save(data, x: int, y: int, df: pd.DataFrame, last=False) -> (int, p
             df = save_to_df('{}', x, y, df)
             if not last:
                 df = save_to_df(',', x + 1, y, df)
-            y += 1
         else:
             df = save_to_df('{', x, y, df)
             y += 1
@@ -33,13 +32,11 @@ def traverse_save(data, x: int, y: int, df: pd.DataFrame, last=False) -> (int, p
                 else:
                     y, df = traverse_save(value, x + 1, y, df, last=True)
                 df = save_to_df('}' if last else '},', x, y, df)
-            y += 1
     elif isinstance(data, list):
         if not data:
             df = save_to_df('[]', x, y, df)
             if not last:
                 df = save_to_df(',', x + 1, y, df)
-            y += 1
         else:
             df = save_to_df('[', x, y, df)
             y += 1
@@ -49,7 +46,6 @@ def traverse_save(data, x: int, y: int, df: pd.DataFrame, last=False) -> (int, p
                 else:
                     y, df = traverse_save(item, x, y, df, last=True)
             df = save_to_df(']' if last else '],', x, y, df)
-            y += 1
     else:
         if isinstance(data, str):
             df = save_to_df('"' + data + '"', x, y, df)
@@ -60,8 +56,7 @@ def traverse_save(data, x: int, y: int, df: pd.DataFrame, last=False) -> (int, p
             df = save_to_df(s, x, y, df)
         if not last:
             df = save_to_df(',', x + 1, y, df)
-        y += 1
-    return y, df
+    return y + 1, df
 
 
 def json_to_df(json_data: dict) -> pd.DataFrame:
