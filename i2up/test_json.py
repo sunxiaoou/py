@@ -3,10 +3,29 @@ from pprint import pprint
 
 import pandas as pd
 
-from json_tool import json_to_df, df_to_json
+from json_tool import json_to_df, df_to_json, df_to_excel, excel_to_df
 
 
 class JsonTestCase(unittest.TestCase):
+    """
+    +-----------------------------------------------------------+
+    |  |      0       |    1       |     2          |     3     |
+    +-----------------------------------------------------------+
+    |0 |name         ｜"John Doe"  |                |           |
+    |1 |age          ｜30          |                |           |
+    |2 |is_employee  ｜True        |                |           |
+    |3 |address      ｜street      |"123 Main St"   |           |
+    |4 |             ｜city        |"Anytown"       |           |
+    |5 |             ｜postal_code |"12345"         |           |
+    |6 |phone_numbers｜[0]         |type            |"home"     |
+    |7 |             ｜            |number          |"555-1234" |
+    |8 |             ｜[1]         |type            |"work"     |
+    |9 |             ｜            |number          |"555-5678" |
+    |10|skills       ｜[0]         |"Python"        |           |
+    |11|             ｜[1]         |"Excel"         |           |
+    |12|             ｜[2]         |"Data Analysis" |           |
+    +-----------------------------------------------------------+
+    """
     json_data = {
         "name": "John Doe",
         "age": 30,
@@ -102,6 +121,16 @@ class JsonTestCase(unittest.TestCase):
         print("Test to compare")
         data = df_to_json(pd.DataFrame(self.df_data))
         self.assertEqual(self.json_data, data)
+        df = json_to_df(self.json_data)
+        self.assertEqual(self.json_data, df_to_json(df))
+
+    def test_df_to_excel(self):
+        print("Test to df to excel")
+        df_to_excel(pd.DataFrame(self.df_data), 'test_json.xlsx', 'john_doe', True)
+
+    def test_excel_to_df(self):
+        print("Test to excel to df")
+        print(excel_to_df('test_json.xlsx', 'john_doe'))
 
 
 if __name__ == '__main__':
