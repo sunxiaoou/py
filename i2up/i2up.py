@@ -1,5 +1,7 @@
 #! /usr/bin/python3
+import argparse
 import json
+from pprint import pprint
 
 import requests
 
@@ -32,6 +34,10 @@ class I2UP:
         response.raise_for_status()
         return response.json()['data']['version']
 
+    @staticmethod
+    def get_subset(objects: list, keys: list) -> list:
+        return [{key: obj[key] for key in keys} for obj in objects]
+
     def get_activated_nodes(self) -> list:
         url = f"{self.base_url}/active/node"
         headers = {
@@ -39,7 +45,24 @@ class I2UP:
         }
         response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
         response.raise_for_status()
-        return response.json()['data']['info_list']
+        nodes = response.json()['data']['info_list']
+        return I2UP.get_subset(nodes, ['address', 'node_name', 'node_uuid'])
+
+    def get_node_uuid(self, name: str) -> str:
+        for node in self.get_activated_nodes():
+            if name == node['node_name']:
+                return node['node_uuid']
+        print(f'Cannot find {name}')
+        return ''
+
+    def get_activated_node(self, name: str) -> dict:
+        url = f"{self.base_url}/active/node/{self.get_node_uuid(name)}"
+        headers = {
+            'Authorization': self.token
+        }
+        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response.raise_for_status()
+        return response.json()['data']['active_node']
 
     def get_db_nodes(self) -> list:
         url = f"{self.base_url}/active/db"
@@ -48,14 +71,8 @@ class I2UP:
         }
         response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
         response.raise_for_status()
-        return response.json()['data']['info_list']
-
-    def get_node_uuid(self, name: str) -> str:
-        for node in self.get_activated_nodes():
-            if name == node['node_name']:
-                return node['node_uuid']
-        print(f'Cannot find {name}')
-        return ''
+        dbs = response.json()['data']['info_list']
+        return I2UP.get_subset(dbs, ['db_name', 'db_type', 'db_uuid'])
 
     def get_db_uuid(self, name: str) -> str:
         for db in self.get_db_nodes():
@@ -125,7 +142,8 @@ class I2UP:
         }
         response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
         response.raise_for_status()
-        return response.json()['data']['info_list']
+        rules = response.json()['data']['info_list']
+        return I2UP.get_subset(rules, ['mysql_name', 'mysql_uuid', 'src_db_name', 'tgt_db_name'])
 
     def get_mysql_rule_uuid(self, name: str) -> str:
         for node in self.get_mysql_rules():
@@ -175,7 +193,60 @@ class I2UP:
 
 
 def main():
-    pass
+    parser = argparse.ArgumentParser(description='I2UP utilities')
+
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--version', action='store_true', help='Show version')
+    group.add_argument('--list-nodes', action='store_true', help='List activated nodes')
+    group.add_argument('--show-node', action='store_true', help='Show an activated node')
+    group.add_argument('--list-dbs', action='store_true', help='List DB nodes')
+    group.add_argument('--show-db', action='store_true', help='Show a DB node')
+    group.add_argument('--create-db', action='store_true', help='Create a DB node')
+    group.add_argument('--delete-db', action='store_true', help='Delete a DB node')
+    group.add_argument('--list-rules', action='store_true', help='List MySQL sync rules')
+    group.add_argument('--show-rule', action='store_true', help='Show a MySQL sync rule')
+    group.add_argument('--create-rule', action='store_true', help='Create a MySQL sync rule')
+    group.add_argument('--delete-rule', action='store_true', help='Delete a MySQL sync rule')
+
+    parser.add_argument('--ip', required=True, help='IP address or hostname')
+    parser.add_argument('--port', required=False, type=int, default=58086, help='Port number (default: 58086)')
+    parser.add_argument('--ca', required=False, default='ca.crt', help='Path of ca file (default: ca.crt)')
+    parser.add_argument('--node', required=False, help='Name of activated node')
+    parser.add_argument('--db', required=False, help='Name of DB node')
+    parser.add_argument('--rule', required=False, help='Name of MySQL sync rule')
+    parser.add_argument('--json', required=False, help='Path of json file to create DB/rule')
+
+    args = parser.parse_args()
+    i2up = I2UP(args.ca, args.ip, args.port)
+
+    if args.version:
+        print(i2up.get_version())
+    elif args.list_nodes:
+        nodes = i2up.get_activated_nodes()
+        print("count(%d)" % len(nodes))
+        pprint(nodes)
+    elif args.show_node:
+        pprint(i2up.get_activated_node(args.node))
+    elif args.list_dbs:
+        dbs = i2up.get_db_nodes()
+        print("count(%d)" % len(dbs))
+        pprint(dbs)
+    elif args.show_db:
+        pprint(i2up.get_db_node(args.db))
+    elif args.create_db:
+        pprint(i2up.create_db_node(args.json))
+    elif args.delete_db:
+        pprint(i2up.delete_db_node(args.db))
+    elif args.list_rules:
+        rules = i2up.get_mysql_rules()
+        print("count(%d)" % len(rules))
+        pprint(rules)
+    elif args.show_rule:
+        pprint(i2up.get_mysql_rule(args.rule))
+    elif args.create_rule:
+        pprint(i2up.create_mysql_rule(args.json))
+    elif args.delete_rule:
+        pprint(i2up.delete_mysql_rule(args.rule))
 
 
 if __name__ == "__main__":
