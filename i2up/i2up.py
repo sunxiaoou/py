@@ -7,15 +7,15 @@ import requests
 
 
 class I2UP:
-    def __init__(self, ca_path: str, ip: str, port=58086):
+    def __init__(self, ip: str, port: int, user: str, pwd: str, ca_path: str):
         self.ca_path = ca_path
         self.base_url = f"https://{ip}:{port}/api"
         self.token = None
 
         url = f"{self.base_url}/auth/token"
         payload = json.dumps({
-            "username": "admin",
-            "pwd": "Info@4321"
+            "username": user,
+            "pwd": pwd
         })
         headers = {
             'Content-Type': 'application/json'
@@ -210,6 +210,8 @@ def main():
 
     parser.add_argument('--ip', required=True, help='IP address or hostname')
     parser.add_argument('--port', required=False, type=int, default=58086, help='Port number (default: 58086)')
+    parser.add_argument('--user', required=False, default='admin', help='Username (default: admin)')
+    parser.add_argument('--pwd', required=False, default='Info@1234', help='Password (default: Info@1234)')
     parser.add_argument('--ca', required=False, default='ca.crt', help='Path of ca file (default: ca.crt)')
     parser.add_argument('--node', required=False, help='Name of activated node')
     parser.add_argument('--db', required=False, help='Name of DB node')
@@ -217,7 +219,7 @@ def main():
     parser.add_argument('--json', required=False, help='Path of json file to create DB/rule')
 
     args = parser.parse_args()
-    i2up = I2UP(args.ca, args.ip, args.port)
+    i2up = I2UP(args.ip, args.port, args.user, args.pwd, args.ca)
 
     if args.version:
         print(i2up.get_version())

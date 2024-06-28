@@ -9,7 +9,10 @@ class I2UPTestCase(unittest.TestCase):
     def setUpClass(cls):
         ca_path = "ca.crt"
         ip = 'centos1'
-        cls.i2up = I2UP(ca_path, ip)
+        port = 58086
+        user = 'admin'
+        pwd = 'Info@1234'
+        cls.i2up = I2UP(ip, port, user, pwd, ca_path)
 
     def test_get_version(self):
         print("Test to get version")
