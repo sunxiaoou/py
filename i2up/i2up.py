@@ -198,15 +198,15 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--version', action='store_true', help='Show version')
     group.add_argument('--list-nodes', action='store_true', help='List activated nodes')
-    group.add_argument('--show-node', action='store_true', help='Show an activated node')
+    group.add_argument('--show-node', action='store_true', help='Show an activated node (with --node)')
     group.add_argument('--list-dbs', action='store_true', help='List DB nodes')
-    group.add_argument('--show-db', action='store_true', help='Show a DB node')
-    group.add_argument('--create-db', action='store_true', help='Create a DB node')
-    group.add_argument('--delete-db', action='store_true', help='Delete a DB node')
+    group.add_argument('--show-db', action='store_true', help='Show a DB node (with --db)')
+    group.add_argument('--create-db', action='store_true', help='Create a DB node (with --json)')
+    group.add_argument('--delete-db', action='store_true', help='Delete a DB node (with --db)')
     group.add_argument('--list-rules', action='store_true', help='List MySQL sync rules')
-    group.add_argument('--show-rule', action='store_true', help='Show a MySQL sync rule')
-    group.add_argument('--create-rule', action='store_true', help='Create a MySQL sync rule')
-    group.add_argument('--delete-rule', action='store_true', help='Delete a MySQL sync rule')
+    group.add_argument('--show-rule', action='store_true', help='Show a MySQL sync rule (with --rule)')
+    group.add_argument('--create-rule', action='store_true', help='Create a MySQL sync rule (with --json)')
+    group.add_argument('--delete-rule', action='store_true', help='Delete a MySQL sync rule (with --rule)')
 
     parser.add_argument('--ip', required=True, help='IP address or hostname')
     parser.add_argument('--port', required=False, type=int, default=58086, help='Port number (default: 58086)')
@@ -228,26 +228,33 @@ def main():
         print("count(%d)" % len(nodes))
         pprint(nodes)
     elif args.show_node:
+        assert args.node is not None
         pprint(i2up.get_activated_node(args.node))
     elif args.list_dbs:
         dbs = i2up.get_db_nodes()
         print("count(%d)" % len(dbs))
         pprint(dbs)
     elif args.show_db:
+        assert args.db is not None
         pprint(i2up.get_db_node(args.db))
     elif args.create_db:
+        assert args.json is not None
         pprint(i2up.create_db_node(args.json))
     elif args.delete_db:
+        assert args.db is not None
         pprint(i2up.delete_db_node(args.db))
     elif args.list_rules:
         rules = i2up.get_mysql_rules()
         print("count(%d)" % len(rules))
         pprint(rules)
     elif args.show_rule:
+        assert args.rule is not None
         pprint(i2up.get_mysql_rule(args.rule))
     elif args.create_rule:
+        assert args.json is not None
         pprint(i2up.create_mysql_rule(args.json))
     elif args.delete_rule:
+        assert args.rule is not None
         pprint(i2up.delete_mysql_rule(args.rule))
 
 
