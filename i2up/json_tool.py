@@ -110,16 +110,16 @@ def excel_to_json(xlsx: str, sheet: str, json_file: str):
 def main():
     parser = argparse.ArgumentParser(description='Convert JSON to Excel or Excel to JSON')
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('--json-to-excel', action='store_true', help='Convert JSON to Excel')
-    group.add_argument('--excel-to-json', action='store_true', help='Convert Excel to JSON')
-    parser.add_argument('--json-file', required=True, help='JSON filename')
-    parser.add_argument('--excel-file', required=True, help='Excel filename')
-    parser.add_argument('--excel-sheet', required=True, help='Excel sheet')
+    group.add_argument('--json2excel', action='store_true', help='Convert JSON to Excel')
+    group.add_argument('--excel2json', action='store_true', help='Convert Excel to JSON')
+    parser.add_argument('--json', required=True, help='JSON filename')
+    parser.add_argument('--excel', required=True, help='Excel filename')
+    parser.add_argument('--sheet', required=True, help='Excel sheet name')
     args = parser.parse_args()
-    if args.json_to_excel:
-        json_to_excel(args.json_file, args.excel_file, args.excel_sheet)
-    elif args.excel_to_json:
-        excel_to_json(args.excel_file, args.excel_sheet, args.json_file)
+    if args.json2excel:
+        json_to_excel(args.json, args.excel, args.sheet)
+    elif args.excel2json:
+        excel_to_json(args.excel, args.sheet, args.json)
 
 
 if __name__ == "__main__":

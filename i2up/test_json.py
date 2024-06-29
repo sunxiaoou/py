@@ -94,16 +94,18 @@ class JsonTestCase(unittest.TestCase):
         JsonTestCase.traverse_print(self.json_data)
 
     @staticmethod
-    def traverse_count(data: dict, count=0) -> int:
+    def traverse_count(data: dict, count=0, x=0, max_x=0) -> (int, int):
         if isinstance(data, dict):
             for key, value in data.items():
-                count = JsonTestCase.traverse_count(value, count)
+                max_x = max(max_x, x + 1)
+                count, max_x = JsonTestCase.traverse_count(value, count, x + 1, max_x)
         elif isinstance(data, list):
             for index, item in enumerate(data):
-                count = JsonTestCase.traverse_count(item, count)
+                max_x = max(max_x, x + 1)
+                count, max_x = JsonTestCase.traverse_count(item, count, x + 1, max_x)
         else:
             count += 1
-        return count
+        return count, max_x
 
     def test_traverse_count(self):
         print("Test traverse count")
