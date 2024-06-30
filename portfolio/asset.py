@@ -405,6 +405,65 @@ def futu(datafile: str) -> pd.DataFrame:
     return df
 
 
+def usmart(datafile: str) -> pd.DataFrame:
+    with open(datafile) as f:
+        lines = []
+        for line in f.readlines():
+            line = re.sub(r'[,，]', '', re.sub(r'[+＋]', ' ', re.sub('[-－]', ' -', line)))
+            lines += line.rstrip('\n').split()
+
+    currency = 'usd'
+    i = 0
+    while not lines[i].startswith('我的资产'):
+        i += 1
+    i += 1
+    while not re.match(r'\d+\.\d\d', lines[i]):
+        i += 1
+    asset = float(lines[i])
+    i += 1
+    while not lines[i].startswith('现金余额'):
+        i += 1
+    total_mv_2 = float(lines[i + 2])
+    cash = float(lines[i + 3])
+    i += 4
+    assert round(total_mv_2 + cash, 2) == asset, \
+        print("total_mv({}) + cash({}) != asset({})".format(total_mv_2, cash, asset))
+
+    while not lines[i].startswith('今日盈亏'):
+        i += 1
+    total_mv = float(lines[i + 2])
+    total_hg = float(lines[i + 4])
+    i += 5
+    result = [('盈立', currency, 'cash', '现金', '货币', 0, cash, 0)]
+    while not lines[i].startswith('持仓盈亏'):
+        i += 1
+    i += 1
+    while len(lines) - i >= 7:
+        while not re.match(r'^[\d]+\.\d\d$', lines[i]):
+            i += 1
+        market_value = float(lines[i])
+        nav = float(lines[i + 1])
+        i += 2
+        while not re.match(r'^[A-Z]{4}$', lines[i]):
+            i += 1
+        code = lines[i]
+        i += 1
+        while not re.match(r'^[\d]+$', lines[i]):
+            i += 1
+        volume = int(lines[i])
+        cost = float(lines[i + 1])
+        name, type, risk = SECURITIES[code]
+        hold_gain = round(market_value - cost * volume, 2)
+        result.append(('盈立', currency, code, name, type, risk, market_value, hold_gain, nav))
+        i += 3
+    df = pd.DataFrame(result, columns=COLUMNS + ['nav'])
+    sum_mv = round(df['market_value'].sum(), 2)
+    assert sum_mv + total_mv_2 - total_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
+    sum_hg = round(df['hold_gain'].sum(), 2)
+    assert sum_hg == total_hg, print("sum_hg({}) != total_hg({})".format(sum_hg, total_hg))
+    return df
+
+
 def danjuan(datafile: str) -> pd.DataFrame:
     def get_plan(plan: str) -> list:
         resp = requests.get(url + 'plan/' + plan, headers=headers)
@@ -510,8 +569,9 @@ def tonghs(datafile: str) -> pd.DataFrame:
 
 
 def run(file: str) -> pd.DataFrame:
-    platforms = {'zsb': zhaoshang_bank, 'hsb': hangseng_bank, 'yh': yinhe, 'hb': huabao, 'hs': huasheng, 'ft': futu,
-                 'dj': danjuan, 'ths': tonghs}
+    # platforms = {'zsb': zhaoshang_bank, 'hsb': hangseng_bank, 'yh': yinhe, 'hb': huabao, 'hs': huasheng, 'ft': futu,
+    #              'dj': danjuan, 'ths': tonghs}
+    platforms = {'zsb': zhaoshang_bank, 'hsb': hangseng_bank, 'yh': yinhe, 'hs': huasheng, 'ft': futu, 'us': usmart}
     func = platforms[re.search(r'.*/(.*)_.*', file).group(1)]
     return func(file)
 
@@ -542,7 +602,8 @@ def fill(rates: tuple, df: pd.DataFrame) -> pd.DataFrame:
 
 
 def run_all(rates: tuple, files: list) -> pd.DataFrame:
-    platforms = ['zsb_', 'hsb_', 'yh_', 'hb_', 'hs_', 'ft_', 'dj_', 'ths_']   # to sort files
+    # platforms = ['zsb_', 'hsb_', 'yh_', 'hb_', 'hs_', 'ft_', 'dj_', 'ths_']   # to sort files
+    platforms = ['zsb_', 'hsb_', 'yh_', 'hs_', 'ft_', 'us_']    # to sort files
     fs = sorted(files)
     frames = []
     for p in platforms:
@@ -584,7 +645,7 @@ def to_execl(xlsx: str, rates: tuple, sheet: str, df: pd.DataFrame):
         {'location': (last_row + 2, 1),
          'letter': 'A',
          # 'labels': ['招商银行', '恒生银行', '银河', '华宝', '华盛*', '富途*', '蛋卷*', '同花顺'],
-         'labels': ['招商银行', '恒生银行', '银河', '华盛*', '富途*', '蛋卷*'],
+         'labels': ['招商银行', '恒生银行', '银河', '华盛*', '富途', '盈立'],
          'category': 'platform',
          'anchor': 'K1'},
         {'location': (last_row + 2, 4),
@@ -599,7 +660,7 @@ def to_execl(xlsx: str, rates: tuple, sheet: str, df: pd.DataFrame):
          'anchor': 'K31'},
         {'location': (last_row + 2, 7),
          'letter': 'E',
-         'labels': ['货币', '债券', '转债', '指数', '主动', '股票', '医药', '中概股'],
+         'labels': ['货币', '债券', '转债', '指数', '主动', '股票', '虚拟币', '中概股'],
          'category': 'type',
          'anchor': 'K46'}
     ]
