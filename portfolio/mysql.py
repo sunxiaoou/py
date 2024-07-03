@@ -3,7 +3,7 @@ import json
 from pprint import pprint
 
 from pymysql import IntegrityError
-from sqlalchemy import create_engine, MetaData, Table
+from sqlalchemy import create_engine, MetaData, Table, select, text
 from sqlalchemy.orm import sessionmaker
 import pandas as pd
 
@@ -19,17 +19,14 @@ class MySql:
     #     self.db.close()
 
     def last_row(self, table: str, column: str, where: str = '') -> dict:
-        metadata = MetaData(self.db)
-        tab = Table(table, metadata, autoload=True)
-        columns = [c.name for c in tab.columns]
-        # print(columns)
-        if not where:
-            query = 'SELECT * FROM %s ORDER BY %s DESC LIMIT 1' % (table, column)
-        else:
-            query = 'SELECT * FROM %s WHERE %s ORDER BY %s DESC LIMIT 1' %\
-                    (table, where, column)
-        values = self.db.execute(query).fetchone()
-        return dict(zip(columns, values)) if values else {}
+        tab_ref = Table(table, MetaData(), autoload_with=self.db)
+        columns = [c.name for c in tab_ref.columns]
+        query = select(tab_ref).order_by(tab_ref.c[column].desc()).limit(1)
+        if where:
+            query = query.where(text(where))
+        with self.db.connect() as conn:
+            result = conn.execute(query).fetchone()
+        return dict(zip(columns, result)) if result else {}
 
     def insert(self, table: str, row: dict):
         session = sessionmaker(bind=self.db)()

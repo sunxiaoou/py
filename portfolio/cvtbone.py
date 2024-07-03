@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+import os
 import re
 import sys
 from datetime import datetime
@@ -7,6 +8,7 @@ import numpy as np
 import pandas as pd
 from openpyxl import load_workbook
 
+from excel_tool import duplicate_last_sheet, df_to_sheet
 from mysql import MySql
 from snowball import Snowball
 
@@ -87,28 +89,25 @@ def get_my_list(xlsx: str) -> pd.DataFrame:
 
 
 def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
-    try:
-        wb = load_workbook(xlsx)
-    except FileNotFoundError:
-        df.to_excel(xlsx, sheet_name=sheet, index=False)
-        print(xlsx + ' created')
-        return
+    duplicate_last_sheet(xlsx, sheet)
+    df_to_sheet(df, xlsx, sheet, overlay=True, header=True)
 
-    if sheet in wb.sheetnames:
-        print("%s has '%s' already" % (xlsx, sheet))
-        return
 
-    ws = wb.copy_worksheet(wb.worksheets[-1])       # copy a old sheet as template to avoid adjust size
-    if df.shape[0] < ws.max_row:
-        ws.delete_rows(df.shape[0], ws.max_row - 1)
-    ws.title = sheet
-    wb.active = len(wb.worksheets) - 1
-
-    writer = pd.ExcelWriter(xlsx, engine='openpyxl')
-    writer.book = wb
-    writer.sheets = {worksheet.title: worksheet for worksheet in wb.worksheets}
-    df.to_excel(writer, sheet_name=sheet, index=False)
-    writer.save()
+# def to_excel(xlsx: str, sheet: str, df: pd.DataFrame, overwrite=False):
+#     if not os.path.exists(xlsx):
+#         with pd.ExcelWriter(xlsx, engine='openpyxl') as writer:
+#             df.to_excel(writer, sheet_name=sheet, index=False, header=False)
+#         print(f"Created new Excel file with sheet({sheet})")
+#     else:
+#         with pd.ExcelWriter(xlsx, engine='openpyxl', mode='a') as writer:
+#             if sheet in writer.book.sheetnames:
+#                 if overwrite:
+#                     print(f"Sheet({sheet}) already exists in {xlsx}")
+#                     return
+#                 del writer.book[sheet]
+#                 print(f"Deleted original sheet({sheet}) in {xlsx}")
+#             df.to_excel(writer, sheet_name=sheet, index=False, header=True)
+#             print(f"Added new sheet({sheet}) to file: {xlsx}")
 
 
 def update_price(codes: list, db: MySql):
