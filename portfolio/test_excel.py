@@ -3,15 +3,15 @@ import os
 import unittest
 
 from excel_tool import df_to_sheet, duplicate_last_sheet
-from json_tool import json_to_df
+from i2up.json_tool import json_to_df
 
 
 class ExcelTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        with open('tmp/msq_u_auto.json', 'r') as f:
+        with open('../i2up/tmp/msq_u_auto.json', 'r') as f:
             cls.msq_u = json.load(f)
-        with open('tmp/msq_c1_auto.json', 'r') as f:
+        with open('../i2up/tmp/msq_c1_auto.json', 'r') as f:
             cls.msq_c1 = json.load(f)
         cls.xlsx = 'test_excel.xlsx'
 
