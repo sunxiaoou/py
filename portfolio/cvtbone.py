@@ -1,5 +1,4 @@
 #! /usr/bin/python3
-import os
 import re
 import sys
 from datetime import datetime
@@ -89,25 +88,8 @@ def get_my_list(xlsx: str) -> pd.DataFrame:
 
 
 def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
-    duplicate_last_sheet(xlsx, sheet)
+    duplicate_last_sheet(xlsx, sheet, df.shape[0])
     df_to_sheet(df, xlsx, sheet, overlay=True, header=True)
-
-
-# def to_excel(xlsx: str, sheet: str, df: pd.DataFrame, overwrite=False):
-#     if not os.path.exists(xlsx):
-#         with pd.ExcelWriter(xlsx, engine='openpyxl') as writer:
-#             df.to_excel(writer, sheet_name=sheet, index=False, header=False)
-#         print(f"Created new Excel file with sheet({sheet})")
-#     else:
-#         with pd.ExcelWriter(xlsx, engine='openpyxl', mode='a') as writer:
-#             if sheet in writer.book.sheetnames:
-#                 if overwrite:
-#                     print(f"Sheet({sheet}) already exists in {xlsx}")
-#                     return
-#                 del writer.book[sheet]
-#                 print(f"Deleted original sheet({sheet}) in {xlsx}")
-#             df.to_excel(writer, sheet_name=sheet, index=False, header=True)
-#             print(f"Added new sheet({sheet}) to file: {xlsx}")
 
 
 def update_price(codes: list, db: MySql):

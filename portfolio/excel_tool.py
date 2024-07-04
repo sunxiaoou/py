@@ -23,11 +23,14 @@ def df_to_sheet(df: pd.DataFrame, xlsx: str, sheet: str, overlay=False, header=T
             print(f"Overlap sheet({sheet}) in file {xlsx}")
 
 
-def duplicate_last_sheet(xlsx: str, sheet: str):
+def duplicate_last_sheet(xlsx: str, sheet: str, row_count: int):
     wb = load_workbook(xlsx)
     last_sheet = wb.worksheets[-1]
     new_sheet = wb.copy_worksheet(last_sheet)
+    if row_count < new_sheet.max_row:
+        new_sheet.delete_rows(row_count, new_sheet.max_row - 1)
     new_sheet.title = sheet
+    wb.active = wb.index(new_sheet)
     wb.save(xlsx)
 
 

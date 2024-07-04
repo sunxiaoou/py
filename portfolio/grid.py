@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
 from matplotlib import dates, pyplot, ticker
-from openpyxl import load_workbook
 
 from excel_tool import duplicate_last_sheet, df_to_sheet
 from mysql import MySql
@@ -248,25 +247,7 @@ def get_count(row: pd.Series) -> tuple:
 
 
 def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
-    # try:
-    #     wb = load_workbook(xlsx)
-    # except FileNotFoundError:
-    #     df.to_excel(xlsx, sheet_name=sheet, index=False)
-    #     print(xlsx + ' created')
-    #     return
-    #
-    # ws = wb.copy_worksheet(wb.worksheets[-1])       # copy a old sheet as template to avoid adjust size
-    # if df.shape[0] < ws.max_row:
-    #     ws.delete_rows(df.shape[0], ws.max_row - 1)
-    # ws.title = sheet
-    # wb.active = len(wb.worksheets) - 1
-    #
-    # writer = pd.ExcelWriter(xlsx, engine='openpyxl')
-    # writer.book = wb
-    # writer.sheets = {worksheet.title: worksheet for worksheet in wb.worksheets}
-    # df.to_excel(writer, sheet_name=sheet, index=False)
-    # writer.save()
-    duplicate_last_sheet(xlsx, sheet)
+    duplicate_last_sheet(xlsx, sheet, df.shape[0])
     df_to_sheet(df, xlsx, sheet, overlay=True, header=True)
 
 

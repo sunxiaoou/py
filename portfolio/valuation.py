@@ -319,7 +319,7 @@ def get_valuation_with_threshold(dic: dict) -> pd.DataFrame:
 
 
 def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
-    duplicate_last_sheet(xlsx, sheet)
+    duplicate_last_sheet(xlsx, sheet, df.shape[0])
     df_to_sheet(df, xlsx, sheet, overlay=True, header=True)
 
     wb = load_workbook(xlsx)

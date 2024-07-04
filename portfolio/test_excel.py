@@ -23,7 +23,7 @@ class ExcelTestCase(unittest.TestCase):
 
     def test_copy_last_sheet(self):
         print("Test to duplicate last sheet")
-        duplicate_last_sheet(self.xlsx, 'msq_c1')
+        duplicate_last_sheet(self.xlsx, 'msq_c1', 10)
 
     def test_overlap_sheet(self):
         print("Test to overlap sheet")
