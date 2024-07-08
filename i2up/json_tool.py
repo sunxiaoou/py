@@ -74,21 +74,39 @@ def df_to_json(df: pd.DataFrame) -> dict:
     return json.loads(json_str)
 
 
-def df_to_excel(df: pd.DataFrame, xlsx: str, sheet: str, overwrite=False):
+# def df_to_excel2(df: pd.DataFrame, xlsx: str, sheet: str, overwrite=False):
+#     if not os.path.exists(xlsx):
+#         with pd.ExcelWriter(xlsx, engine='openpyxl') as writer:
+#             df.to_excel(writer, sheet_name=sheet, index=False, header=False)
+#         print(f"Created new Excel file with sheet({sheet})")
+#     else:
+#         with pd.ExcelWriter(xlsx, engine='openpyxl', mode='a') as writer:
+#             if sheet in writer.book.sheetnames:
+#                 if not overwrite:
+#                     print(f"Sheet({sheet}) already exists in {xlsx}")
+#                     return
+#                 del writer.book[sheet]
+#                 print(f"Deleted original sheet({sheet}) in {xlsx}")
+#             df.to_excel(writer, sheet_name=sheet, index=False, header=False)
+#             print(f"Added new sheet({sheet}) to file: {xlsx}")
+
+
+def df_to_excel(df: pd.DataFrame, xlsx: str, sheet: str, overlay=False, header=False):
     if not os.path.exists(xlsx):
-        with pd.ExcelWriter(xlsx, engine='openpyxl') as writer:
-            df.to_excel(writer, sheet_name=sheet, index=False, header=False)
+        with pd.ExcelWriter(xlsx, engine='openpyxl') as w:
+            df.to_excel(w, sheet_name=sheet, index=False, header=header)
         print(f"Created new Excel file with sheet({sheet})")
+    elif not overlay:
+        with pd.ExcelWriter(xlsx, engine='openpyxl', mode='a') as w:
+            if sheet in w.book.sheetnames:
+                print(f"Sheet({sheet}) already exists in {xlsx}")
+                return
+            df.to_excel(w, sheet_name=sheet, index=False, header=header)
+            print(f"Added new sheet({sheet}) to file {xlsx}")
     else:
-        with pd.ExcelWriter(xlsx, engine='openpyxl', mode='a') as writer:
-            if sheet in writer.book.sheetnames:
-                if not overwrite:
-                    print(f"Sheet({sheet}) already exists in {xlsx}")
-                    return
-                del writer.book[sheet]
-                print(f"Deleted original sheet({sheet}) in {xlsx}")
-            df.to_excel(writer, sheet_name=sheet, index=False, header=False)
-            print(f"Added new sheet({sheet}) to file: {xlsx}")
+        with pd.ExcelWriter(xlsx, engine='openpyxl', mode='a', if_sheet_exists='overlay') as w:
+            df.to_excel(w, sheet_name=sheet, index=False, header=header, startrow=0, startcol=0)
+            print(f"Overlap sheet({sheet}) in file {xlsx}")
 
 
 def excel_to_df(xlsx: str, sheet: str) -> pd.DataFrame:

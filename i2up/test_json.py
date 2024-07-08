@@ -136,12 +136,12 @@ class JsonTestCase(unittest.TestCase):
 
     def test_json_to_excel(self):
         print("Test to json_file to excel")
-        json_to_excel('json/msq_u_kfk_auto.json', 'test_json.xlsx', 'msq_u_kfk_auto')
+        json_to_excel('json/msq_u_kfk_auto.json', 'excel/test_json.xlsx', 'msq_u_kfk_auto')
 
     def test_excel_to_json(self):
         print("Test to excel to json_file")
         # excel_to_json('test_json.xlsx', 'john_doe', 'john_doe.json')
-        excel_to_json('test_json.xlsx', 'msq_u_kfk_auto', 'tmp/msq_u_kfk_auto.json')
+        excel_to_json('excel/test_json.xlsx', 'msq_u_kfk_auto', 'tmp/msq_u_kfk_auto.json')
 
 
 if __name__ == '__main__':
