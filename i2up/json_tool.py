@@ -47,7 +47,9 @@ def traverse_save(data, x: int, y: int, df: pd.DataFrame, last=False) -> (int, p
                     y, df = traverse_save(item, x, y, df, last=True)
             df = save_to_df(']' if last else '],', x, y, df)
     else:
-        if isinstance(data, str):
+        if data is None:
+            df = save_to_df('Null', x, y, df)
+        elif isinstance(data, str):
             df = save_to_df('"' + data + '"', x, y, df)
         else:
             s = str(data)
@@ -67,7 +69,7 @@ def json_to_df(json_data: dict) -> pd.DataFrame:
 def df_to_json(df: pd.DataFrame) -> dict:
     json_str = ''
     for _, row in df.iterrows():
-        row_str = " ".join(['null' if str(cell) == 'None' else str(cell) for cell in row if pd.notna(cell)])
+        row_str = " ".join(['null' if str(cell) == 'Null' else str(cell) for cell in row if pd.notna(cell)])
         json_str += row_str + "\n"
     return json.loads(json_str)
 

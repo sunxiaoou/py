@@ -108,7 +108,8 @@ class I2UP:
     def create_db_node(self, file: str) -> dict:
         url = f"{self.base_url}/active/db"
         json_obj = I2UP.load_json_file(file)
-        json_obj["bind_lic_list"] = [self.get_lic_uuid()]
+        if json_obj['db_type'] != 'kafka':
+            json_obj["bind_lic_list"] = [self.get_lic_uuid()]
         json_obj['node_uuid'] = self.get_node_uuid(json_obj['node_uuid'])
         payload = json.dumps(json_obj)
         headers = {

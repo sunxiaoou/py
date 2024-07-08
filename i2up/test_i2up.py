@@ -32,15 +32,15 @@ class I2UPTestCase(unittest.TestCase):
 
     def test_show_db_node(self):
         print("Test to show db node")
-        pprint(self.i2up.get_db_node('msq_u'))
+        pprint(self.i2up.get_db_node('kfk_u'))
 
     def test_create_db_node(self):
         print("Test to create db node")
-        pprint(self.i2up.create_db_node('json/msq_c1_auto.json'))
+        pprint(self.i2up.create_db_node('json/kfk_u_auto.json'))
 
     def test_delete_db_node(self):
-        print("Test to create db node")
-        pprint(self.i2up.delete_db_node('msq_c2'))
+        print("Test to delete db node")
+        pprint(self.i2up.delete_db_node('kfk_u_auto'))
 
     def test_list_mysql_rules(self):
         print("Test to list mysql rules")
@@ -54,11 +54,13 @@ class I2UPTestCase(unittest.TestCase):
 
     def test_create_mysql_rule(self):
         print("Test to create mysql rule")
-        pprint(self.i2up.create_mysql_rule('json/msq_u_c1_auto.json'))
+        # pprint(self.i2up.create_mysql_rule('json/msq_u_c1_auto.json'))
+        pprint(self.i2up.create_mysql_rule('json/msq_u_kfk_auto.json'))
 
     def test_delete_mysql_rule(self):
         print("Test to delete mysql rule")
-        pprint(self.i2up.delete_mysql_rule('msq_test'))
+        # pprint(self.i2up.delete_mysql_rule('msq_test'))
+        pprint(self.i2up.delete_mysql_rule('msq_u_kfk_auto'))
 
 
 if __name__ == '__main__':

@@ -1,0 +1,94 @@
+{
+    "bin_log": false,
+    "bind_lic_list": [],
+    "biz_grp_list": [],
+    "cdb": "",
+    "comment": "",
+    "config": {
+        "auth": "none",
+        "authentication": "",
+        "broker_server": [],
+        "charset": "",
+        "cluster": "",
+        "conn_pool_max": 20,
+        "database_name": "",
+        "db_ip": "",
+        "db_list": [
+            {
+                "ip": "192.168.55.250",
+                "port": 9092
+            }
+        ],
+        "db_schema": "oracle",
+        "db2_run_system": "LUW",
+        "filter_session": 0,
+        "gmssl": true,
+        "instance_name": "",
+        "kerberos_keytab_path": "",
+        "kerberos_principal": "",
+        "kerberos_service_name": "kafka",
+        "kudu_impala": {
+            "default_database": "",
+            "impala_auth_type": "no_auth",
+            "impala_client_keytab_path": "",
+            "impala_client_krb_principal": "",
+            "impala_server_ip": "",
+            "impala_server_krbhost_fqdn": "",
+            "impala_server_krbrealm": "",
+            "impala_server_krbservice_name": "impala",
+            "impala_server_port": 21050
+        },
+        "log_read": {
+            "asm_instance": "",
+            "asm_ip": "",
+            "asm_password": "",
+            "asm_port": 1521,
+            "asm_username": "",
+            "os_auth": 0
+        },
+        "login_url": "",
+        "model": "",
+        "password": "",
+        "pdserver": [],
+        "port": "",
+        "relay": {
+            "enable": 0,
+            "relay_node_uuid": ""
+        },
+        "remote_file_agent": {
+            "compress": "no",
+            "enable": 0,
+            "port": ""
+        },
+        "role": [
+            "target"
+        ],
+        "sasl_plain_user": "",
+        "server_name": "",
+        "sniff": 0,
+        "sqlserver": "",
+        "transport": {
+            "auth": "gmssl",
+            "certificate": "",
+            "ssl_mode": "",
+            "sslmode": "disabled"
+        },
+        "user_management": [],
+        "user_oceanbase": "sys",
+        "username": "",
+        "zookeeper": {
+            "set": []
+        }
+    },
+    "db_mode": "normal",
+    "db_name": "kfk_u_auto",
+    "db_type": "kafka",
+    "db_uuid": "",
+    "deploy_mode": "single",
+    "file_open_type": "DIRECT",
+    "log_read_type": "file",
+    "maintenance": 0,
+    "model": 0,
+    "modify": false,
+    "node_uuid": "centos1"
+}
