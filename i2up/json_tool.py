@@ -61,6 +61,24 @@ def traverse_save(data, x: int, y: int, df: pd.DataFrame, last=False) -> (int, p
     return y + 1, df
 
 
+def merge_dict(default_dict: dict, subset_dict: dict):
+    for key, value in subset_dict.items():
+        if isinstance(value, dict) and isinstance(default_dict.get(key), dict):
+            merge_dict(default_dict[key], value)
+        else:
+            default_dict[key] = value
+
+
+def merge_json(template: str, subset: str, output: str):
+    with open(template, 'r') as f:
+        default_dict = json.load(f)
+        with open(subset, 'r') as f2:
+            subset_dict = json.load(f2)
+            merge_dict(default_dict, subset_dict)
+            with open(output, 'w') as f:
+                json.dump(default_dict, f, indent=4)
+
+
 def json_to_df(json_data: dict) -> pd.DataFrame:
     _, df = traverse_save(json_data, 0, 0, pd.DataFrame(index=range(8), columns=range(8)), True)
     return df
@@ -72,23 +90,6 @@ def df_to_json(df: pd.DataFrame) -> dict:
         row_str = " ".join(['null' if str(cell) == 'Null' else str(cell) for cell in row if pd.notna(cell)])
         json_str += row_str + "\n"
     return json.loads(json_str)
-
-
-# def df_to_excel2(df: pd.DataFrame, xlsx: str, sheet: str, overwrite=False):
-#     if not os.path.exists(xlsx):
-#         with pd.ExcelWriter(xlsx, engine='openpyxl') as writer:
-#             df.to_excel(writer, sheet_name=sheet, index=False, header=False)
-#         print(f"Created new Excel file with sheet({sheet})")
-#     else:
-#         with pd.ExcelWriter(xlsx, engine='openpyxl', mode='a') as writer:
-#             if sheet in writer.book.sheetnames:
-#                 if not overwrite:
-#                     print(f"Sheet({sheet}) already exists in {xlsx}")
-#                     return
-#                 del writer.book[sheet]
-#                 print(f"Deleted original sheet({sheet}) in {xlsx}")
-#             df.to_excel(writer, sheet_name=sheet, index=False, header=False)
-#             print(f"Added new sheet({sheet}) to file: {xlsx}")
 
 
 def df_to_excel(df: pd.DataFrame, xlsx: str, sheet: str, overlay=False, header=False):
@@ -120,8 +121,10 @@ def json_to_excel(json_file: str, xlsx: str, sheet: str):
     print(f"Converted {json_file} to sheet({sheet}) in {xlsx}")
 
 
-def excel_to_json(xlsx: str, sheet: str, json_file: str):
-    json_data = df_to_json(excel_to_df(xlsx, sheet))
+def excel_to_json(xlsx: str, sheet: str, template: str, temp_sheet: str, json_file: str):
+    json_data = df_to_json(excel_to_df(template, temp_sheet))
+    subset = df_to_json(excel_to_df(xlsx, sheet))
+    merge_dict(json_data, subset)
     with open(json_file, 'w') as f:
         json.dump(json_data, f, indent=4)
     print(f"Converted sheet({sheet}) in {xlsx} to {json_file}")
@@ -135,11 +138,13 @@ def main():
     parser.add_argument('--json', required=True, help='JSON filename')
     parser.add_argument('--excel', required=True, help='Excel filename')
     parser.add_argument('--sheet', required=True, help='Excel sheet name')
+    parser.add_argument('--template', required=False, help='Template excel filename')
+    parser.add_argument('--t_sheet', required=False, help='Template sheet name')
     args = parser.parse_args()
     if args.json2excel:
         json_to_excel(args.json, args.excel, args.sheet)
     elif args.excel2json:
-        excel_to_json(args.excel, args.sheet, args.json)
+        excel_to_json(args.excel, args.sheet, args.template, args.t_sheet, args.json)
 
 
 if __name__ == "__main__":

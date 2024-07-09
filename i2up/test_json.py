@@ -3,7 +3,7 @@ from pprint import pprint
 
 import pandas as pd
 
-from json_tool import json_to_df, df_to_json, df_to_excel, excel_to_df, json_to_excel, excel_to_json
+from json_tool import json_to_df, df_to_json, df_to_excel, excel_to_df, json_to_excel, excel_to_json, merge_json
 
 
 class JsonTestCase(unittest.TestCase):
@@ -142,6 +142,11 @@ class JsonTestCase(unittest.TestCase):
         print("Test to excel to json_file")
         # excel_to_json('test_json.xlsx', 'john_doe', 'john_doe.json')
         excel_to_json('excel/test_json.xlsx', 'msq_u_kfk_auto', 'tmp/msq_u_kfk_auto.json')
+
+    def test_merge_json(self):
+        print("Test to merge json")
+        # merge_json('json/msqdb_tpl.json', 'json/msq_u.json', 'tmp/msq_u_all.json')
+        merge_json('json/msq_kfk_tpl.json', 'json/msq_u_kfk.json', 'tmp/msq_u_kfk_all.json')
 
 
 if __name__ == '__main__':

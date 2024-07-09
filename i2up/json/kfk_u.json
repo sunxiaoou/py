@@ -1,0 +1,17 @@
+{
+    "config": {
+        "auth": "none",
+        "db_list": [
+            {
+                "ip": "192.168.55.250",
+                "port": 9092
+            }
+        ],
+        "role": [
+            "target"
+        ]
+    },
+    "db_name": "kfk_u_auto",
+    "db_type": "kafka",
+    "node_uuid": "centos1"
+}

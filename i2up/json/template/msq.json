@@ -1,0 +1,37 @@
+{
+    "bind_lic_list": [],
+    "cdb": "",
+    "comment": "",
+    "config": {
+        "auth": "",
+        "db_list": [],
+        "role": [],
+        "transport": {
+            "auth": "gmssl",
+            "certificate": "",
+            "ssl_mode": "",
+            "sslmode": "disabled"
+        },
+        "user_management": [
+            {
+                "auth_uuid": "",
+                "cred_login": 0,
+                "cred_uuid": "",
+                "default_db": "",
+                "enable": true,
+                "passwd": "",
+                "url": "",
+                "user": ""
+            }
+        ]
+    },
+    "db_encryed": 2,
+    "db_mode": "normal",
+    "db_name": "",
+    "db_type": "mysql",
+    "deploy_mode": "single",
+    "file_open_type": "DIRECT",
+    "log_read_type": "file",
+    "maintenance": 0,
+    "node_uuid": ""
+}

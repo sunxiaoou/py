@@ -1,0 +1,29 @@
+{
+    "config": {
+        "dst_connect_user": "manga",
+        "src_connect_user": "manga"
+    },
+    "db_map": "",
+    "db_set": {},
+    "full_sync": 1,
+    "incre_sync": 1,
+    "map_type": "table",
+    "mysql_name": "msq_u_c1_auto",
+    "src_db_uuid": "msq_u_auto",
+    "tab_map": [
+        {
+            "column": [
+                {
+                    "dst_column": "name",
+                    "src_column": "name"
+                }
+            ],
+            "dst_db": "manga",
+            "dst_table": "fruit",
+            "src_db": "manga",
+            "src_table": "fruit"
+        }
+    ],
+    "tgt_db_uuid": "msq_c1_auto",
+    "tgt_type": "mysql"
+}

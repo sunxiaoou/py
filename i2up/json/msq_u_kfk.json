@@ -1,0 +1,39 @@
+{
+    "config": {
+        "full_sync_settings": {
+            "dump_thd": 1,
+            "end_db_map": "",
+            "end_tab_map": [
+                {
+                    "column": [],
+                    "dst_db": "",
+                    "dst_table": "",
+                    "src_db": "manga",
+                    "src_table": "fruit"
+                }
+            ],
+            "load_thd": 1
+        }
+    },
+    "db_map": "",
+    "full_sync": 0,
+    "incre_sync": 1,
+    "map_type": "table",
+    "mysql_name": "msq_u_kfk_auto",
+    "search_ip": ["192.168.55.250"],
+    "src_db_name": "msq_u_auto",
+    "src_db_uuid": "msq_u_auto",
+    "src_type": "mysql",
+    "tab_map": [
+        {
+            "column": [],
+            "dst_db": "fruit",
+            "dst_table": "fruit",
+            "src_db": "manga",
+            "src_table": "fruit"
+        }
+    ],
+    "tgt_db_name": "kfk_u_auto",
+    "tgt_db_uuid": "kfk_u_auto",
+    "tgt_type": "kafka"
+}

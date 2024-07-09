@@ -1,0 +1,29 @@
+{
+    "config": {
+        "auth": "pass",
+        "db_list": [
+            {
+                "ip": "192.168.55.11",
+                "port": 3306
+            }
+        ],
+        "role": [
+            "target"
+        ],
+        "user_management": [
+            {
+                "auth_uuid": "",
+                "cred_login": 0,
+                "cred_uuid": "",
+                "default_db": "manga",
+                "enable": true,
+                "passwd": "manga",
+                "url": "",
+                "user": "manga"
+            }
+        ]
+    },
+    "db_name": "msq_c1_auto",
+    "db_type": "mysql",
+    "node_uuid": "centos1"
+}
