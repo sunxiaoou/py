@@ -6,7 +6,6 @@ from datetime import datetime
 from pprint import pprint
 
 import numpy as np
-import openpyxl
 import pandas as pd
 import pyperclip
 import requests
@@ -15,6 +14,7 @@ from openpyxl.chart import PieChart, Reference
 from openpyxl.utils import get_column_letter
 
 from currency import hkd_usd_rate
+from excel_tool import duplicate_last_sheet, df_to_sheet
 from mysql import MySql
 from securities import *
 
@@ -307,7 +307,7 @@ def huasheng(datafile: str) -> pd.DataFrame:
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
     result = [('华盛', currency, 'cash', '现金', '货币', 0, cash, 0)]
     i += 15
-    while not lines[i].endswith('成本价'):
+    while '成本价' not in lines[i]:
         i += 1
     i += 1
     codes = []
@@ -363,16 +363,16 @@ def futu(datafile: str) -> pd.DataFrame:
         i += 1
     currency = 'hkd' if '港币' in lines[i] else 'usd'
     asset = float(lines[i + 1])
-    i += 2
-    while not lines[i].startswith('持仓盈亏'):
-        i += 1
-    total_hg = float(lines[i + 3])
-    i += 4
-    while not lines[i].startswith('现金可提'):
+    i += 1
+    while not lines[i].startswith('今日盈亏'):
         i += 1
     total_mv = float(lines[i + 1])
-    cash = float(lines[i + 2])
-    i += 3
+    total_hg = float(lines[i + 2])
+    i += 2
+    while not lines[i].startswith('最大购买力'):
+        i += 1
+    cash = float(lines[i + 1])
+    i += 1
     assert round(total_mv + cash, 2) == asset, \
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
     result = [('富途', currency, 'cash', '现金', '货币', 0, cash, 0)]
@@ -617,17 +617,9 @@ def run_all(rates: tuple, files: list) -> pd.DataFrame:
 
 
 def to_execl(xlsx: str, rates: tuple, sheet: str, df: pd.DataFrame):
-    try:
-        wb = load_workbook(xlsx)
-    except FileNotFoundError:
-        wb = openpyxl.Workbook()
+    df_to_sheet(df, xlsx, sheet, overlay=False, header=True)
 
-    writer = pd.ExcelWriter(xlsx, engine='openpyxl')
-    writer.book = wb
-    writer.sheets = {worksheet.title: worksheet for worksheet in wb.worksheets}
-    df.to_excel(writer, sheet_name=sheet, index=False)
-    writer.save()
-
+    wb = load_workbook(xlsx)
     ws = wb[sheet]
     last_row = ws.max_row
     last_col = ws.max_column
@@ -698,6 +690,8 @@ def to_execl(xlsx: str, rates: tuple, sheet: str, df: pd.DataFrame):
         pie.add_data(data, titles_from_data=True)
         pie.set_categories(labels)
         pie.title = summary['category']
+        pie.height = 7
+        pie.width = 12
         ws.add_chart(pie, summary['anchor'])
     wb.save(xlsx)
 
