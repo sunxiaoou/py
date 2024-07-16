@@ -18,11 +18,33 @@ class I2UPTestCase(unittest.TestCase):
         print("Test to get version")
         print("version(%s)" % self.i2up.get_version())
 
+    def test_list_inactivated_nodes(self):
+        print("Test to list inactivated nodes")
+        info_list = self.i2up.get_inactivated_nodes()
+        print("count(%d)" % len(info_list))
+        pprint(info_list)
+
+    def test_show_inactivated_node(self):
+        print("Test to show inactivated node")
+        pprint(self.i2up.get_inactivated_node('hadoop3'))
+
+    def test_activate_node(self):
+        print("Test to activate node")
+        pprint(self.i2up.activate_node('hadoop3', 'Info@1234', True, False))
+
     def test_list_activated_nodes(self):
         print("Test to list activated nodes")
         info_list = self.i2up.get_activated_nodes()
         print("count(%d)" % len(info_list))
         pprint(info_list)
+
+    def test_show_activated_node(self):
+        print("Test to show activated node")
+        pprint(self.i2up.get_activated_node('hadoop3'))
+
+    def test_delete_activated_node(self):
+        print("Test to delete activated node")
+        pprint(self.i2up.delete_activated_node('hadoop3', True))
 
     def test_list_db_nodes(self):
         print("Test to list db nodes")

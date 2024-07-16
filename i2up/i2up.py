@@ -38,6 +38,53 @@ class I2UP:
     def get_subset(objects: list, keys: list) -> list:
         return [{key: obj[key] for key in keys} for obj in objects]
 
+    def get_inactivated_nodes(self) -> list:
+        url = f"{self.base_url}/active/node/inactive_list"
+        headers = {
+            'Authorization': self.token
+        }
+        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response.raise_for_status()
+        nodes = response.json()['data']['info_list']
+        return I2UP.get_subset(nodes, ['address', 'node_name', 'node_uuid'])
+
+    def get_inactivated_node(self, name: str) -> dict:
+        url = f"{self.base_url}/active/node/inactive_list"
+        headers = {
+            'Authorization': self.token
+        }
+        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response.raise_for_status()
+        for node in response.json()['data']['info_list']:
+            if name == node['node_name']:
+                return node
+        return {}
+
+    def activate_node(self, name: str, password: str, source: bool, target: bool, data_path: str = '/var/iadata')\
+            -> dict:
+        url = f"{self.base_url}/active/node"
+        node = self.get_inactivated_node(name)
+        assert node
+        payload = json.dumps({
+            "active_flag": "active",
+            "address": node['address'].split(',')[0],
+            "cache_dir": f"{data_path}/cache/",
+            "data_port": "26804",
+            "log_dir": f"{data_path}/log/",
+            "node_name": name,
+            "node_type": f"{1 if source else 0}{1 if target else 0}00",
+            "node_uuid": node['node_uuid'],
+            "password": password,
+            "web_uuid": "00000000-0000-0000-0000-000000000000"
+        })
+        headers = {
+            'Authorization': self.token,
+            'Content-Type': 'application/json'
+        }
+        response = requests.request("POST", url, headers=headers, data=payload, verify=self.ca_path)
+        response.raise_for_status()
+        return response.json()['data']
+
     def get_activated_nodes(self) -> list:
         url = f"{self.base_url}/active/node"
         headers = {
@@ -63,6 +110,22 @@ class I2UP:
         response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
         response.raise_for_status()
         return response.json()['data']['active_node']
+
+    def delete_activated_node(self, name: str, force: bool) -> dict:
+        url = f"{self.base_url}/active/node"
+        payload = json.dumps({
+            "uuids": [
+                self.get_node_uuid(name)
+            ],
+            "force": 1 if force else 0
+        })
+        headers = {
+            'Authorization': self.token,
+            'Content-Type': 'application/json'
+        }
+        response = requests.request("DELETE", url, headers=headers, data=payload, verify=self.ca_path)
+        response.raise_for_status()
+        return response.json()['data']
 
     def get_db_nodes(self) -> list:
         url = f"{self.base_url}/active/db"
