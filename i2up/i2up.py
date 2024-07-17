@@ -38,7 +38,7 @@ class I2UP:
     def get_subset(objects: list, keys: list) -> list:
         return [{key: obj[key] for key in keys} for obj in objects]
 
-    def get_inactivated_nodes(self) -> list:
+    def get_inactive_nodes(self) -> list:
         url = f"{self.base_url}/active/node/inactive_list"
         headers = {
             'Authorization': self.token
@@ -48,7 +48,7 @@ class I2UP:
         nodes = response.json()['data']['info_list']
         return I2UP.get_subset(nodes, ['address', 'node_name', 'node_uuid'])
 
-    def get_inactivated_node(self, name: str) -> dict:
+    def get_inactive_node(self, name: str) -> dict:
         url = f"{self.base_url}/active/node/inactive_list"
         headers = {
             'Authorization': self.token
@@ -60,10 +60,9 @@ class I2UP:
                 return node
         return {}
 
-    def activate_node(self, name: str, password: str, source: bool, target: bool, data_path: str = '/var/iadata')\
-            -> dict:
+    def activate_node(self, name: str, password: str, source: bool, target: bool, data_path='/var/iadata') -> dict:
         url = f"{self.base_url}/active/node"
-        node = self.get_inactivated_node(name)
+        node = self.get_inactive_node(name)
         assert node
         payload = json.dumps({
             "active_flag": "active",
@@ -85,7 +84,7 @@ class I2UP:
         response.raise_for_status()
         return response.json()['data']
 
-    def get_activated_nodes(self) -> list:
+    def get_active_nodes(self) -> list:
         url = f"{self.base_url}/active/node"
         headers = {
             'Authorization': self.token
@@ -96,13 +95,13 @@ class I2UP:
         return I2UP.get_subset(nodes, ['address', 'node_name', 'node_uuid'])
 
     def get_node_uuid(self, name: str) -> str:
-        for node in self.get_activated_nodes():
+        for node in self.get_active_nodes():
             if name == node['node_name']:
                 return node['node_uuid']
         print(f'Cannot find {name}')
         return ''
 
-    def get_activated_node(self, name: str) -> dict:
+    def get_active_node(self, name: str) -> dict:
         url = f"{self.base_url}/active/node/{self.get_node_uuid(name)}"
         headers = {
             'Authorization': self.token
@@ -111,7 +110,7 @@ class I2UP:
         response.raise_for_status()
         return response.json()['data']['active_node']
 
-    def delete_activated_node(self, name: str, force: bool) -> dict:
+    def delete_active_node(self, name: str, force: bool) -> dict:
         url = f"{self.base_url}/active/node"
         payload = json.dumps({
             "uuids": [
@@ -261,8 +260,13 @@ def main():
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--version', action='store_true', help='Show version')
-    group.add_argument('--list-nodes', action='store_true', help='List activated nodes')
-    group.add_argument('--show-node', action='store_true', help='Show an activated node (with --node)')
+    group.add_argument('--list-inactive-nodes', action='store_true', help='List inactive nodes')
+    group.add_argument('--show-inactive-node', action='store_true', help='Show a inactive node (with --node)')
+    group.add_argument('--list-nodes', action='store_true', help='List active nodes')
+    group.add_argument('--show-node', action='store_true', help='Show an active node (with --node)')
+    group.add_argument('--activate-node', action='store_true',
+                       help='Activate a inactive node (with --node [--pwd] [--src] [--tgt] [--path])')
+    group.add_argument('--delete-node', action='store_true', help='Delete an active node (with --node)')
     group.add_argument('--list-dbs', action='store_true', help='List DB nodes')
     group.add_argument('--show-db', action='store_true', help='Show a DB node (with --db)')
     group.add_argument('--create-db', action='store_true', help='Create a DB node (with --json)')
@@ -275,9 +279,17 @@ def main():
     parser.add_argument('--ip', required=True, help='IP address or hostname')
     parser.add_argument('--port', required=False, type=int, default=58086, help='Port number (default: 58086)')
     parser.add_argument('--user', required=False, default='admin', help='Username (default: admin)')
-    parser.add_argument('--pwd', required=False, default='Info@1234', help='Password (default: Info@1234)')
+    parser.add_argument('--pwd', required=False, default='Info@1234', help='Password of the user (default: Info@1234)')
     parser.add_argument('--ca', required=False, default='ca.crt', help='Path of ca file (default: ca.crt)')
-    parser.add_argument('--node', required=False, help='Name of activated node')
+    parser.add_argument('--node', required=False, help='Name of active/inactive node')
+    parser.add_argument('--pwd2', required=False, default='Info@1234',
+                        help='Password to activate node (default: Info@1234)')
+    parser.add_argument('--src', required=False, action='store_true',
+                        help='Is a source node (just a flag without argument)')
+    parser.add_argument('--tgt', required=False, action='store_true',
+                        help='Is a target node (just a flag without argument)')
+    parser.add_argument('--path', required=False, default='/var/iadata',
+                        help='Parent dir of cache & log (default: /var/iadata)')
     parser.add_argument('--db', required=False, help='Name of DB node')
     parser.add_argument('--rule', required=False, help='Name of MySQL sync rule')
     parser.add_argument('--json', required=False, help='Path of json file to create DB/rule')
@@ -287,13 +299,26 @@ def main():
 
     if args.version:
         print(i2up.get_version())
+    elif args.list_inactive_nodes:
+        nodes = i2up.get_inactive_nodes()
+        print("count(%d)" % len(nodes))
+        pprint(nodes)
+    elif args.show_inactive_node:
+        assert args.node is not None
+        pprint(i2up.get_inactive_node(args.node))
     elif args.list_nodes:
-        nodes = i2up.get_activated_nodes()
+        nodes = i2up.get_active_nodes()
         print("count(%d)" % len(nodes))
         pprint(nodes)
     elif args.show_node:
         assert args.node is not None
-        pprint(i2up.get_activated_node(args.node))
+        pprint(i2up.get_active_node(args.node))
+    elif args.activate_node:
+        assert args.node and (args.src or args.tgt)
+        pprint(i2up.activate_node(args.node, args.pwd, args.src, args.tgt))
+    elif args.delete_node:
+        assert args.node is not None
+        pprint(i2up.delete_active_node(args.node, True))
     elif args.list_dbs:
         dbs = i2up.get_db_nodes()
         print("count(%d)" % len(dbs))
