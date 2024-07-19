@@ -18,6 +18,16 @@ class I2UPTestCase(unittest.TestCase):
         print("Test to get version")
         print("version(%s)" % self.i2up.get_version())
 
+    def test_list_credentials(self):
+        print("Test to list credentials")
+        info_list = self.i2up.get_credentials()
+        print("count(%d)" % len(info_list))
+        pprint(info_list)
+
+    def test_show_credential(self):
+        print("Test to show credential")
+        pprint(self.i2up.get_credential('guest_cred'))
+
     def test_list_inactivated_nodes(self):
         print("Test to list inactivated nodes")
         info_list = self.i2up.get_inactive_nodes()
@@ -54,7 +64,7 @@ class I2UPTestCase(unittest.TestCase):
 
     def test_show_db_node(self):
         print("Test to show db node")
-        pprint(self.i2up.get_db_node('kfk_u'))
+        pprint(self.i2up.get_db_node('msq_u_auto'))
 
     def test_create_db_node(self):
         print("Test to create db node")
@@ -72,7 +82,7 @@ class I2UPTestCase(unittest.TestCase):
 
     def test_show_mysql_rule(self):
         print("Test to show mysql rule")
-        pprint(self.i2up.get_mysql_rule('msq_h1_h2'))
+        pprint(self.i2up.get_mysql_rule('msq_u_c1_auto'))
 
     def test_create_mysql_rule(self):
         print("Test to create mysql rule")

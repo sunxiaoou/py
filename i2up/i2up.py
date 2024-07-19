@@ -34,6 +34,21 @@ class I2UP:
         response.raise_for_status()
         return response.json()['data']['version']
 
+    def get_credentials(self) -> list:
+        url = f"{self.base_url}/credential"
+        headers = {
+            'Authorization': self.token
+        }
+        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response.raise_for_status()
+        return response.json()['data']['info_list']
+
+    def get_credential(self, name: str) -> dict:
+        for credential in self.get_credentials():
+            if name == credential['cred_name']:
+                return credential
+        return {}
+
     @staticmethod
     def get_subset(objects: list, keys: list) -> list:
         return [{key: obj[key] for key in keys} for obj in objects]
@@ -315,7 +330,7 @@ def main():
         pprint(i2up.get_active_node(args.node))
     elif args.activate_node:
         assert args.node and (args.src or args.tgt)
-        pprint(i2up.activate_node(args.node, args.pwd, args.src, args.tgt))
+        pprint(i2up.activate_node(args.node, args.pwd2, args.src, args.tgt))
     elif args.delete_node:
         assert args.node is not None
         pprint(i2up.delete_active_node(args.node, True))
