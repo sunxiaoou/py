@@ -75,7 +75,8 @@ class I2UP:
                 return node
         return {}
 
-    def activate_node(self, name: str, password: str, source: bool, target: bool, data_path='/var/iadata') -> dict:
+    def activate_node(self, name: str, name2: str, password: str, source: bool, target: bool, data_path='/var/iadata') \
+            -> dict:
         url = f"{self.base_url}/active/node"
         node = self.get_inactive_node(name)
         assert node
@@ -85,7 +86,7 @@ class I2UP:
             "cache_dir": f"{data_path}/cache/",
             "data_port": "26804",
             "log_dir": f"{data_path}/log/",
-            "node_name": name,
+            "node_name": name if name2 is None else name2,
             "node_type": f"{1 if source else 0}{1 if target else 0}00",
             "node_uuid": node['node_uuid'],
             "password": password,
@@ -297,6 +298,7 @@ def main():
     parser.add_argument('--pwd', required=False, default='Info@1234', help='Password of the user (default: Info@1234)')
     parser.add_argument('--ca', required=False, default='ca.crt', help='Path of ca file (default: ca.crt)')
     parser.add_argument('--node', required=False, help='Name of active/inactive node')
+    parser.add_argument('--node2', required=False, help='New name assigns to an activating node')
     parser.add_argument('--pwd2', required=False, default='Info@1234',
                         help='Password to activate node (default: Info@1234)')
     parser.add_argument('--src', required=False, action='store_true',
@@ -330,7 +332,7 @@ def main():
         pprint(i2up.get_active_node(args.node))
     elif args.activate_node:
         assert args.node and (args.src or args.tgt)
-        pprint(i2up.activate_node(args.node, args.pwd2, args.src, args.tgt))
+        pprint(i2up.activate_node(args.node, args.node2, args.pwd2, args.src, args.tgt))
     elif args.delete_node:
         assert args.node is not None
         pprint(i2up.delete_active_node(args.node, True))

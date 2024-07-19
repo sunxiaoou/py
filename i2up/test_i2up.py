@@ -50,7 +50,7 @@ class I2UPTestCase(unittest.TestCase):
 
     def test_activate_node(self):
         print("Test to activate node")
-        pprint(self.i2up.activate_node('hadoop3', 'Info@1234', True, False))
+        pprint(self.i2up.activate_node('hadoop3', None, 'Info@1234', True, False))
 
     def test_delete_activated_node(self):
         print("Test to delete activated node")
