@@ -18,7 +18,7 @@ class ExcelTestCase(unittest.TestCase):
 
     def test_list_dbs(self):
         print("Test to list dbs")
-        dbs = self.excel.get_dbs('db_node')
+        dbs = self.excel.get_dbs('db_node2')
         print("count(%d)" % len(dbs))
         pprint(dbs)
 
