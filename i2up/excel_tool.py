@@ -29,7 +29,7 @@ class Excel:
                 user_management = []
                 if pd.notna(row['cred_name']):
                     user_management.append({
-                        "cred_name": row['cred_name'],
+                        "cred_uuid": row['cred_name'],
                         "default_db": row['default_db']
                     })
                 elif pd.notna(row['user']) and pd.notna(row['passwd']):
@@ -39,9 +39,11 @@ class Excel:
                         "default_db": row['default_db']
                     })
                 current_record = {
-                    "db_list": db_list,
-                    "role": roles,
-                    "user_management": user_management,
+                    "config": {
+                        "db_list": db_list,
+                        "role": roles,
+                        "user_management": user_management
+                    },
                     "db_name": row['db_name'],
                     "db_type": row['db_type'],
                     "node_uuid": row['node_name']
@@ -122,9 +124,7 @@ class Excel:
 
 
 def main():
-    excel_file = 'excel/i2up_data.xlsx'
-    excel = Excel(excel_file)
-    excel.get_nodes('workNode')
+    pass
 
 
 if __name__ == "__main__":
