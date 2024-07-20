@@ -18,9 +18,15 @@ class ExcelTestCase(unittest.TestCase):
 
     def test_list_dbs(self):
         print("Test to list dbs")
-        dbs = self.excel.get_dbs('db_node2')
+        dbs = self.excel.get_dbs('db_node')
         print("count(%d)" % len(dbs))
         pprint(dbs)
+
+    def test_list_mysql_rules(self):
+        print("Test to list mysql rules")
+        rules = self.excel.get_mysql_rules('msq_rule')
+        print("count(%d)" % len(rules))
+        pprint(rules)
 
 
 if __name__ == '__main__':
