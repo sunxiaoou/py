@@ -79,6 +79,9 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
     df = pd.DataFrame(result, columns=COLUMNS)
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
+    s = re.sub(r'.+_', '', datafile[: -4])
+    cash2 = float(s) if s else 0
+    df.at[0, 'market_value'] += cash2
     return df
 
 
@@ -279,9 +282,6 @@ def huabao(datafile: str) -> pd.DataFrame:
 
 
 def huasheng(datafile: str) -> pd.DataFrame:
-    s = re.sub(r'.+_', '', datafile[: -4])
-    cash2 = float(s) if s else 0
-
     with open(datafile) as f:
         lines = []
         for line in f.readlines():
@@ -345,6 +345,8 @@ def huasheng(datafile: str) -> pd.DataFrame:
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
     sum_hg = round(df['hold_gain'].sum(), 2)
     assert sum_hg == total_hg, print("sum_hg({}) != total_hg({})".format(sum_hg, total_hg))
+    s = re.sub(r'.+_', '', datafile[: -4])
+    cash2 = float(s) if s else 0
     df.at[0, 'market_value'] += cash2
     df.apply(verify, axis=1)
     df.drop(columns=['volume', 'cost'], inplace=True)
@@ -457,8 +459,8 @@ def usmart(datafile: str) -> pd.DataFrame:
         result.append(('盈立', currency, code, name, type, risk, market_value, hold_gain, nav))
         i += 3
     df = pd.DataFrame(result, columns=COLUMNS + ['nav'])
-    sum_mv = round(df['market_value'].sum(), 2)
-    assert sum_mv + total_mv_2 - total_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
+    sum_mv = round(df['market_value'].sum() + total_mv_2 - total_mv, 2)
+    assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
     sum_hg = round(df['hold_gain'].sum(), 2)
     assert sum_hg == total_hg, print("sum_hg({}) != total_hg({})".format(sum_hg, total_hg))
     return df
@@ -603,7 +605,7 @@ def fill(rates: tuple, df: pd.DataFrame) -> pd.DataFrame:
 
 def run_all(rates: tuple, files: list) -> pd.DataFrame:
     # platforms = ['zsb_', 'hsb_', 'yh_', 'hb_', 'hs_', 'ft_', 'dj_', 'ths_']   # to sort files
-    platforms = ['zsb_', 'hsb_', 'yh_', 'hs_', 'ft_', 'us_']    # to sort files
+    platforms = ['zsb_', 'yh_', 'hs_', 'ft_', 'us_']    # to sort files
     fs = sorted(files)
     frames = []
     for p in platforms:
@@ -637,7 +639,7 @@ def to_execl(xlsx: str, rates: tuple, sheet: str, df: pd.DataFrame):
         {'location': (last_row + 2, 1),
          'letter': 'A',
          # 'labels': ['招商银行', '恒生银行', '银河', '华宝', '华盛*', '富途*', '蛋卷*', '同花顺'],
-         'labels': ['招商银行', '恒生银行', '银河', '华盛*', '富途', '盈立'],
+         'labels': ['招商银行', '银河', '华盛*', '富途', '盈立'],
          'category': 'platform',
          'anchor': 'K1'},
         {'location': (last_row + 2, 4),
