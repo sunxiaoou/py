@@ -1,10 +1,16 @@
 #! /usr/bin/python3
+import json
+import os
+
 import pandas as pd
 
 
 class Excel:
-    def __init__(self, name: str):
+    def __init__(self, name: str, template: str, output: str):
         self.name = name
+        self.template = template
+        self.output = output
+        os.makedirs(output, exist_ok=True)
 
     def get_nodes(self, sheet: str) -> list:
         df = pd.read_excel(self.name, sheet_name=sheet)
@@ -83,28 +89,43 @@ class Excel:
                 full_sync_custom_cfg = [row['full_sync_custom_cfg']] if pd.notna(row['full_sync_custom_cfg']) else []
                 incre_full_sync_custom_cfg = [row['incre_full_sync_custom_cfg']] \
                     if pd.notna(row['incre_full_sync_custom_cfg']) else []
-                tab_map = [{
-                    "src_db": row['src_db'],
-                    "src_table": row['src_table'],
-                    "dst_db": row['dst_db'],
-                    "dst_table": row['dst_table']}] \
-                    if pd.notna(row['src_db']) and pd.notna(row['src_table']) else []
+                map_type = ''
+                db_map = []
+                tab_map = []
+                if pd.notna(row['src_db']):
+                    if pd.notna(row['src_table']):
+                        map_type = 'table'
+                        tab_map = [{
+                            "src_db": row['src_db'],
+                            "src_table": row['src_table'],
+                            "dst_db": row['dst_db'],
+                            "dst_table": row['dst_table']}]
+                    else:
+                        map_type = 'database'
+                        db_map = [{
+                            "src_table": row['src_db'],
+                            "dst_table": row['dst_db']
+                        }]
                 current_record = {
+                    "db_map": db_map,
                     "full_sync": 1 if row['full_sync'] == 'yes' else 0,
-                    "full_sync_settings": {
-                        "dump_thd": int(row['dump_thd']) if pd.notna(row['dump_thd']) else None,
-                        "existing_table": row['existing_table'],
-                        "full_sync_custom_cfg": full_sync_custom_cfg
+                    "config": {
+                        "full_sync_settings": {
+                            "dump_thd": int(row['dump_thd']) if pd.notna(row['dump_thd']) else None,
+                            "existing_table": row['existing_table'],
+                            "full_sync_custom_cfg": full_sync_custom_cfg
+                        }
                     },
                     "incre_sync": 1 if row['incre_sync'] == 'yes' else 0,
                     "mysql_name": row['mysql_name'],
+                    "map_type": map_type,
                     "other_settings": {
                         "dyn_thread": int(row['dyn_thread']) if pd.notna(row['dyn_thread']) else None,
                         "incre_full_sync_custom_cfg": incre_full_sync_custom_cfg
                     },
-                    "src_db_name": row['src_db_name'],
+                    "src_db_uuid": row['src_db_name'],
                     "tab_map": tab_map,
-                    "tgt_db_name": row['tgt_db_name']
+                    "tgt_db_uuid": row['tgt_db_name']
                 }
             else:
                 if pd.notna(row['full_sync_custom_cfg']):
@@ -112,15 +133,39 @@ class Excel:
                 if pd.notna(row['incre_full_sync_custom_cfg']):
                     current_record["other_settings"]["incre_full_sync_custom_cfg"].\
                         append(row['incre_full_sync_custom_cfg'])
-                if pd.notna(row['src_db']) and pd.notna(row['src_table']):
-                    current_record["tab_map"].append({
-                        "src_db": row['src_db'],
-                        "src_table": row['src_table'],
-                        "dst_db": row['dst_db'],
-                        "dst_table": row['dst_table']})
+                if pd.notna(row['src_db']):
+                    if pd.notna(row['src_table']):
+                        current_record["tab_map"].append({
+                            "src_db": row['src_db'],
+                            "src_table": row['src_table'],
+                            "dst_db": row['dst_db'],
+                            "dst_table": row['dst_table']})
+                    else:
+                        current_record["db_map"].append({
+                            "src_table": row['src_db'],
+                            "dst_table": row['dst_db']})
         if current_record is not None:
             data_list.append(current_record)
         return data_list
+
+    @staticmethod
+    def merge_dict(default_dict: dict, subset_dict: dict):
+        for key, value in subset_dict.items():
+            if isinstance(value, dict) and isinstance(default_dict.get(key), dict):
+                Excel.merge_dict(default_dict[key], value)
+            else:
+                default_dict[key] = value
+
+    def generate_db_json(self, sheet: str, db_dict: dict):
+        df = pd.read_excel(self.template, sheet_name=sheet, header=None)
+        json_str = ''
+        for _, row in df.iterrows():
+            row_str = " ".join(['null' if str(cell) == 'Null' else str(cell) for cell in row if pd.notna(cell)])
+            json_str += row_str + "\n"
+        json_data = json.loads(json_str)
+        Excel.merge_dict(json_data, db_dict)
+        with open(f"{self.output}/{db_dict['db_name']}.json", 'w') as f:
+            json.dump(json_data, f, indent=4)
 
 
 def main():
