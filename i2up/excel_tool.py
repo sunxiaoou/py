@@ -156,20 +156,29 @@ class Excel:
             else:
                 default_dict[key] = value
 
-    def generate_db_json(self, sheet: str, db_dict: dict):
-        df = pd.read_excel(self.template, sheet_name=sheet, header=None)
+    def generate_creation_json(self, t_sheet: str, obj_dict: dict):
+        df = pd.read_excel(self.template, sheet_name=t_sheet, header=None)
         json_str = ''
         for _, row in df.iterrows():
             row_str = " ".join(['null' if str(cell) == 'Null' else str(cell) for cell in row if pd.notna(cell)])
             json_str += row_str + "\n"
         json_data = json.loads(json_str)
-        Excel.merge_dict(json_data, db_dict)
-        with open(f"{self.output}/{db_dict['db_name']}.json", 'w') as f:
+        Excel.merge_dict(json_data, obj_dict)
+        with open(f"{self.output}/{obj_dict['db_name']}.json", 'w') as f:
             json.dump(json_data, f, indent=4)
+
+    def generate_csvs(self):
+        excel_file = pd.ExcelFile(self.name)
+        for sheet_name in excel_file.sheet_names:
+            df = pd.read_excel(excel_file, sheet_name=sheet_name)
+            csv_file_path = f"{self.output}/{sheet_name}.csv"
+            df.to_csv(csv_file_path, index=False, header=False, encoding='utf-8')
+            print(f"Sheet '{sheet_name}' has been saved to '{csv_file_path}'")
 
 
 def main():
-    pass
+    excel = Excel('excel/zx-test-env_2.xlsx', None, 'output')
+    excel.generate_csvs()
 
 
 if __name__ == "__main__":
