@@ -53,9 +53,13 @@ class ExcelTestCase(unittest.TestCase):
                 'full_sync_settings': {
                     'dump_thd': 2,
                     'existing_table': 'drop_purge',
-                    'full_sync_custom_cfg': ['targetjdbc.extra.column.value=auto']}
+                    'full_sync_custom_cfg': ['targetjdbc.extra.column.value=auto'],
+                    'load_thd': 2}
             },
             'db_map': [],
+            'dml_track': {
+                'date_time_column': 'cdc_upd_tmstamp',
+                'op_column': 'cdc_upd_type'},
             'full_sync': 1,
             'incre_sync': 1,
             'map_type': 'table',
@@ -78,7 +82,7 @@ class ExcelTestCase(unittest.TestCase):
                     'src_table': 'export'
                 }],
             'tgt_db_uuid': 'msq_c1_auto'}
-        self.excel.generate_creation_json('msq', dic)
+        self.excel.generate_creation_json('msq_msq', dic)
 
 
 if __name__ == '__main__':

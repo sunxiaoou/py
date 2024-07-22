@@ -83,9 +83,6 @@ class Excel:
 
     def get_mysql_rules(self, sheet: str) -> list:
         df = pd.read_excel(self.name, sheet_name=sheet)
-        # df.columns = ["NO", "mysql_name", "src_db_name", "tgt_db_name", "src_db", "dst_db", "src_table", "dst_table",
-        #               "full_sync", "dump_thd", "load_thd", "existing_table", "full_sync_custom_cfg",
-        #               "incre_sync", "dyn_thread", "incre_full_sync_custom_cfg"]
         data_list = []
         current_record = None
         for _, row in df.iterrows():
@@ -176,7 +173,12 @@ class Excel:
             json_str += row_str + "\n"
         json_data = json.loads(json_str)
         Excel.merge_dict(json_data, obj_dict)
-        with open(f"{self.output}/{obj_dict['db_name']}.json", 'w') as f:
+        key = ''
+        if 'msq' == t_sheet:
+            key = 'db_name'
+        elif 'msq_msq' == t_sheet:
+            key = 'mysql_name'
+        with open(f"{self.output}/{obj_dict[key]}.json", 'w') as f:
             json.dump(json_data, f, indent=4)
 
     def generate_csvs(self):
