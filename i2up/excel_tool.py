@@ -14,35 +14,40 @@ class Excel:
 
     def get_nodes(self, sheet: str) -> list:
         df = pd.read_excel(self.name, sheet_name=sheet)
-        df.columns = ['NO', 'node_name', 'address', 'data_port', 'cache_dir', 'log_dir', 'password', 'node_type']
-        df['node_type'] = df['node_type'].apply(lambda x: f"{1 if 'src' in x else 0}{1 if 'tgt' in x else 0}00")
-        df = df.drop(columns=['NO'])
+        df['节点类型'] = df['节点类型'].apply(lambda x: f"{1 if '源端节点' in x else 0}{1 if '备端节点' in x else 0}00")
+        df = df.drop(columns=['序号'])
+        df.columns = ['node_name', 'address', 'data_port', 'cache_dir', 'log_dir', 'password', 'node_type']
         return df.to_dict(orient='records')
 
     def get_dbs(self, sheet: str) -> list:
         df = pd.read_excel(self.name, sheet_name=sheet)
-        df.columns = ["NO", "db_name", "node_name", "db_type", "role", "ip", "port", "cred_name", "user", "passwd",
-                      "default_db"]
         data_list = []
         current_record = None
         for _, row in df.iterrows():
-            if pd.notna(row['NO']):
+            if pd.notna(row['序号']):
                 if current_record is not None:
                     data_list.append(current_record)
-                roles = row['role'].split('|') if pd.notna(row['role']) else []
-                db_list = [{"ip": row['ip'], "port": int(row['port'])}] \
-                    if pd.notna(row['ip']) and pd.notna(row['port']) else []
+                roles = []
+                for i in row['角色'].split('|') if pd.notna(row['角色']) else []:
+                    if i in ['source', '源库']:
+                        roles.append('source')
+                    elif i in ['target', '备库']:
+                        roles.append('target')
+                    else:
+                        assert False
+                db_list = [{"ip": row['IP地址'], "port": int(row['端口'])}] \
+                    if pd.notna(row['IP地址']) and pd.notna(row['端口']) else []
                 user_management = []
-                if pd.notna(row['cred_name']):
+                if pd.notna(row['凭据名称']):
                     user_management.append({
-                        "cred_uuid": row['cred_name'],
-                        "default_db": row['default_db']
+                        "cred_uuid": row['凭据名称'],
+                        "default_db": row['默认数据库']
                     })
-                elif pd.notna(row['user']) and pd.notna(row['passwd']):
+                elif pd.notna(row['用户名']) and pd.notna(row['密码']):
                     user_management.append({
-                        "user": row['user'],
-                        "passwd": row['passwd'],
-                        "default_db": row['default_db']
+                        "user": row['用户名'],
+                        "passwd": row['密码'],
+                        "default_db": row['默认数据库']
                     })
                 current_record = {
                     "config": {
@@ -50,26 +55,27 @@ class Excel:
                         "role": roles,
                         "user_management": user_management
                     },
-                    "db_name": row['db_name'],
-                    "db_type": row['db_type'],
-                    "node_uuid": row['node_name']
+                    "db_name": row['名称'],
+                    "db_type": row['数据库类型'],
+                    "node_uuid": row['工作节点'],
+                    "username": row['所有者']
                 }
             else:
-                if pd.notna(row['ip']) and pd.notna(row['port']):
+                if pd.notna(row['IP地址']) and pd.notna(row['端口']):
                     current_record["db_list"].append({
-                        "ip": row['ip'],
-                        "port": int(row['port'])
+                        "ip": row['IP地址'],
+                        "port": int(row['端口'])
                     })
                 if pd.notna(row['cred_name']) and row['cred_name'].strip() != "":
                     current_record["user_management"].append({
-                        "cred_name": row['cred_name'],
-                        "default_db": row['default_db']
+                        "cred_name": row['凭据名称'],
+                        "default_db": row['默认数据库']
                     })
-                elif pd.notna(row['user']) and pd.notna(row['passwd']):
+                elif pd.notna(row['用户名']) and pd.notna(row['密码']):
                     current_record["user_management"].append({
-                        "user": row['user'],
-                        "passwd": row['passwd'],
-                        "default_db": row['default_db']
+                        "user": row['用户名'],
+                        "passwd": row['密码'],
+                        "default_db": row['默认数据库']
                     })
         if current_record is not None:
             data_list.append(current_record)
@@ -77,73 +83,79 @@ class Excel:
 
     def get_mysql_rules(self, sheet: str) -> list:
         df = pd.read_excel(self.name, sheet_name=sheet)
-        df.columns = ["NO", "mysql_name", "src_db_name", "tgt_db_name", "src_db", "dst_db", "src_table", "dst_table",
-                      "full_sync", "dump_thd", "load_thd", "existing_table", "full_sync_custom_cfg",
-                      "incre_sync", "dyn_thread", "incre_full_sync_custom_cfg"]
+        # df.columns = ["NO", "mysql_name", "src_db_name", "tgt_db_name", "src_db", "dst_db", "src_table", "dst_table",
+        #               "full_sync", "dump_thd", "load_thd", "existing_table", "full_sync_custom_cfg",
+        #               "incre_sync", "dyn_thread", "incre_full_sync_custom_cfg"]
         data_list = []
         current_record = None
         for _, row in df.iterrows():
-            if pd.notna(row['NO']):
+            if pd.notna(row['序号']):
                 if current_record is not None:
                     data_list.append(current_record)
-                full_sync_custom_cfg = [row['full_sync_custom_cfg']] if pd.notna(row['full_sync_custom_cfg']) else []
-                incre_full_sync_custom_cfg = [row['incre_full_sync_custom_cfg']] \
-                    if pd.notna(row['incre_full_sync_custom_cfg']) else []
+                dm_track = {}
+                if pd.notna(row['操作装载时间和日期']):
+                    dm_track["date_time_column"] = row['操作装载时间和日期']
+                if pd.notna(row['操作装载标记']):
+                    dm_track["op_column"] = row['操作装载标记']
+                full_sync_custom_cfg = [row['全量自定义配置']] if pd.notna(row['全量自定义配置']) else []
+                incre_full_sync_custom_cfg = [row['增量自定义配置']] if pd.notna(row['增量自定义配置']) else []
                 map_type = ''
                 db_map = []
                 tab_map = []
-                if pd.notna(row['src_db']):
-                    if pd.notna(row['src_table']):
+                if pd.notna(row['源端库名']):
+                    if pd.notna(row['源端表名']):
                         map_type = 'table'
                         tab_map = [{
-                            "src_db": row['src_db'],
-                            "src_table": row['src_table'],
-                            "dst_db": row['dst_db'],
-                            "dst_table": row['dst_table']}]
+                            "src_db": row['源端库名'],
+                            "src_table": row['源端表名'],
+                            "dst_db": row['备端库名'],
+                            "dst_table": row['备端表名']}]
                     else:
                         map_type = 'database'
                         db_map = [{
-                            "src_table": row['src_db'],
-                            "dst_table": row['dst_db']
+                            "src_table": row['源端库名'],
+                            "dst_table": row['备端库名']
                         }]
                 current_record = {
                     "db_map": db_map,
-                    "full_sync": 1 if row['full_sync'] == 'yes' else 0,
+                    "full_sync": 1 if row['全量同步'] == 'yes' else 0,
                     "config": {
                         "full_sync_settings": {
-                            "dump_thd": int(row['dump_thd']) if pd.notna(row['dump_thd']) else None,
-                            "existing_table": row['existing_table'],
-                            "full_sync_custom_cfg": full_sync_custom_cfg
+                            "dump_thd": int(row['全量导出线程数']) if pd.notna(row['全量导出线程数']) else None,
+                            "existing_table": row['表覆盖策略'],
+                            "full_sync_custom_cfg": full_sync_custom_cfg,
+                            "load_thd": int(row['全量装载线程数']) if pd.notna(row['全量装载线程数']) else None,
                         }
                     },
-                    "incre_sync": 1 if row['incre_sync'] == 'yes' else 0,
-                    "mysql_name": row['mysql_name'],
+                    "dml_track": dm_track,
+                    "incre_sync": 1 if row['增量同步'] == 'yes' else 0,
+                    "mysql_name": row['规则名称'],
                     "map_type": map_type,
                     "other_settings": {
-                        "dyn_thread": int(row['dyn_thread']) if pd.notna(row['dyn_thread']) else None,
+                        "dyn_thread": int(row['增量装载线程数']) if pd.notna(row['增量装载线程数']) else None,
                         "incre_full_sync_custom_cfg": incre_full_sync_custom_cfg
                     },
-                    "src_db_uuid": row['src_db_name'],
+                    "src_db_uuid": row['源端数据库'],
                     "tab_map": tab_map,
-                    "tgt_db_uuid": row['tgt_db_name']
+                    "tgt_db_uuid": row['备端数据库'],
+                    "username": row['所有者']
                 }
             else:
-                if pd.notna(row['full_sync_custom_cfg']):
-                    current_record["full_sync_settings"]["full_sync_custom_cfg"].append(row['full_sync_custom_cfg'])
-                if pd.notna(row['incre_full_sync_custom_cfg']):
-                    current_record["other_settings"]["incre_full_sync_custom_cfg"].\
-                        append(row['incre_full_sync_custom_cfg'])
-                if pd.notna(row['src_db']):
-                    if pd.notna(row['src_table']):
+                if pd.notna(row['全量自定义配置']):
+                    current_record["full_sync_settings"]["full_sync_custom_cfg"].append(row['全量自定义配置'])
+                if pd.notna(row['增量自定义配置']):
+                    current_record["other_settings"]["incre_full_sync_custom_cfg"].append(row['增量自定义配置'])
+                if pd.notna(row['源端库名']):
+                    if pd.notna(row['源端表名']):
                         current_record["tab_map"].append({
-                            "src_db": row['src_db'],
-                            "src_table": row['src_table'],
-                            "dst_db": row['dst_db'],
-                            "dst_table": row['dst_table']})
+                            "src_db": row['源端库名'],
+                            "src_table": row['源端表名'],
+                            "dst_db": row['备端库名'],
+                            "dst_table": row['备端表名']})
                     else:
                         current_record["db_map"].append({
-                            "src_table": row['src_db'],
-                            "dst_table": row['dst_db']})
+                            "src_table": row['源端库名'],
+                            "dst_table": row['备端库名']})
         if current_record is not None:
             data_list.append(current_record)
         return data_list
