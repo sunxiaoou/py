@@ -313,8 +313,17 @@ class Excel:
 
 
 def main():
-    excel = Excel('excel/zx-test-env_2.xlsx', None, 'output')
-    excel.generate_csvs()
+    # excel = Excel('excel/zx-test-env_2.xlsx', None, 'output')
+    # excel.generate_csvs()
+    excel = Excel('excel/rule_auto.xlsx', 'excel/template.xlsx', 'output')
+    for node in excel.get_dbs('db_node'):
+        excel.generate_creation_json('msq', node)
+    for node in excel.get_kfks('kfk_node'):
+        excel.generate_creation_json('kfk', node)
+    for rule in excel.get_msq_msq_rules('msq_msq_rule'):
+        excel.generate_creation_json('msq_msq', rule)
+    for rule in excel.get_msq_kfk_rules('msq_kfk_rule'):
+        excel.generate_creation_json('msq_kfk', rule)
 
 
 if __name__ == "__main__":
