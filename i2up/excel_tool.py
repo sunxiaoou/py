@@ -285,7 +285,7 @@ class Excel:
             else:
                 default_dict[key] = value
 
-    def generate_creation_json(self, t_sheet: str, obj_dict: dict):
+    def generate_creation(self, t_sheet: str, obj_dict: dict) -> dict:
         df = pd.read_excel(self.template, sheet_name=t_sheet, header=None)
         json_str = ''
         for _, row in df.iterrows():
@@ -293,6 +293,10 @@ class Excel:
             json_str += row_str + "\n"
         json_data = json.loads(json_str)
         Excel.merge_dict(json_data, obj_dict)
+        return json_data
+
+    def generate_creation_json(self, t_sheet: str, obj_dict: dict):
+        json_data = self.generate_creation(t_sheet, obj_dict)
         key = ''
         if t_sheet in ['kfk', 'msq']:
             key = 'db_name'

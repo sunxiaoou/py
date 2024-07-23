@@ -114,11 +114,14 @@ class I2UP:
         for node in self.get_active_nodes():
             if name == node['node_name']:
                 return node['node_uuid']
-        print(f'Cannot find {name}')
+        print(f'Cannot find node "{name}"')
         return ''
 
     def get_active_node(self, name: str) -> dict:
-        url = f"{self.base_url}/active/node/{self.get_node_uuid(name)}"
+        uuid = self.get_node_uuid(name)
+        if uuid == '':
+            return {}
+        url = f"{self.base_url}/active/node/{uuid}"
         headers = {
             'Authorization': self.token
         }
@@ -127,10 +130,13 @@ class I2UP:
         return response.json()['data']['active_node']
 
     def delete_active_node(self, name: str, force: bool) -> dict:
+        uuid = self.get_node_uuid(name)
+        if uuid == '':
+            return {}
         url = f"{self.base_url}/active/node"
         payload = json.dumps({
             "uuids": [
-                self.get_node_uuid(name)
+                uuid
             ],
             "force": 1 if force else 0
         })
@@ -156,11 +162,14 @@ class I2UP:
         for db in self.get_db_nodes():
             if name == db['db_name']:
                 return db['db_uuid']
-        print(f'Cannot find {name}')
+        print(f'Cannot find db "{name}"')
         return ''
 
     def get_db_node(self, name: str) -> dict:
-        url = f"{self.base_url}/active/db/{self.get_db_uuid(name)}"
+        uuid = self.get_db_uuid(name)
+        if uuid == '':
+            return {}
+        url = f"{self.base_url}/active/db/{uuid}"
         headers = {
             'Authorization': self.token
         }
@@ -183,13 +192,12 @@ class I2UP:
             json_data = json.load(f)
         return json_data
 
-    def create_db_node(self, file: str) -> dict:
+    def create_db_node(self, json_data: dict) -> dict:
         url = f"{self.base_url}/active/db"
-        json_obj = I2UP.load_json_file(file)
-        if json_obj['db_type'] != 'kafka':
-            json_obj["bind_lic_list"] = [self.get_lic_uuid()]
-        json_obj['node_uuid'] = self.get_node_uuid(json_obj['node_uuid'])
-        payload = json.dumps(json_obj)
+        if json_data['db_type'] != 'kafka':
+            json_data["bind_lic_list"] = [self.get_lic_uuid()]
+        json_data['node_uuid'] = self.get_node_uuid(json_data['node_uuid'])
+        payload = json.dumps(json_data)
         headers = {
             'Authorization': self.token,
             'Content-Type': 'application/json'
@@ -198,11 +206,14 @@ class I2UP:
         response.raise_for_status()
         return response.json()['data']
 
-    def delete_db_node(self, dbname: str) -> dict:
+    def delete_db_node(self, name: str) -> dict:
+        uuid = self.get_db_uuid(name)
+        if uuid == '':
+            return {}
         url = f"{self.base_url}/active/db"
         payload = json.dumps({
             "uuids": [
-                self.get_db_uuid(dbname)
+                uuid
             ],
             "force": 0
         })
@@ -228,11 +239,14 @@ class I2UP:
         for node in self.get_mysql_rules():
             if name == node['mysql_name']:
                 return node['mysql_uuid']
-        print(f'Cannot find {name}')
+        print(f'Cannot find rule "{name}"')
         return ''
 
     def get_mysql_rule(self, name: str) -> dict:
-        url = f"{self.base_url}/stream/rule/{self.get_mysql_rule_uuid(name)}"
+        uuid = self.get_mysql_rule_uuid(name)
+        if uuid == '':
+            return {}
+        url = f"{self.base_url}/stream/rule/{uuid}"
         headers = {
             'Authorization': self.token
         }
@@ -240,12 +254,11 @@ class I2UP:
         response.raise_for_status()
         return response.json()['data']['info_list']
 
-    def create_mysql_rule(self, file: str) -> dict:
+    def create_mysql_rule(self, json_data: dict) -> dict:
         url = f"{self.base_url}/stream/rule"
-        json_obj = I2UP.load_json_file(file)
-        json_obj['src_db_uuid'] = self.get_db_uuid(json_obj['src_db_uuid'])
-        json_obj['tgt_db_uuid'] = self.get_db_uuid(json_obj['tgt_db_uuid'])
-        payload = json.dumps(json_obj)
+        json_data['src_db_uuid'] = self.get_db_uuid(json_data['src_db_uuid'])
+        json_data['tgt_db_uuid'] = self.get_db_uuid(json_data['tgt_db_uuid'])
+        payload = json.dumps(json_data)
         headers = {
             'Authorization': self.token,
             'Content-Type': 'application/json'
@@ -255,10 +268,13 @@ class I2UP:
         return response.json()['data']
 
     def delete_mysql_rule(self, name: str) -> dict:
+        uuid = self.get_mysql_rule_uuid(name)
+        if uuid == '':
+            return {}
         url = f"{self.base_url}/stream/rule"
         payload = json.dumps({
             "mysql_uuids": [
-                self.get_mysql_rule_uuid(name)
+                uuid
             ],
             "force": False
         })
@@ -345,7 +361,7 @@ def main():
         pprint(i2up.get_db_node(args.db))
     elif args.create_db:
         assert args.json is not None
-        pprint(i2up.create_db_node(args.json))
+        pprint(i2up.create_db_node(I2UP.load_json_file(args.json)))
     elif args.delete_db:
         assert args.db is not None
         pprint(i2up.delete_db_node(args.db))
@@ -358,7 +374,7 @@ def main():
         pprint(i2up.get_mysql_rule(args.rule))
     elif args.create_rule:
         assert args.json is not None
-        pprint(i2up.create_mysql_rule(args.json))
+        pprint(i2up.create_mysql_rule(I2UP.load_json_file(args.json)))
     elif args.delete_rule:
         assert args.rule is not None
         pprint(i2up.delete_mysql_rule(args.rule))

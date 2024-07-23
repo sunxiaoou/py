@@ -28,32 +28,32 @@ class I2UPTestCase(unittest.TestCase):
         print("Test to show credential")
         pprint(self.i2up.get_credential('guest_cred'))
 
-    def test_list_inactivated_nodes(self):
-        print("Test to list inactivated nodes")
+    def test_list_inactive_nodes(self):
+        print("Test to list inactive nodes")
         info_list = self.i2up.get_inactive_nodes()
         print("count(%d)" % len(info_list))
         pprint(info_list)
 
-    def test_show_inactivated_node(self):
-        print("Test to show inactivated node")
+    def test_show_inactive_node(self):
+        print("Test to show inactive node")
         pprint(self.i2up.get_inactive_node('hadoop3'))
 
-    def test_list_activated_nodes(self):
-        print("Test to list activated nodes")
+    def test_list_active_nodes(self):
+        print("Test to list active nodes")
         info_list = self.i2up.get_active_nodes()
         print("count(%d)" % len(info_list))
         pprint(info_list)
 
-    def test_show_activated_node(self):
-        print("Test to show activated node")
+    def test_show_active_node(self):
+        print("Test to show active node")
         pprint(self.i2up.get_active_node('hadoop3'))
 
     def test_activate_node(self):
         print("Test to activate node")
         pprint(self.i2up.activate_node('hadoop3', None, 'Info@1234', True, False))
 
-    def test_delete_activated_node(self):
-        print("Test to delete activated node")
+    def test_delete_active_node(self):
+        print("Test to delete active node")
         pprint(self.i2up.delete_active_node('hadoop3', True))
 
     def test_list_db_nodes(self):
@@ -68,7 +68,7 @@ class I2UPTestCase(unittest.TestCase):
 
     def test_create_db_node(self):
         print("Test to create db node")
-        pprint(self.i2up.create_db_node('json/kfk_u_auto.json'))
+        pprint(self.i2up.create_db_node(I2UP.load_json_file('json/kfk_u_auto.json')))
 
     def test_delete_db_node(self):
         print("Test to delete db node")
@@ -82,12 +82,13 @@ class I2UPTestCase(unittest.TestCase):
 
     def test_show_mysql_rule(self):
         print("Test to show mysql rule")
-        pprint(self.i2up.get_mysql_rule('msq_u_c1_auto'))
+        # pprint(self.i2up.get_mysql_rule('msq_u_c1_auto'))
+        pprint(self.i2up.get_mysql_rule('msq_u_kfk_auto'))
 
     def test_create_mysql_rule(self):
         print("Test to create mysql rule")
         # pprint(self.i2up.create_mysql_rule('json/msq_u_c1_auto.json'))
-        pprint(self.i2up.create_mysql_rule('json/msq_u_kfk_auto.json'))
+        pprint(self.i2up.create_mysql_rule(I2UP.load_json_file('json/msq_u_kfk_auto.json')))
 
     def test_delete_mysql_rule(self):
         print("Test to delete mysql rule")
