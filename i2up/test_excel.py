@@ -24,30 +24,73 @@ class ExcelTestCase(unittest.TestCase):
         print("count(%d)" % len(dbs))
         pprint(dbs)
 
-    def test_list_mysql_rules(self):
-        print("Test to list mysql rules")
-        rules = self.excel.get_mysql_rules('msq_rule')
+    def test_list_kfks(self):
+        print("Test to list kfks")
+        dbs = self.excel.get_kfks('kfk_node')
+        print("count(%d)" % len(dbs))
+        pprint(dbs)
+
+    def test_list_msq_msq_rules(self):
+        print("Test to list msq_msq rules")
+        rules = self.excel.get_msq_msq_rules('msq_msq_rule')
+        print("count(%d)" % len(rules))
+        pprint(rules)
+
+    def test_list_msq_kfk_rules(self):
+        print("Test to list msq_kfk rules")
+        rules = self.excel.get_msq_kfk_rules('msq_kfk_rule')
         print("count(%d)" % len(rules))
         pprint(rules)
 
     def test_generate_db_json(self):
-        print("Test to list mysql rules")
+        print("Test to generate msq json")
         dic = {
             'config': {
-                'db_list': [{
-                    'ip': '192.168.55.250',
-                    'port': 3306}],
+                'db_list': [
+                    {
+                        'ip': '192.168.55.250',
+                        'port': 3306
+                    }
+                ],
                 'role': ['source', 'target'],
-                'user_management': [{
-                    'cred_uuid': 'manga',
-                    'default_db': 'manga'}]},
+                'user_management': [
+                    {
+                        'cred_uuid': 'manga',
+                        'default_db': 'manga'
+                    }
+                ]
+            },
             'db_name': 'msq_u_auto',
             'db_type': 'mysql',
-            'node_uuid': 'centos1'}
+            'node_uuid': 'centos1'
+        }
         self.excel.generate_creation_json('msq', dic)
 
-    def test_generate_msq_rule_json(self):
-        print("Test to list mysql rules")
+    def test_generate_kfk_json(self):
+        print("Test to generate kfk json")
+        dic = {
+            'config': {
+                'auth': 'kerberos',
+                'db_list': [
+                    {
+                        'ip': '192.168.55.250',
+                        'port': 9092
+                    }
+                ],
+                'kerberos_keytab_path': 'root/kafka_keytab',
+                'kerberos_principal': 'kafka@sdp1-xyk',
+                'kerberos_service_name': 'kafka',
+                'role': ['target']
+            },
+            'db_name': 'kfk_u_auto',
+            'db_type': 'kafka',
+            'node_uuid': 'centos1',
+            'username': 'admin'
+        }
+        self.excel.generate_creation_json('kfk', dic)
+
+    def test_generate_msq_msq_json(self):
+        print("Test to list msq_msq json")
         dic = {
             'config': {
                 'full_sync_settings': {
@@ -80,9 +123,50 @@ class ExcelTestCase(unittest.TestCase):
                     'dst_table': 'export',
                     'src_db': 'manga',
                     'src_table': 'export'
-                }],
-            'tgt_db_uuid': 'msq_c1_auto'}
+                }
+            ],
+            'tgt_db_uuid': 'msq_c1_auto'
+        }
         self.excel.generate_creation_json('msq_msq', dic)
+
+    def test_generate_msq_kfk_json(self):
+        print("Test to list msq_kfk json")
+        dic = {
+            'config': {
+                'full_sync_settings': {
+                    'dump_thd': 1,
+                    'full_sync_custom_cfg': ['dump.no.data=true'],
+                    'load_thd': 1
+                }
+            },
+            'db_map': [],
+            'full_sync': 1,
+            'incre_sync': 0,
+            'map_type': 'table',
+            'mysql_name': 'msq_u_kfk_auto',
+            'other_settings': {
+                'dyn_thread': 1,
+                'incre_full_sync_custom_cfg': []
+            },
+            'src_db_uuid': 'msq_u_auto',
+            'tab_map': [
+                {
+                    'dst_db': 'fruit',
+                    'dst_table': 'fruit',
+                    'src_db': 'manga',
+                    'src_table': 'fruit'
+                },
+                {
+                    'dst_db': 'export',
+                    'dst_table': 'export',
+                    'src_db': 'manga',
+                    'src_table': 'export'
+                }
+            ],
+            'tgt_db_uuid': 'kfk_u_auto',
+            'username': 'admin'
+        }
+        self.excel.generate_creation_json('msq_kfk', dic)
 
 
 if __name__ == '__main__':
