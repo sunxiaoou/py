@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+import argparse
 import json
 import os
 from pprint import pprint
@@ -9,11 +10,16 @@ from i2up import I2UP
 
 
 class Excel:
-    def __init__(self, name: str, template: str, output: str):
+    # sheet names
+    WORK_NODE = 'work_node'
+    MSQ_NODE = 'msq_node'
+    KFK_NODE = 'kfk_node'
+    MSQ_MSQ_RULE = 'msq_msq_rule'
+    MSQ_KFK_RULE = 'msq_kfk_rule'
+
+    def __init__(self, name: str, template: str):
         self.name = name
         self.template = template
-        self.output = output
-        os.makedirs(output, exist_ok=True)
 
     def get_nodes(self, sheet: str) -> list:
         df = pd.read_excel(self.name, sheet_name=sheet)
@@ -305,91 +311,92 @@ class Excel:
         Excel.merge_dict(json_data, obj_dict)
         return json_data
 
-    def generate_creation_json(self, t_sheet: str, obj_dict: dict):
+    def generate_creation_json(self, t_sheet: str, obj_dict: dict, output: str):
         json_data = self.generate_creation(t_sheet, obj_dict)
         key = ''
-        if t_sheet in ['kfk', 'msq']:
+        if t_sheet in [Excel.KFK_NODE, Excel.MSQ_NODE]:
             key = 'db_name'
-        elif t_sheet in ['msq_kfk', 'msq_msq']:
+        elif t_sheet in [Excel.MSQ_KFK_RULE, Excel.MSQ_MSQ_RULE]:
             key = 'mysql_name'
-        file = f"{self.output}/{obj_dict[key]}.json"
+        file = f"{output}/{obj_dict[key]}.json"
         with open(file, 'w') as f:
             json.dump(json_data, f, indent=4)
         print(f"{file} generated according to {t_sheet} in {self.template}")
 
-    def generate_csvs(self):
+    def generate_csvs(self, output: str):
         excel_file = pd.ExcelFile(self.name)
         for sheet_name in excel_file.sheet_names:
             df = pd.read_excel(excel_file, sheet_name=sheet_name)
-            csv_file_path = f"{self.output}/{sheet_name}.csv"
+            csv_file_path = f"{output}/{sheet_name}.csv"
             df.to_csv(csv_file_path, index=False, header=False, encoding='utf-8')
             print(f"Sheet '{sheet_name}' saved to '{csv_file_path}'")
 
 
-def generate_all_csv():
-    excel = Excel('excel/zx-test-env_2.xlsx', None, 'output')
-    excel.generate_csvs()
+def generate_all_csv(output: str):
+    os.makedirs(output, exist_ok=True)
+    excel = Excel('excel/zx-test-env_2.xlsx', None)
+    excel.generate_csvs(output)
 
 
-def generate_all_json(excel: Excel):
-    for node in excel.get_dbs('db_node'):
-        excel.generate_creation_json('msq', node)
-    for node in excel.get_kfks('kfk_node'):
-        excel.generate_creation_json('kfk', node)
-    for rule in excel.get_msq_msq_rules('msq_msq_rule'):
-        excel.generate_creation_json('msq_msq', rule)
-    for rule in excel.get_msq_kfk_rules('msq_kfk_rule'):
-        excel.generate_creation_json('msq_kfk', rule)
+def generate_all_json(excel: Excel, output: str):
+    for node in excel.get_dbs(Excel.MSQ_NODE):
+        excel.generate_creation_json(Excel.MSQ_NODE, node, output)
+    for node in excel.get_kfks(Excel.KFK_NODE):
+        excel.generate_creation_json(Excel.KFK_NODE, node, output)
+    for rule in excel.get_msq_msq_rules(Excel.MSQ_MSQ_RULE):
+        excel.generate_creation_json(Excel.MSQ_MSQ_RULE, rule, output)
+    for rule in excel.get_msq_kfk_rules(Excel.MSQ_KFK_RULE):
+        excel.generate_creation_json(Excel.MSQ_KFK_RULE, rule, output)
 
 
 def delete_all_objects(excel: Excel, i2up: I2UP):
-    for rule in excel.get_msq_kfk_rules('msq_kfk_rule'):
+    for rule in excel.get_msq_kfk_rules(Excel.MSQ_KFK_RULE):
         name = rule['mysql_name']
         print(f"deleting rule {name} ...")
         pprint(i2up.delete_mysql_rule(name))
-    for rule in excel.get_msq_msq_rules('msq_msq_rule'):
+    for rule in excel.get_msq_msq_rules(Excel.MSQ_MSQ_RULE):
         name = rule['mysql_name']
         print(f"deleting rule {name} ...")
         pprint(i2up.delete_mysql_rule(name))
-    for node in excel.get_kfks('kfk_node'):
+    for node in excel.get_kfks(Excel.KFK_NODE):
         name = node["db_name"]
         print(f"deleting db_node {name} ...")
         pprint(i2up.delete_db_node(name))
-    for node in excel.get_dbs('db_node'):
+    for node in excel.get_dbs(Excel.MSQ_NODE):
         name = node["db_name"]
         print(f"deleting db_node {name} ...")
         pprint(i2up.delete_db_node(name))
 
 
 def create_all_objects(excel: Excel, i2up: I2UP):
-    for node in excel.get_dbs('db_node'):
+    for node in excel.get_dbs(Excel.MSQ_NODE):
         name = node["db_name"]
         print(f"creating db_node {name} ...")
-        json_data = excel.generate_creation('msq', node)
+        json_data = excel.generate_creation(Excel.MSQ_NODE, node)
         if i2up.get_db_uuid(name) == '':
             pprint(i2up.create_db_node(json_data))
         else:
             print(f"db {name} exists already")
-    for node in excel.get_kfks('kfk_node'):
+    for node in excel.get_kfks(Excel.KFK_NODE):
         name = node["db_name"]
         print(f"creating db_node {name} ...")
-        json_data = excel.generate_creation('kfk', node)
+        json_data = excel.generate_creation(Excel.KFK_NODE, node)
         if i2up.get_db_uuid(name) == '':
             pprint(i2up.create_db_node(json_data))
         else:
             print(f"db {name} exists already")
-    for rule in excel.get_msq_msq_rules('msq_msq_rule'):
+    for rule in excel.get_msq_msq_rules(Excel.MSQ_MSQ_RULE):
         name = rule['mysql_name']
         print(f"creating rule {name} ...")
-        json_data = excel.generate_creation('msq_msq', rule)
+        json_data = excel.generate_creation(Excel.MSQ_MSQ_RULE, rule)
         if i2up.get_mysql_rule_uuid(name) == '':
             pprint(i2up.create_mysql_rule(json_data))
         else:
             print(f"rule {name} exists already")
-    for rule in excel.get_msq_kfk_rules('msq_kfk_rule'):
+    for rule in excel.get_msq_kfk_rules(Excel.MSQ_KFK_RULE):
         name = rule['mysql_name']
         print(f"creating rule {name} ...")
-        json_data = excel.generate_creation('msq_kfk', rule)
+        json_data = excel.generate_creation(Excel.MSQ_KFK_RULE, rule)
         if i2up.get_mysql_rule_uuid(name) == '':
             pprint(i2up.create_mysql_rule(json_data))
         else:
@@ -397,11 +404,32 @@ def create_all_objects(excel: Excel, i2up: I2UP):
 
 
 def main():
-    excel = Excel('excel/samples.xlsx', 'excel/template.xlsx', 'output')
-    # generate_all_json(excel)
-    i2up = I2UP('centos1', 58086, 'admin', 'Info@1234', 'ca.crt')
-    # delete_all_objects(excel, i2up)
-    create_all_objects(excel, i2up)
+    parser = argparse.ArgumentParser(description='Parse dbNodes/rules in a excel and create them in i2up')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--excel2json', action='store_true', help='Convert dbNodes/rules in excel to json files')
+    group.add_argument('--deleteObjects', action='store_true', help='Delete dbNodes/rules in excel from i2up')
+    group.add_argument('--createObjects', action='store_true', help='Create dbNodes/rules in excel into i2up')
+    parser.add_argument('--ip', required=False, help='IP address or hostname')
+    parser.add_argument('--port', required=False, type=int, default=58086, help='Port number (default: 58086)')
+    parser.add_argument('--user', required=False, default='admin', help='Username (default: admin)')
+    parser.add_argument('--pwd', required=False, default='Info@1234', help='Password of the user (default: Info@1234)')
+    parser.add_argument('--ca', required=False, default='ca.crt', help='Path of ca file (default: ca.crt)')
+    parser.add_argument('--excel', required=True, help='Excel file contains dbNodes/rules')
+    parser.add_argument('--template', required=True, help='Excel file contains dbNodes/rules template')
+    parser.add_argument('--output', required=False, default='output', help='Path for output json files')
+    args = parser.parse_args()
+    excel = Excel(args.excel, args.template)
+    if args.excel2json:
+        os.makedirs(args.output, exist_ok=True)
+        generate_all_json(excel, args.output)
+    elif args.deleteObjects:
+        assert args.ip is not None
+        i2up = I2UP(args.ip, args.port, args.user, args.pwd, args.ca)
+        delete_all_objects(excel, i2up)
+    elif args.createObjects:
+        assert args.ip is not None
+        i2up = I2UP(args.ip, args.port, args.user, args.pwd, args.ca)
+        create_all_objects(excel, i2up)
 
 
 if __name__ == "__main__":

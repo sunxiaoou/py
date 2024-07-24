@@ -9,36 +9,36 @@ class ExcelTestCase(unittest.TestCase):
     def setUpClass(cls):
         excel_file = 'excel/samples.xlsx'
         template = 'excel/template.xlsx'
-        output_dir = 'output'
-        cls.excel = Excel(excel_file, template, output_dir)
+        cls.excel = Excel(excel_file, template)
+        cls.output = 'output'
 
     def test_list_nodes(self):
         print("Test to list nodes")
-        nodes = self.excel.get_nodes('work_node')
+        nodes = self.excel.get_nodes(Excel.WORK_NODE)
         print("count(%d)" % len(nodes))
         pprint(nodes)
 
     def test_list_dbs(self):
         print("Test to list dbs")
-        dbs = self.excel.get_dbs('db_node')
+        dbs = self.excel.get_dbs(Excel.MSQ_NODE)
         print("count(%d)" % len(dbs))
         pprint(dbs)
 
     def test_list_kfks(self):
         print("Test to list kfks")
-        dbs = self.excel.get_kfks('kfk_node')
+        dbs = self.excel.get_kfks(Excel.KFK_NODE)
         print("count(%d)" % len(dbs))
         pprint(dbs)
 
     def test_list_msq_msq_rules(self):
         print("Test to list msq_msq rules")
-        rules = self.excel.get_msq_msq_rules('msq_msq_rule')
+        rules = self.excel.get_msq_msq_rules(Excel.MSQ_MSQ_RULE)
         print("count(%d)" % len(rules))
         pprint(rules)
 
     def test_list_msq_kfk_rules(self):
         print("Test to list msq_kfk rules")
-        rules = self.excel.get_msq_kfk_rules('msq_kfk_rule')
+        rules = self.excel.get_msq_kfk_rules(Excel.MSQ_KFK_RULE)
         print("count(%d)" % len(rules))
         pprint(rules)
 
@@ -65,7 +65,7 @@ class ExcelTestCase(unittest.TestCase):
             'db_type': 'mysql',
             'node_uuid': 'centos1'
         }
-        self.excel.generate_creation_json('msq', dic)
+        self.excel.generate_creation_json(Excel.MSQ_NODE, dic, self.output)
 
     def test_generate_kfk_json(self):
         print("Test to generate kfk json")
@@ -100,7 +100,7 @@ class ExcelTestCase(unittest.TestCase):
                'db_type': 'kafka',
                'node_uuid': 'centos1',
                'username': 'admin'}
-        self.excel.generate_creation_json('kfk', dic)
+        self.excel.generate_creation_json(Excel.KFK_NODE, dic, self.output)
 
     def test_generate_msq_msq_json(self):
         print("Test to list msq_msq json")
@@ -140,7 +140,7 @@ class ExcelTestCase(unittest.TestCase):
             ],
             'tgt_db_uuid': 'msq_c1_auto'
         }
-        self.excel.generate_creation_json('msq_msq', dic)
+        self.excel.generate_creation_json(Excel.MSQ_MSQ_RULE, dic, self.output)
 
     def test_generate_msq_kfk_json(self):
         print("Test to list msq_kfk json")
@@ -179,7 +179,7 @@ class ExcelTestCase(unittest.TestCase):
             'tgt_db_uuid': 'kfk_u_auto',
             'username': 'admin'
         }
-        self.excel.generate_creation_json('msq_kfk', dic)
+        self.excel.generate_creation_json(Excel.MSQ_KFK_RULE, dic, self.output)
 
 
 if __name__ == '__main__':
