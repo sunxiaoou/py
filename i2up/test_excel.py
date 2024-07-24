@@ -7,7 +7,7 @@ from excel_tool import Excel
 class ExcelTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        excel_file = 'excel/rule_auto.xlsx'
+        excel_file = 'excel/samples.xlsx'
         template = 'excel/template.xlsx'
         output_dir = 'output'
         cls.excel = Excel(excel_file, template, output_dir)

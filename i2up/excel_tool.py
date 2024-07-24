@@ -397,7 +397,7 @@ def create_all_objects(excel: Excel, i2up: I2UP):
 
 
 def main():
-    excel = Excel('excel/rule_auto.xlsx', 'excel/template.xlsx', 'output')
+    excel = Excel('excel/samples.xlsx', 'excel/template.xlsx', 'output')
     # generate_all_json(excel)
     i2up = I2UP('centos1', 58086, 'admin', 'Info@1234', 'ca.crt')
     # delete_all_objects(excel, i2up)
