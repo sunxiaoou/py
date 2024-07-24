@@ -26,7 +26,7 @@ class I2UPTestCase(unittest.TestCase):
 
     def test_show_credential(self):
         print("Test to show credential")
-        pprint(self.i2up.get_credential('guest_cred'))
+        pprint(self.i2up.get_credential('manga'))
 
     def test_list_inactive_nodes(self):
         print("Test to list inactive nodes")
@@ -68,7 +68,7 @@ class I2UPTestCase(unittest.TestCase):
 
     def test_create_db_node(self):
         print("Test to create db node")
-        pprint(self.i2up.create_db_node(I2UP.load_json_file('json/kfk_u_auto.json')))
+        pprint(self.i2up.create_db_node(I2UP.load_json_file('output/kfk_u_auto.json')))
 
     def test_delete_db_node(self):
         print("Test to delete db node")

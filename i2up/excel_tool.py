@@ -1,8 +1,11 @@
 #! /usr/bin/python3
 import json
 import os
+from pprint import pprint
 
 import pandas as pd
+
+from i2up import I2UP
 
 
 class Excel:
@@ -40,6 +43,7 @@ class Excel:
                 user_management = []
                 if pd.notna(row['凭据名称']):
                     user_management.append({
+                        "cred_login": 1,
                         "cred_uuid": row['凭据名称'],
                         "default_db": row['默认数据库']
                     })
@@ -68,6 +72,7 @@ class Excel:
                     })
                 if pd.notna(row['cred_name']) and row['cred_name'].strip() != "":
                     current_record["user_management"].append({
+                        "cred_login": 1,
                         "cred_name": row['凭据名称'],
                         "default_db": row['默认数据库']
                     })
@@ -97,25 +102,24 @@ class Excel:
                         roles.append('target')
                     else:
                         assert False
-                auth = ''
-                kerberos_keytab_path = ''
-                kerberos_principal = ''
-                kerberos_service_name = ''
+                auth = 'none'
                 if pd.notna(row['kafka凭证']) and pd.notna('kafka服务名') and pd.notna('keytab路径'):
                     auth = 'kerberos'
-                    kerberos_keytab_path = row['keytab路径']
-                    kerberos_principal = row['kafka凭证']
-                    kerberos_service_name = row['kafka服务名']
                 db_list = [{"ip": row['IP地址'], "port": int(row['端口'])}] \
                     if pd.notna(row['IP地址']) and pd.notna(row['端口']) else []
+                user_management = []
+                if pd.notna(row['kafka凭证']) and pd.notna(row['keytab路径'] and pd.notna(row['kafka服务名'])):
+                    user_management.append({
+                        "user": row['kafka凭证'],
+                        "passwd": row['keytab路径'],
+                        "default_db": row['kafka服务名']
+                    })
                 current_record = {
                     "config": {
                         "db_list": db_list,
                         "auth": auth,
-                        "kerberos_keytab_path": kerberos_keytab_path,
-                        "kerberos_principal": kerberos_principal,
-                        "kerberos_service_name": kerberos_service_name,
                         "role": roles,
+                        "user_management": user_management
                     },
                     "db_name": row['名称'],
                     "db_type": row['数据库类型'],
@@ -127,6 +131,12 @@ class Excel:
                     current_record["db_list"].append({
                         "ip": row['IP地址'],
                         "port": int(row['端口'])
+                    })
+                if pd.notna(row['kafka凭证']) and pd.notna(row['keytab路径'] and pd.notna(row['kafka服务名'])):
+                    current_record["user_management"].append({
+                        "user": row['kafka凭证'],
+                        "passwd": row['keytab路径'],
+                        "default_db": row['kafka服务名']
                     })
         if current_record is not None:
             data_list.append(current_record)
@@ -316,10 +326,12 @@ class Excel:
             print(f"Sheet '{sheet_name}' saved to '{csv_file_path}'")
 
 
-def main():
-    # excel = Excel('excel/zx-test-env_2.xlsx', None, 'output')
-    # excel.generate_csvs()
-    excel = Excel('excel/rule_auto.xlsx', 'excel/template.xlsx', 'output')
+def generate_all_csv():
+    excel = Excel('excel/zx-test-env_2.xlsx', None, 'output')
+    excel.generate_csvs()
+
+
+def generate_all_json(excel: Excel):
     for node in excel.get_dbs('db_node'):
         excel.generate_creation_json('msq', node)
     for node in excel.get_kfks('kfk_node'):
@@ -328,6 +340,68 @@ def main():
         excel.generate_creation_json('msq_msq', rule)
     for rule in excel.get_msq_kfk_rules('msq_kfk_rule'):
         excel.generate_creation_json('msq_kfk', rule)
+
+
+def delete_all_objects(excel: Excel, i2up: I2UP):
+    for rule in excel.get_msq_kfk_rules('msq_kfk_rule'):
+        name = rule['mysql_name']
+        print(f"deleting rule {name} ...")
+        pprint(i2up.delete_mysql_rule(name))
+    for rule in excel.get_msq_msq_rules('msq_msq_rule'):
+        name = rule['mysql_name']
+        print(f"deleting rule {name} ...")
+        pprint(i2up.delete_mysql_rule(name))
+    for node in excel.get_kfks('kfk_node'):
+        name = node["db_name"]
+        print(f"deleting db_node {name} ...")
+        pprint(i2up.delete_db_node(name))
+    for node in excel.get_dbs('db_node'):
+        name = node["db_name"]
+        print(f"deleting db_node {name} ...")
+        pprint(i2up.delete_db_node(name))
+
+
+def create_all_objects(excel: Excel, i2up: I2UP):
+    for node in excel.get_dbs('db_node'):
+        name = node["db_name"]
+        print(f"creating db_node {name} ...")
+        json_data = excel.generate_creation('msq', node)
+        if i2up.get_db_uuid(name) == '':
+            pprint(i2up.create_db_node(json_data))
+        else:
+            print(f"db {name} exists already")
+    for node in excel.get_kfks('kfk_node'):
+        name = node["db_name"]
+        print(f"creating db_node {name} ...")
+        json_data = excel.generate_creation('kfk', node)
+        if i2up.get_db_uuid(name) == '':
+            pprint(i2up.create_db_node(json_data))
+        else:
+            print(f"db {name} exists already")
+    for rule in excel.get_msq_msq_rules('msq_msq_rule'):
+        name = rule['mysql_name']
+        print(f"creating rule {name} ...")
+        json_data = excel.generate_creation('msq_msq', rule)
+        if i2up.get_mysql_rule_uuid(name) == '':
+            pprint(i2up.create_mysql_rule(json_data))
+        else:
+            print(f"rule {name} exists already")
+    for rule in excel.get_msq_kfk_rules('msq_kfk_rule'):
+        name = rule['mysql_name']
+        print(f"creating rule {name} ...")
+        json_data = excel.generate_creation('msq_kfk', rule)
+        if i2up.get_mysql_rule_uuid(name) == '':
+            pprint(i2up.create_mysql_rule(json_data))
+        else:
+            print(f"rule {name} exists already")
+
+
+def main():
+    excel = Excel('excel/rule_auto.xlsx', 'excel/template.xlsx', 'output')
+    # generate_all_json(excel)
+    i2up = I2UP('centos1', 58086, 'admin', 'Info@1234', 'ca.crt')
+    # delete_all_objects(excel, i2up)
+    create_all_objects(excel, i2up)
 
 
 if __name__ == "__main__":

@@ -55,6 +55,7 @@ class ExcelTestCase(unittest.TestCase):
                 'role': ['source', 'target'],
                 'user_management': [
                     {
+                        'cred_login': 1,
                         'cred_uuid': 'manga',
                         'default_db': 'manga'
                     }
@@ -77,16 +78,28 @@ class ExcelTestCase(unittest.TestCase):
                         'port': 9092
                     }
                 ],
-                'kerberos_keytab_path': 'root/kafka_keytab',
-                'kerberos_principal': 'kafka@sdp1-xyk',
-                'kerberos_service_name': 'kafka',
-                'role': ['target']
+                'role': ['target'],
+                'user_management': [
+                    {
+                        'default_db': 'kfk_svc',
+                        'passwd': 'manga',
+                        'user': 'manga'
+                    }
+                ]
             },
             'db_name': 'kfk_u_auto',
             'db_type': 'kafka',
             'node_uuid': 'centos1',
             'username': 'admin'
         }
+        dic = {'config': {'auth': 'none',
+                          'db_list': [{'ip': '192.168.55.250', 'port': 9092}],
+                          'role': ['target'],
+                          'user_management': []},
+               'db_name': 'kfk_u_auto',
+               'db_type': 'kafka',
+               'node_uuid': 'centos1',
+               'username': 'admin'}
         self.excel.generate_creation_json('kfk', dic)
 
     def test_generate_msq_msq_json(self):

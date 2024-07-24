@@ -197,6 +197,9 @@ class I2UP:
         if json_data['db_type'] != 'kafka':
             json_data["bind_lic_list"] = [self.get_lic_uuid()]
         json_data['node_uuid'] = self.get_node_uuid(json_data['node_uuid'])
+        for user in json_data['config']['user_management']:
+            if 'cred_uuid' in user:
+                user['cred_uuid'] = self.get_credential(user['cred_uuid'])['cred_uuid']
         payload = json.dumps(json_data)
         headers = {
             'Authorization': self.token,
