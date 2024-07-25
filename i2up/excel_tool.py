@@ -170,15 +170,16 @@ class Excel:
                     if pd.notna(row['源端表名']):
                         map_type = 'table'
                         tab_map = [{
-                            "src_db": row['源端库名'],
-                            "src_table": row['源端表名'],
                             "dst_db": row['备端库名'],
-                            "dst_table": row['备端表名']}]
+                            "dst_table": row['备端表名'],
+                            "src_db": row['源端库名'],
+                            "src_table": row['源端表名']
+                        }]
                     else:
                         map_type = 'database'
                         db_map = [{
-                            "src_table": row['源端库名'],
-                            "dst_table": row['备端库名']
+                            "dst_table": row['备端库名'],
+                            "src_table": row['源端库名']
                         }]
                 current_record = {
                     "db_map": db_map,
@@ -212,14 +213,16 @@ class Excel:
                 if pd.notna(row['源端库名']):
                     if pd.notna(row['源端表名']):
                         current_record["tab_map"].append({
-                            "src_db": row['源端库名'],
-                            "src_table": row['源端表名'],
                             "dst_db": row['备端库名'],
-                            "dst_table": row['备端表名']})
+                            "dst_table": row['备端表名'],
+                            "src_db": row['源端库名'],
+                            "src_table": row['源端表名']
+                        })
                     else:
                         current_record["db_map"].append({
-                            "src_table": row['源端库名'],
-                            "dst_table": row['备端库名']})
+                            "dst_table": row['备端库名'],
+                            "src_table": row['源端库名']
+                        })
         if current_record is not None:
             data_list.append(current_record)
         return data_list
@@ -241,15 +244,16 @@ class Excel:
                     if pd.notna(row['源端表名']):
                         map_type = 'table'
                         tab_map = [{
-                            "src_db": row['源端库名'],
-                            "src_table": row['源端表名'],
                             "dst_db": row['备端topic'],
-                            "dst_table": row['备端topic']}]
+                            "dst_table": row['备端topic'],
+                            "src_db": row['源端库名'],
+                            "src_table": row['源端表名']
+                        }]
                     else:
                         map_type = 'database'
                         db_map = [{
-                            "src_table": row['源端库名'],
-                            "dst_table": row['备端topic']
+                            "dst_table": row['备端topic'],
+                            "src_table": row['源端库名']
                         }]
                 current_record = {
                     "db_map": db_map,
@@ -281,14 +285,16 @@ class Excel:
                 if pd.notna(row['源端库名']):
                     if pd.notna(row['源端表名']):
                         current_record["tab_map"].append({
-                            "src_db": row['源端库名'],
-                            "src_table": row['源端表名'],
                             "dst_db": row['备端topic'],
-                            "dst_table": row['备端topic']})
+                            "dst_table": row['备端topic'],
+                            "src_db": row['源端库名'],
+                            "src_table": row['源端表名']
+                        })
                     else:
                         current_record["db_map"].append({
-                            "src_table": row['源端库名'],
-                            "dst_table": row['备端topic']})
+                            "dst_table": row['备端topic'],
+                            "src_table": row['源端库名']
+                        })
         if current_record is not None:
             data_list.append(current_record)
         return data_list
@@ -352,26 +358,26 @@ def generate_all_json(excel: Excel, output: str):
 def delete_all_objects(excel: Excel, i2up: I2UP):
     for rule in excel.get_msq_kfk_rules(Excel.MSQ_KFK_RULE):
         name = rule['mysql_name']
-        print(f"deleting rule {name} ...")
+        print(f"Deleting rule {name} ...")
         pprint(i2up.delete_mysql_rule(name))
     for rule in excel.get_msq_msq_rules(Excel.MSQ_MSQ_RULE):
         name = rule['mysql_name']
-        print(f"deleting rule {name} ...")
+        print(f"Deleting rule {name} ...")
         pprint(i2up.delete_mysql_rule(name))
     for node in excel.get_kfks(Excel.KFK_NODE):
         name = node["db_name"]
-        print(f"deleting db_node {name} ...")
+        print(f"Deleting db_node {name} ...")
         pprint(i2up.delete_db_node(name))
     for node in excel.get_dbs(Excel.MSQ_NODE):
         name = node["db_name"]
-        print(f"deleting db_node {name} ...")
+        print(f"Deleting db_node {name} ...")
         pprint(i2up.delete_db_node(name))
 
 
 def create_all_objects(excel: Excel, i2up: I2UP):
     for node in excel.get_dbs(Excel.MSQ_NODE):
         name = node["db_name"]
-        print(f"creating db_node {name} ...")
+        print(f"Creating db_node {name} ...")
         json_data = excel.generate_creation(Excel.MSQ_NODE, node)
         if i2up.get_db_uuid(name) == '':
             pprint(i2up.create_db_node(json_data))
@@ -379,7 +385,7 @@ def create_all_objects(excel: Excel, i2up: I2UP):
             print(f"db {name} exists already")
     for node in excel.get_kfks(Excel.KFK_NODE):
         name = node["db_name"]
-        print(f"creating db_node {name} ...")
+        print(f"Creating db_node {name} ...")
         json_data = excel.generate_creation(Excel.KFK_NODE, node)
         if i2up.get_db_uuid(name) == '':
             pprint(i2up.create_db_node(json_data))
@@ -387,7 +393,7 @@ def create_all_objects(excel: Excel, i2up: I2UP):
             print(f"db {name} exists already")
     for rule in excel.get_msq_msq_rules(Excel.MSQ_MSQ_RULE):
         name = rule['mysql_name']
-        print(f"creating rule {name} ...")
+        print(f"Creating rule {name} ...")
         json_data = excel.generate_creation(Excel.MSQ_MSQ_RULE, rule)
         if i2up.get_mysql_rule_uuid(name) == '':
             pprint(i2up.create_mysql_rule(json_data))
@@ -395,7 +401,7 @@ def create_all_objects(excel: Excel, i2up: I2UP):
             print(f"rule {name} exists already")
     for rule in excel.get_msq_kfk_rules(Excel.MSQ_KFK_RULE):
         name = rule['mysql_name']
-        print(f"creating rule {name} ...")
+        print(f"Creating rule {name} ...")
         json_data = excel.generate_creation(Excel.MSQ_KFK_RULE, rule)
         if i2up.get_mysql_rule_uuid(name) == '':
             pprint(i2up.create_mysql_rule(json_data))
@@ -415,11 +421,12 @@ def main():
     parser.add_argument('--pwd', required=False, default='Info@1234', help='Password of the user (default: Info@1234)')
     parser.add_argument('--ca', required=False, default='ca.crt', help='Path of ca file (default: ca.crt)')
     parser.add_argument('--excel', required=True, help='Excel file contains dbNodes/rules')
-    parser.add_argument('--template', required=True, help='Excel file contains dbNodes/rules template')
+    parser.add_argument('--template', required=False, help='Excel file contains dbNodes/rules template')
     parser.add_argument('--output', required=False, default='output', help='Path for output json files')
     args = parser.parse_args()
     excel = Excel(args.excel, args.template)
     if args.excel2json:
+        assert args.template is not None
         os.makedirs(args.output, exist_ok=True)
         generate_all_json(excel, args.output)
     elif args.deleteObjects:
@@ -427,7 +434,7 @@ def main():
         i2up = I2UP(args.ip, args.port, args.user, args.pwd, args.ca)
         delete_all_objects(excel, i2up)
     elif args.createObjects:
-        assert args.ip is not None
+        assert args.ip is not None and args.template is not None
         i2up = I2UP(args.ip, args.port, args.user, args.pwd, args.ca)
         create_all_objects(excel, i2up)
 
