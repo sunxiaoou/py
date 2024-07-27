@@ -8,11 +8,13 @@ $ diff -u main.php.orig main.php
   -$config['enable_sign_verify'] = true; // 签名校验
   +$config['enable_sign_verify'] = false; // 关闭签名校验
 3) 拷贝控制机根证书 /usr/info2soft/cntlcenter/etc/certs/ca.crt 到当前脚本运行目录
-4) 生成数据库节点时如用到credential对象，需事先生成
+4) 如使用 AccessKey 代替传统的用户名和口令, 需在控制台的 "账户信息/密钥管理" 中事先生成
+5) 生成数据库节点时如用到 "凭据(credential)" 对象，需在控制台的 "系统管理/凭据管理" 中事先生成
 
 
 1. 目录结构
 ├── ca.crt                  # I2UP 根证书
+├── access.key              # 存放 AccessKey 的文件 (可选)
 ├── excel
 │   ├── samples.xlsx        # 生成 MySQL/Kafka 节点和 MySQL-MySQL/Kafka 规则时的工作表示例，只包含创建上述对象所需的常用参数
 │   └── template.xlsx       # 生成 MySQL/Kafka 节点和 MySQL-MySQL/Kafka 规则时的默认参数表，和工作表合并后产生实际的参数表

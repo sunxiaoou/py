@@ -7,13 +7,16 @@ import requests
 
 
 class I2UP:
-    def __init__(self, ip: str, port: int, ca_path: str, user: str = None, pwd: str = None):
+    def __init__(self, ip: str, port: int, ca_path: str, ak_path: str = None, user: str = None, pwd: str = None):
         self.ca_path = ca_path
         self.base_url = f"https://{ip}:{port}/api"
         self.headers = {
             'Content-Type': 'application/json'
         }
-        if user is not None and pwd is not None:
+        if ak_path is not None:
+            with open(ak_path, 'r') as f:
+                self.headers['ACCESS-KEY'] = f.readline().strip()
+        elif user is not None and pwd is not None:
             url = f"{self.base_url}/auth/token"
             payload = json.dumps({
                 "username": user,
@@ -25,7 +28,7 @@ class I2UP:
             # print("token(%s)" % token)
             self.headers['Authorization'] = token
         else:
-            self.headers['ACCESS-KEY'] = 'zGsHPV8YAjxMD3d1KCw9Npc7g5mbofuL'
+            assert False
 
     def get_version(self) -> str:
         url = f"{self.base_url}/version"
@@ -258,9 +261,11 @@ def main():
 
     parser.add_argument('--ip', required=True, help='IP address or hostname')
     parser.add_argument('--port', required=False, type=int, default=58086, help='Port number (default: 58086)')
-    parser.add_argument('--user', required=False, default='admin', help='Username (default: admin)')
-    parser.add_argument('--pwd', required=False, default='Info@1234', help='Password of the user (default: Info@1234)')
     parser.add_argument('--ca', required=False, default='ca.crt', help='Path of ca file (default: ca.crt)')
+    parser.add_argument('--ak', required=False, default='access.key',
+                        help='Path of AccessKey file (default: access.key)')
+    parser.add_argument('--user', required=False, default='admin', help='Username (default: admin)')
+    parser.add_argument('--pwd', required=False, help='Password of the user')
     parser.add_argument('--node', required=False, help='Name of active/inactive node')
     parser.add_argument('--node2', required=False, help='New name assigns to an activating node')
     parser.add_argument('--pwd2', required=False, default='Info@1234',
@@ -276,7 +281,12 @@ def main():
     parser.add_argument('--json', required=False, help='Path of json file to create DB/rule')
 
     args = parser.parse_args()
-    i2up = I2UP(args.ip, args.port, args.ca, args.user, args.pwd)
+    if args.ak is not None:
+        i2up = I2UP(args.ip, args.port, args.ca, args.ak)
+    elif args.user is not None and args.pwd is not None:
+        i2up = I2UP(args.ip, args.port, args.ca, user=args.user, pwd=args.pwd)
+    else:
+        assert False
 
     if args.version:
         print(i2up.get_version())

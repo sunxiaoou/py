@@ -417,9 +417,11 @@ def main():
     group.add_argument('--createObjects', action='store_true', help='Create dbNodes/rules in excel into i2up')
     parser.add_argument('--ip', required=False, help='IP address or hostname')
     parser.add_argument('--port', required=False, type=int, default=58086, help='Port number (default: 58086)')
-    parser.add_argument('--user', required=False, default='admin', help='Username (default: admin)')
-    parser.add_argument('--pwd', required=False, default='Info@1234', help='Password of the user (default: Info@1234)')
     parser.add_argument('--ca', required=False, default='ca.crt', help='Path of ca file (default: ca.crt)')
+    parser.add_argument('--ak', required=False, default='access.key',
+                        help='Path of AccessKey file (default: access.key)')
+    parser.add_argument('--user', required=False, default='admin', help='Username (default: admin)')
+    parser.add_argument('--pwd', required=False, help='Password of the user')
     parser.add_argument('--excel', required=True, help='Excel file contains dbNodes/rules')
     parser.add_argument('--template', required=False, help='Excel file contains dbNodes/rules template')
     parser.add_argument('--output', required=False, default='output', help='Path for output json files')
@@ -431,11 +433,21 @@ def main():
         generate_all_json(excel, args.output)
     elif args.deleteObjects:
         assert args.ip is not None
-        i2up = I2UP(args.ip, args.port, args.ca, args.user, args.pwd)
+        if args.ak is not None:
+            i2up = I2UP(args.ip, args.port, args.ca, args.ak)
+        elif args.user is not None and args.pwd is not None:
+            i2up = I2UP(args.ip, args.port, args.ca, user=args.user, pwd=args.pwd)
+        else:
+            assert False
         delete_all_objects(excel, i2up)
     elif args.createObjects:
         assert args.ip is not None and args.template is not None
-        i2up = I2UP(args.ip, args.port, args.user, args.pwd, args.ca)
+        if args.ak is not None:
+            i2up = I2UP(args.ip, args.port, args.ca, args.ak)
+        elif args.user is not None and args.pwd is not None:
+            i2up = I2UP(args.ip, args.port, args.ca, user=args.user, pwd=args.pwd)
+        else:
+            assert False
         create_all_objects(excel, i2up)
 
 
