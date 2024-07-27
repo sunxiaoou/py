@@ -7,39 +7,35 @@ import requests
 
 
 class I2UP:
-    def __init__(self, ip: str, port: int, user: str, pwd: str, ca_path: str):
+    def __init__(self, ip: str, port: int, ca_path: str, user: str = None, pwd: str = None):
         self.ca_path = ca_path
         self.base_url = f"https://{ip}:{port}/api"
-        self.token = None
-
-        url = f"{self.base_url}/auth/token"
-        payload = json.dumps({
-            "username": user,
-            "pwd": pwd
-        })
-        headers = {
+        self.headers = {
             'Content-Type': 'application/json'
         }
-        response = requests.request("POST", url, headers=headers, data=payload, verify=self.ca_path)
-        response.raise_for_status()
-        self.token = response.json()['data']['token']
-        # print("token(%s)" % self.token)
+        if user is not None and pwd is not None:
+            url = f"{self.base_url}/auth/token"
+            payload = json.dumps({
+                "username": user,
+                "pwd": pwd
+            })
+            response = requests.request("POST", url, headers=self.headers, data=payload, verify=self.ca_path)
+            response.raise_for_status()
+            token = response.json()['data']['token']
+            # print("token(%s)" % token)
+            self.headers['Authorization'] = token
+        else:
+            self.headers['ACCESS-KEY'] = 'zGsHPV8YAjxMD3d1KCw9Npc7g5mbofuL'
 
     def get_version(self) -> str:
         url = f"{self.base_url}/version"
-        headers = {
-            'Authorization': self.token
-        }
-        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response = requests.request("GET", url, headers=self.headers, data={}, verify=self.ca_path)
         response.raise_for_status()
         return response.json()['data']['version']
 
     def get_credentials(self) -> list:
         url = f"{self.base_url}/credential"
-        headers = {
-            'Authorization': self.token
-        }
-        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response = requests.request("GET", url, headers=self.headers, data={}, verify=self.ca_path)
         response.raise_for_status()
         return response.json()['data']['info_list']
 
@@ -55,20 +51,14 @@ class I2UP:
 
     def get_inactive_nodes(self) -> list:
         url = f"{self.base_url}/active/node/inactive_list"
-        headers = {
-            'Authorization': self.token
-        }
-        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response = requests.request("GET", url, headers=self.headers, data={}, verify=self.ca_path)
         response.raise_for_status()
         nodes = response.json()['data']['info_list']
         return I2UP.get_subset(nodes, ['address', 'node_name', 'node_uuid'])
 
     def get_inactive_node(self, name: str) -> dict:
         url = f"{self.base_url}/active/node/inactive_list"
-        headers = {
-            'Authorization': self.token
-        }
-        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response = requests.request("GET", url, headers=self.headers, data={}, verify=self.ca_path)
         response.raise_for_status()
         for node in response.json()['data']['info_list']:
             if name == node['node_name']:
@@ -92,20 +82,13 @@ class I2UP:
             "password": password,
             "web_uuid": "00000000-0000-0000-0000-000000000000"
         })
-        headers = {
-            'Authorization': self.token,
-            'Content-Type': 'application/json'
-        }
-        response = requests.request("POST", url, headers=headers, data=payload, verify=self.ca_path)
+        response = requests.request("POST", url, headers=self.headers, data=payload, verify=self.ca_path)
         response.raise_for_status()
         return response.json()['data']
 
     def get_active_nodes(self) -> list:
         url = f"{self.base_url}/active/node"
-        headers = {
-            'Authorization': self.token
-        }
-        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response = requests.request("GET", url, headers=self.headers, data={}, verify=self.ca_path)
         response.raise_for_status()
         nodes = response.json()['data']['info_list']
         return I2UP.get_subset(nodes, ['address', 'node_name', 'node_uuid'])
@@ -122,10 +105,7 @@ class I2UP:
         if uuid == '':
             return {}
         url = f"{self.base_url}/active/node/{uuid}"
-        headers = {
-            'Authorization': self.token
-        }
-        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response = requests.request("GET", url, headers=self.headers, data={}, verify=self.ca_path)
         response.raise_for_status()
         return response.json()['data']['active_node']
 
@@ -140,20 +120,13 @@ class I2UP:
             ],
             "force": 1 if force else 0
         })
-        headers = {
-            'Authorization': self.token,
-            'Content-Type': 'application/json'
-        }
-        response = requests.request("DELETE", url, headers=headers, data=payload, verify=self.ca_path)
+        response = requests.request("DELETE", url, headers=self.headers, data=payload, verify=self.ca_path)
         response.raise_for_status()
         return response.json()['data']
 
     def get_db_nodes(self) -> list:
         url = f"{self.base_url}/active/db"
-        headers = {
-            'Authorization': self.token
-        }
-        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response = requests.request("GET", url, headers=self.headers, data={}, verify=self.ca_path)
         response.raise_for_status()
         dbs = response.json()['data']['info_list']
         return I2UP.get_subset(dbs, ['db_name', 'db_type', 'db_uuid'])
@@ -170,19 +143,13 @@ class I2UP:
         if uuid == '':
             return {}
         url = f"{self.base_url}/active/db/{uuid}"
-        headers = {
-            'Authorization': self.token
-        }
-        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response = requests.request("GET", url, headers=self.headers, data={}, verify=self.ca_path)
         response.raise_for_status()
         return response.json()['data']['active_db']
 
     def get_lic_uuid(self) -> str:
         url = f"{self.base_url}/lic"
-        headers = {
-            'Authorization': self.token
-        }
-        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response = requests.request("GET", url, headers=self.headers, data={}, verify=self.ca_path)
         response.raise_for_status()
         return response.json()['data']['info_list'][0]['lic_uuid']
 
@@ -201,11 +168,7 @@ class I2UP:
             if 'cred_uuid' in user:
                 user['cred_uuid'] = self.get_credential(user['cred_uuid'])['cred_uuid']
         payload = json.dumps(json_data)
-        headers = {
-            'Authorization': self.token,
-            'Content-Type': 'application/json'
-        }
-        response = requests.request("POST", url, headers=headers, data=payload, verify=self.ca_path)
+        response = requests.request("POST", url, headers=self.headers, data=payload, verify=self.ca_path)
         response.raise_for_status()
         return response.json()['data']
 
@@ -220,20 +183,13 @@ class I2UP:
             ],
             "force": 0
         })
-        headers = {
-            'Authorization': self.token,
-            'Content-Type': 'application/json'
-        }
-        response = requests.request("DELETE", url, headers=headers, data=payload, verify=self.ca_path)
+        response = requests.request("DELETE", url, headers=self.headers, data=payload, verify=self.ca_path)
         response.raise_for_status()
         return response.json()['data']
 
     def get_mysql_rules(self) -> list:
         url = f"{self.base_url}/stream/rule"
-        headers = {
-            'Authorization': self.token
-        }
-        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response = requests.request("GET", url, headers=self.headers, data={}, verify=self.ca_path)
         response.raise_for_status()
         rules = response.json()['data']['info_list']
         return I2UP.get_subset(rules, ['mysql_name', 'mysql_uuid', 'src_db_name', 'tgt_db_name'])
@@ -250,10 +206,7 @@ class I2UP:
         if uuid == '':
             return {}
         url = f"{self.base_url}/stream/rule/{uuid}"
-        headers = {
-            'Authorization': self.token
-        }
-        response = requests.request("GET", url, headers=headers, data={}, verify=self.ca_path)
+        response = requests.request("GET", url, headers=self.headers, data={}, verify=self.ca_path)
         response.raise_for_status()
         return response.json()['data']['info_list']
 
@@ -262,11 +215,7 @@ class I2UP:
         json_data['src_db_uuid'] = self.get_db_uuid(json_data['src_db_uuid'])
         json_data['tgt_db_uuid'] = self.get_db_uuid(json_data['tgt_db_uuid'])
         payload = json.dumps(json_data)
-        headers = {
-            'Authorization': self.token,
-            'Content-Type': 'application/json'
-        }
-        response = requests.request("POST", url, headers=headers, data=payload, verify=self.ca_path)
+        response = requests.request("POST", url, headers=self.headers, data=payload, verify=self.ca_path)
         response.raise_for_status()
         return response.json()['data']
 
@@ -281,11 +230,7 @@ class I2UP:
             ],
             "force": False
         })
-        headers = {
-            'Authorization': self.token,
-            'Content-Type': 'application/json'
-        }
-        response = requests.request("DELETE", url, headers=headers, data=payload, verify=self.ca_path)
+        response = requests.request("DELETE", url, headers=self.headers, data=payload, verify=self.ca_path)
         response.raise_for_status()
         return response.json()['data']
 
@@ -331,7 +276,7 @@ def main():
     parser.add_argument('--json', required=False, help='Path of json file to create DB/rule')
 
     args = parser.parse_args()
-    i2up = I2UP(args.ip, args.port, args.user, args.pwd, args.ca)
+    i2up = I2UP(args.ip, args.port, args.ca, args.user, args.pwd)
 
     if args.version:
         print(i2up.get_version())

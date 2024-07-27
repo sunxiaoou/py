@@ -431,7 +431,7 @@ def main():
         generate_all_json(excel, args.output)
     elif args.deleteObjects:
         assert args.ip is not None
-        i2up = I2UP(args.ip, args.port, args.user, args.pwd, args.ca)
+        i2up = I2UP(args.ip, args.port, args.ca, args.user, args.pwd)
         delete_all_objects(excel, i2up)
     elif args.createObjects:
         assert args.ip is not None and args.template is not None

@@ -12,7 +12,8 @@ class I2UPTestCase(unittest.TestCase):
         port = 58086
         user = 'admin'
         pwd = 'Info@1234'
-        cls.i2up = I2UP(ip, port, user, pwd, ca_path)
+        # cls.i2up = I2UP(ip, port, ca_path, user, pwd)
+        cls.i2up = I2UP(ip, port, ca_path)
 
     def test_get_version(self):
         print("Test to get version")
