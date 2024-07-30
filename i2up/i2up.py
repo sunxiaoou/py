@@ -262,8 +262,7 @@ def main():
     parser.add_argument('--ip', required=True, help='IP address or hostname')
     parser.add_argument('--port', required=False, type=int, default=58086, help='Port number (default: 58086)')
     parser.add_argument('--ca', required=False, default='ca.crt', help='Path of ca file (default: ca.crt)')
-    parser.add_argument('--ak', required=False, default='access.key',
-                        help='Path of AccessKey file (default: access.key)')
+    parser.add_argument('--ak', required=False, help='Path of AccessKey file')
     parser.add_argument('--user', required=False, default='admin', help='Username (default: admin)')
     parser.add_argument('--pwd', required=False, help='Password of the user')
     parser.add_argument('--node', required=False, help='Name of active/inactive node')
