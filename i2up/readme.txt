@@ -40,16 +40,18 @@ $ diff -u main.php.orig main.php
 +---------------+---------------------+--------------------+---------------+--------------+
 
 示例
-$ i2up.py -h                                                            # 显示帮助信息
-$ i2up.py --ip centos1 --version                                        # 显示控制机版本, centos1 是控制机机器名
+$ i2up.py -h                                                # 显示帮助信息
+$ i2up.py --ip centos1 --pwd Info1234 --version             # 显示控制机版本, centos1 是控制机机器名, 通过用户/口令认证
+$ i2up.py --ip centos1 --ak access.key --version            # 显示控制机版本, centos1 是控制机机器名，通过access.key认证
 
-$ i2up.py --ip centos1 --list-inactive-nodes                            # 显示未激活机器节点列表
-$ i2up.py --ip centos1 --activate-node --node hadoop3 --pwd2 helper_pwd --src   # 激活机器节点 hadoop3 作为源端节点
+$ i2up.py --ip centos1 --pwd Info1234 --list-inactive-nodes                 # 显示未激活机器节点列表
+$ i2up.py --ip centos1 --pwd Info1234 --activate-node --node hadoop3 --pwd2 helper_pwd --src
+                                                                            # 激活机器节点 hadoop3 作为源端节点
 
-$ i2up.py --ip centos1 --show-db --db msq_u_auto                        # 显示数据库节点 msq_u_auto
-
-$ i2up.py --ip centos1 --create-rule --json json/msq_u_c1_auto.json     # 根据json文件生成同步规则 msq_u_c1_auto
-$ i2up.py --ip centos1 --delete-rule --rule msq_u_c1_auto               # 删除同步规则 msq_u_c1_auto
+$ i2up.py --ip centos1 --pwd Info1234 --show-db --db msq_u_auto             # 显示数据库节点 msq_u_auto
+$ i2up.py --ip centos1 --pwd Info1234 --create-rule --json json/msq_u_c1_auto.json
+                                                                            # 根据json文件生成同步规则 msq_u_c1_auto
+$ i2up.py --ip centos1 --pwd Info1234 --delete-rule --rule msq_u_c1_auto    # 删除同步规则 msq_u_c1_auto
 
 
 3. excel_tool.py
@@ -62,8 +64,8 @@ $ excel_tool.py -h
 $ excel_tool.py --excel2json --excel excel/samples.xlsx --template excel/template.xlsx
 
 3) 根据Excel工作表中提供的数据库节点/同步规则信息，通过 I2UP API 批量删除控制机中的相关对象，示例：
-$ excel_tool.py --deleteObjects --ip centos1 --excel excel/samples.xlsx
+$ excel_tool.py --deleteObjects --ip centos1 --pwd Info1234 --excel excel/samples.xlsx
 
 4) 根据Excel工作表中提供的数据库节点/同步规则信息，结合模版文件中同名表单，通过 I2UP API 在控制机中批量创建相关对象，示例
-$ excel_tool.py --createObjects --ip centos1 --excel excel/samples.xlsx --template excel/template.xlsx
+$ excel_tool.py --createObjects --ip centos1 --pwd Info1234 --excel excel/samples.xlsx --template excel/template.xlsx
 
