@@ -43,18 +43,30 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
             lines += re.sub(r'[,，:>＞]', '', line).rstrip('\n').split()
 
     i = 0
+    while lines[i] != '账户总览':
+        i += 1
+    active_cash = float(lines[i + 1])
+    investment = float(lines[i + 2])
+    # repayment = float(lines[i + 3])
+    i += 4
     while lines[i] != '活期存款':
         i += 1
     cash = float(lines[i + 1])
     result = [('招商银行', 'cny', 'cash', '现金', '货币', 0, cash, 0)]
     i += 2
+    while lines[i] != '快速赎回':
+        i += 1
+    quick_redemption = float(lines[i + 1])
+    assert cash + quick_redemption == active_cash, print(f"{cash} + {quick_redemption} != {active_cash}")
+    result.append(('招商银行', 'cny', '快速赎回', '快速赎回', '货币', 0, quick_redemption, 0))
+    i += 1
     while not lines[i].startswith('理财'):
         i += 1
     i += 1
     while not re.match(r'^[.\d]+$', lines[i]):
         i += 1
-    total_mv = float(lines[i])
-    asset = round(cash + total_mv, 2)
+    assert investment == float(lines[i])
+    asset = round(active_cash + investment, 2)
     i += 1
     try:
         while lines[i]:
@@ -79,6 +91,7 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
     df = pd.DataFrame(result, columns=COLUMNS)
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
+
     s = re.sub(r'.+_', '', datafile[: -4])
     cash2 = float(s) if s else 0
     df.at[0, 'market_value'] += cash2
@@ -328,6 +341,8 @@ def huasheng(datafile: str) -> pd.DataFrame:
         else:
             code = code[:4]
         i += 1
+        if code == 'NMI':
+            code = 'IWN'
         name, type, risk = SECURITIES[code]
         while not re.match(r'^[\d.]+$', lines[i]):
             i += 1
@@ -440,24 +455,27 @@ def usmart(datafile: str) -> pd.DataFrame:
     while not lines[i].startswith('持仓盈亏'):
         i += 1
     i += 1
-    while len(lines) - i >= 7:
-        while not re.match(r'^[\d]+\.\d\d$', lines[i]):
+    try:
+        while len(lines) - i >= 7:
+            while not re.match(r'^[\d]+\.\d\d$', lines[i]):
+                i += 1
+            market_value = float(lines[i])
+            nav = float(lines[i + 1])
+            i += 2
+            while not re.match(r'^[A-Z]{4}$', lines[i]):
+                i += 1
+            code = lines[i]
             i += 1
-        market_value = float(lines[i])
-        nav = float(lines[i + 1])
-        i += 2
-        while not re.match(r'^[A-Z]{4}$', lines[i]):
-            i += 1
-        code = lines[i]
-        i += 1
-        while not re.match(r'^[\d]+$', lines[i]):
-            i += 1
-        volume = int(lines[i])
-        cost = float(lines[i + 1])
-        name, type, risk = SECURITIES[code]
-        hold_gain = round(market_value - cost * volume, 2)
-        result.append(('盈立', currency, code, name, type, risk, market_value, hold_gain, nav))
-        i += 3
+            while not re.match(r'^[\d]+$', lines[i]):
+                i += 1
+            volume = int(lines[i])
+            cost = float(lines[i + 1])
+            name, type, risk = SECURITIES[code]
+            hold_gain = round(market_value - cost * volume, 2)
+            result.append(('盈立', currency, code, name, type, risk, market_value, hold_gain, nav))
+            i += 3
+    except IndexError:
+        pass
     df = pd.DataFrame(result, columns=COLUMNS + ['nav'])
     sum_mv = round(df['market_value'].sum() + total_mv_2 - total_mv, 2)
     assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
@@ -605,7 +623,7 @@ def fill(rates: tuple, df: pd.DataFrame) -> pd.DataFrame:
 
 def run_all(rates: tuple, files: list) -> pd.DataFrame:
     # platforms = ['zsb_', 'hsb_', 'yh_', 'hb_', 'hs_', 'ft_', 'dj_', 'ths_']   # to sort files
-    platforms = ['zsb_', 'yh_', 'hs_', 'ft_', 'us_']    # to sort files
+    platforms = ['zsb_', 'yh_', 'hs_', 'us_']    # to sort files
     fs = sorted(files)
     frames = []
     for p in platforms:
@@ -638,8 +656,8 @@ def to_execl(xlsx: str, rates: tuple, sheet: str, df: pd.DataFrame):
     summaries = [
         {'location': (last_row + 2, 1),
          'letter': 'A',
-         # 'labels': ['招商银行', '恒生银行', '银河', '华宝', '华盛*', '富途*', '蛋卷*', '同花顺'],
-         'labels': ['招商银行', '银河', '华盛*', '富途', '盈立'],
+         # 'labels': ['招商银行', '恒生银行', '银河', '华宝', '华盛*', '富途', '蛋卷*', '同花顺'],
+         'labels': ['招商银行', '银河', '华盛*', '盈立'],
          'category': 'platform',
          'anchor': 'K1'},
         {'location': (last_row + 2, 4),

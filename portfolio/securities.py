@@ -29,6 +29,7 @@ SECURITIES = {
     'BRK': ('伯克希尔B', '股票', 3),
     'DVY': ('道琼斯股息ETF', '指数', 2),
     'EWJ': ('日本ETF', '指数', 2),
+    'EMXC': ('新兴市场ETF', '指数', 2),
     'GBTC': ('GrayscaleBitcoin', '虚拟币', 3),
     'GS': ('高盛', '股票', 3),
     'IBIT': ('iSharesBitcoin', '虚拟币', 3),
