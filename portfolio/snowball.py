@@ -137,7 +137,7 @@ class Snowball:
         return [x['symbol'] for x in stocks]
 
     def my_cvt_bones(self):
-        return self.get_cvt_bones(self.my_list(1, PID_CVT) + self.my_list(1, 12))
+        return self.get_cvt_bones(self.my_list(1, PID_CVT))     # + self.my_list(1, 12)
 
 
 def draw(df: pd.DataFrame, name: str):
