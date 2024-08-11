@@ -188,7 +188,10 @@ def yinhe(datafile: str) -> pd.DataFrame:
             name, code = lines[i][: -6].rstrip(), lines[i][-6:]
         i += 1
         if code[0] in ['1', '7']:
-            type, risk = '转债', 2
+            if code[1] in ['1', '2']:
+                type, risk = '转债', 3
+            else:
+                name, type, risk = SECURITIES[code]
         elif code[0] == '2':
             type, risk = '货币', 0
         else:
