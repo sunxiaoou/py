@@ -11,6 +11,7 @@ import requests
 from pymongo import MongoClient
 
 from mysql import MySql
+from securities import SECURITIES
 
 PID_ETF_A = 0
 PID_HK = -7
@@ -67,7 +68,10 @@ class Market:
                 'ts': datetime.fromtimestamp(i['quote']['timestamp'] / 1000),
                 'name': i['quote']['name'],
                 'price': i['quote']['current'],
-                'pct': i['quote']['percent']}
+                'pct': i['quote']['percent'],
+                'premium': i['quote']['premium_rate']}
+            if dic['code'][2:] in SECURITIES:
+                dic['name'] = SECURITIES[dic['code'][2:]][0]
             result.append(dic.copy())
         return result
 
@@ -148,6 +152,8 @@ def main():
         result = Market.get_stocks(PID_HK)
     elif sys.argv[1] == 'us':
         result = Market.get_stocks(PID_US)
+    elif sys.argv[1] == 'qdii':
+        result = Market.get_stocks(PID_CVT_3)
     elif sys.argv[1] == 'fund':
         funds = [
             '001556', '001594', '001810', '003318', '004069', '005259',
