@@ -68,8 +68,9 @@ class Market:
                 'ts': datetime.fromtimestamp(i['quote']['timestamp'] / 1000),
                 'name': i['quote']['name'],
                 'price': i['quote']['current'],
-                'pct': i['quote']['percent'],
-                'premium': i['quote']['premium_rate']}
+                'premium': i['quote']['premium_rate'],
+                'pct': i['quote']['percent']
+            }
             if dic['code'][2:] in SECURITIES:
                 dic['name'] = SECURITIES[dic['code'][2:]][0]
             result.append(dic.copy())
