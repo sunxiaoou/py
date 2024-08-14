@@ -191,10 +191,11 @@ class I2UP:
         return response.json()['data']
 
     def get_mysql_rules(self) -> list:
-        url = f"{self.base_url}/stream/rule"
-        response = requests.request("GET", url, headers=self.headers, data={}, verify=self.ca_path)
-        response.raise_for_status()
-        rules = response.json()['data']['info_list']
+        rules = []
+        for url in [f"{self.base_url}/stream/rule", f"{self.base_url}/hbase/rule"]:
+            response = requests.request("GET", url, headers=self.headers, data={}, verify=self.ca_path)
+            response.raise_for_status()
+            rules += response.json()['data']['info_list']
         return I2UP.get_subset(rules, ['mysql_name', 'mysql_uuid', 'src_db_name', 'tgt_db_name'])
 
     def get_mysql_rule_uuid(self, name: str) -> str:
@@ -215,6 +216,8 @@ class I2UP:
 
     def create_mysql_rule(self, json_data: dict) -> dict:
         url = f"{self.base_url}/stream/rule"
+        if 'hbase' == json_data['src_type']:
+            url = f"{self.base_url}/hbase/rule"
         json_data['src_db_uuid'] = self.get_db_uuid(json_data['src_db_uuid'])
         json_data['tgt_db_uuid'] = self.get_db_uuid(json_data['tgt_db_uuid'])
         payload = json.dumps(json_data)

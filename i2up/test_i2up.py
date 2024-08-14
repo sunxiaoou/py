@@ -92,7 +92,7 @@ class I2UPTestCase(unittest.TestCase):
     def test_create_mysql_rule(self):
         print("Test to create mysql rule")
         # pprint(self.i2up.create_mysql_rule('json/msq_u_c1_auto.json'))
-        pprint(self.i2up.create_mysql_rule(I2UP.load_json_file('json/msq_u_kfk_auto.json')))
+        pprint(self.i2up.create_mysql_rule(I2UP.load_json_file('json/hb_ht_h2.json')))
 
     def test_delete_mysql_rule(self):
         print("Test to delete mysql rule")

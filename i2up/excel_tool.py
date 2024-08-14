@@ -16,6 +16,7 @@ class Excel:
     HB_NODE = 'hb_node'
     KFK_NODE = 'kfk_node'
     MSQ_MSQ_RULE = 'msq_msq_rule'
+    HB_HB_RULE = 'hb_hb_rule'
     MSQ_KFK_RULE = 'msq_kfk_rule'
 
     def __init__(self, name: str, template: str):
@@ -215,7 +216,7 @@ class Excel:
                     "config": {
                         "full_sync_settings": {
                             "dump_thd": int(row['全量导出线程数']) if pd.notna(row['全量导出线程数']) else None,
-                            "existing_table": row['表覆盖策略'],
+                            "existing_table": row['全量表覆盖策略'],
                             "full_sync_custom_cfg": full_sync_custom_cfg,
                             "load_thd": int(row['全量装载线程数']) if pd.notna(row['全量装载线程数']) else None,
                         }
@@ -238,6 +239,78 @@ class Excel:
                     current_record["full_sync_settings"]["full_sync_custom_cfg"].append(row['全量自定义配置'])
                 if pd.notna(row['增量自定义配置']):
                     current_record["other_settings"]["incre_full_sync_custom_cfg"].append(row['增量自定义配置'])
+                if pd.notna(row['源端库名']):
+                    if pd.notna(row['源端表名']):
+                        current_record["tab_map"].append({
+                            "dst_db": row['备端库名'],
+                            "dst_table": row['备端表名'],
+                            "src_db": row['源端库名'],
+                            "src_table": row['源端表名']
+                        })
+                    else:
+                        current_record["db_map"].append({
+                            "dst_table": row['备端库名'],
+                            "src_table": row['源端库名']
+                        })
+        if current_record is not None:
+            data_list.append(current_record)
+        return data_list
+
+    def get_hb_hb_rules(self, sheet: str) -> list:
+        try:
+            df = pd.read_excel(self.name, sheet_name=sheet)
+        except ValueError:
+            return []
+        data_list = []
+        current_record = None
+        for _, row in df.iterrows():
+            if pd.notna(row['序号']):
+                if current_record is not None:
+                    data_list.append(current_record)
+                map_type = ''
+                db_map = []
+                tab_map = []
+                if pd.notna(row['源端库名']):
+                    if pd.notna(row['源端表名']):
+                        map_type = 'table'
+                        tab_map = [{
+                            "dst_db": row['备端库名'],
+                            "dst_table": row['备端表名'],
+                            "src_db": row['源端库名'],
+                            "src_table": row['源端表名']
+                        }]
+                    else:
+                        map_type = 'database'
+                        db_map = [{
+                            "dst_table": row['备端库名'],
+                            "src_table": row['源端库名']
+                        }]
+                current_record = {
+                    "db_map": db_map,
+                    "config": {
+                        "full_sync_settings": {
+                            "existing_table": row['全量表覆盖策略'],
+
+                        },
+                        "rpc_server": {
+                            "peer": row['rpcSvrPeer'],
+                            "zookeeper": {
+                                "set": [{
+                                    "port": int(row['rpcSvrZkPort']),
+                                    "ip": row['rpcSvrZkAddress'],
+                                    "zk_node": row['rpcSvrZkNode']
+                                }]
+                            }
+                        }
+                    },
+                    "mysql_name": row['规则名称'],
+                    "map_type": map_type,
+                    "src_db_uuid": row['源端数据库'],
+                    "tab_map": tab_map,
+                    "tgt_db_uuid": row['备端数据库'],
+                    "username": row['所有者']
+                }
+            else:
                 if pd.notna(row['源端库名']):
                     if pd.notna(row['源端表名']):
                         current_record["tab_map"].append({
@@ -353,7 +426,7 @@ class Excel:
         key = ''
         if t_sheet in [Excel.HB_NODE, Excel.KFK_NODE, Excel.MSQ_NODE]:
             key = 'db_name'
-        elif t_sheet in [Excel.MSQ_KFK_RULE, Excel.MSQ_MSQ_RULE]:
+        elif t_sheet in [Excel.HB_HB_RULE, Excel.MSQ_KFK_RULE, Excel.MSQ_MSQ_RULE]:
             key = 'mysql_name'
         file = f"{output}/{obj_dict[key]}.json"
         with open(file, 'w') as f:
@@ -384,12 +457,18 @@ def generate_all_json(excel: Excel, output: str):
         excel.generate_creation_json(Excel.KFK_NODE, node, output)
     for rule in excel.get_msq_msq_rules(Excel.MSQ_MSQ_RULE):
         excel.generate_creation_json(Excel.MSQ_MSQ_RULE, rule, output)
+    for rule in excel.get_hb_hb_rules(Excel.HB_HB_RULE):
+        excel.generate_creation_json(Excel.HB_HB_RULE, rule, output)
     for rule in excel.get_msq_kfk_rules(Excel.MSQ_KFK_RULE):
         excel.generate_creation_json(Excel.MSQ_KFK_RULE, rule, output)
 
 
 def delete_all_objects(excel: Excel, i2up: I2UP):
     for rule in excel.get_msq_kfk_rules(Excel.MSQ_KFK_RULE):
+        name = rule['mysql_name']
+        print(f"Deleting rule {name} ...")
+        pprint(i2up.delete_mysql_rule(name))
+    for rule in excel.get_hb_hb_rules(Excel.HB_HB_RULE):
         name = rule['mysql_name']
         print(f"Deleting rule {name} ...")
         pprint(i2up.delete_mysql_rule(name))
@@ -444,6 +523,14 @@ def create_all_objects(excel: Excel, i2up: I2UP):
             pprint(i2up.create_mysql_rule(json_data))
         else:
             print(f"rule {name} exists already")
+    for rule in excel.get_hb_hb_rules(Excel.HB_HB_RULE):
+        name = rule['mysql_name']
+        print(f"Creating rule {name} ...")
+        json_data = excel.generate_creation(Excel.HB_HB_RULE, rule)
+        if i2up.get_mysql_rule_uuid(name) == '':
+            pprint(i2up.create_mysql_rule(json_data))
+        else:
+            print(f"rule {name} exists already")
     for rule in excel.get_msq_kfk_rules(Excel.MSQ_KFK_RULE):
         name = rule['mysql_name']
         print(f"Creating rule {name} ...")
@@ -468,7 +555,8 @@ def main():
     parser.add_argument('--pwd', required=False, help='Password of the user')
     parser.add_argument('--excel', required=True, help='Excel file contains dbNodes/rules')
     parser.add_argument('--template', required=False, help='Excel file contains dbNodes/rules template')
-    parser.add_argument('--output', required=False, default='output', help='Path for output json files')
+    parser.add_argument('--output', required=False, default='output',
+                        help='output path of json files (default: output)')
     args = parser.parse_args()
     excel = Excel(args.excel, args.template)
     if args.excel2json:

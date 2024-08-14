@@ -137,7 +137,7 @@ class JsonTestCase(unittest.TestCase):
 
     def test_json_to_excel(self):
         print("Test to json_file to excel")
-        json_to_excel('json/hb_t.json', 'excel/test_json.xlsx', 'msq_u_kfk_auto')
+        json_to_excel('json/hb_ht_h2_sort.json', 'excel/test_json.xlsx', 'hb_ht_h2')
 
     def test_excel_to_json(self):
         print("Test to excel to json_file")
@@ -151,7 +151,7 @@ class JsonTestCase(unittest.TestCase):
 
     def test_sort_json(self):
         print("Test to sort json")
-        sort_json('json/hb_triple.json', 'json/hb_t.json')
+        sort_json('json/hb_ht_h2.json', 'json/hb_ht_h2_sort.json')
 
 
 if __name__ == '__main__':

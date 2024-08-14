@@ -7,7 +7,8 @@ from excel_tool import Excel
 class ExcelTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        excel_file = 'excel/samples.xlsx'
+        # excel_file = 'excel/samples.xlsx'
+        excel_file = 'excel/sample2.xlsx'
         template = 'excel/template.xlsx'
         cls.excel = Excel(excel_file, template)
         cls.output = 'output'
@@ -39,6 +40,12 @@ class ExcelTestCase(unittest.TestCase):
     def test_list_msq_msq_rules(self):
         print("Test to list msq_msq rules")
         rules = self.excel.get_msq_msq_rules(Excel.MSQ_MSQ_RULE)
+        print("count(%d)" % len(rules))
+        pprint(rules)
+
+    def test_list_hb_hb_rules(self):
+        print("Test to list hb_hb rules")
+        rules = self.excel.get_hb_hb_rules(Excel.HB_HB_RULE)
         print("count(%d)" % len(rules))
         pprint(rules)
 
@@ -133,7 +140,7 @@ class ExcelTestCase(unittest.TestCase):
         self.excel.generate_creation_json(Excel.KFK_NODE, dic, self.output)
 
     def test_generate_msq_msq_json(self):
-        print("Test to list msq_msq json")
+        print("Test to generate msq_msq json")
         dic = {
             'config': {
                 'full_sync_settings': {
@@ -171,6 +178,43 @@ class ExcelTestCase(unittest.TestCase):
             'tgt_db_uuid': 'msq_c1_auto'
         }
         self.excel.generate_creation_json(Excel.MSQ_MSQ_RULE, dic, self.output)
+
+    def test_generate_hb_hb_json(self):
+        print("Test to generate hb_hb json")
+        dic = {
+            'config': {
+                'full_sync_settings': {'existing_table': 'drop_purge'},
+                'rpc_server': {
+                    'peer': 'rs_h1',
+                    'zookeeper': {
+                        'set': [
+                            {'ip': 'hadoop1', 'port': 2181.0, 'zk_node': 2181.0}
+                        ]
+                    }
+                }
+            },
+            'db_map': [],
+            'map_type': 'table',
+            'mysql_name': 'hb_ht_h2',
+            'src_db_uuid': 'hb_triple',
+            'tab_map': [
+                {
+                    'dst_db': 'default',
+                    'dst_table': 'peTable',
+                    'src_db': 'default',
+                    'src_table': 'peTable'
+                },
+                {
+                    'dst_db': 'manga',
+                    'dst_table': 'fruit',
+                    'src_db': 'manga',
+                    'src_table': 'fruit'
+                }
+            ],
+            'tgt_db_uuid': 'hb_h2',
+            'username': 'admin'
+        }
+        self.excel.generate_creation_json(Excel.HB_HB_RULE, dic, self.output)
 
     def test_generate_msq_kfk_json(self):
         print("Test to list msq_kfk json")
