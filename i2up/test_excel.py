@@ -24,6 +24,12 @@ class ExcelTestCase(unittest.TestCase):
         print("count(%d)" % len(dbs))
         pprint(dbs)
 
+    def test_list_hbs(self):
+        print("Test to list hbs")
+        dbs = self.excel.get_dbs(Excel.HB_NODE)
+        print("count(%d)" % len(dbs))
+        pprint(dbs)
+
     def test_list_kfks(self):
         print("Test to list kfks")
         dbs = self.excel.get_kfks(Excel.KFK_NODE)
@@ -66,6 +72,30 @@ class ExcelTestCase(unittest.TestCase):
             'node_uuid': 'centos1'
         }
         self.excel.generate_creation_json(Excel.MSQ_NODE, dic, self.output)
+
+    def test_generate_hb_json(self):
+        print("Test to generate hb json")
+        dic = {
+            'config': {
+                'db_list': [
+                    {'ip': '10.1.125.203', 'port': 8020}
+                ],
+                'role': ['source', 'target'],
+                'user_management': [],
+                'zookeeper': {
+                    'set': [
+                        {'ip': '10.1.125.203', 'port': 2181, 'zk_node': '/hbase'},
+                        {'ip': '10.1.125.204', 'port': 2181, 'zk_node': '/hbase'},
+                        {'ip': '10.1.125.205', 'port': 2181, 'zk_node': '/hbase'}
+                    ]
+                }
+            },
+            'db_name': 'hb_triple',
+            'db_type': 'hbase',
+            'node_uuid': 'hadoop1',
+            'username': 'admin'
+        }
+        self.excel.generate_creation_json(Excel.HB_NODE, dic, self.output)
 
     def test_generate_kfk_json(self):
         print("Test to generate kfk json")

@@ -7,6 +7,7 @@ $ diff -u main.php.orig main.php
    // 接口请求参数签名，postman手工测试时，可关闭该选项跳过复杂的签名计算
   -$config['enable_sign_verify'] = true; // 签名校验
   +$config['enable_sign_verify'] = false; // 关闭签名校验
+$  systemctl restart i2php.service                                  # restart service
 3) 拷贝控制机根证书 /usr/info2soft/cntlcenter/etc/certs/ca.crt 到当前脚本运行目录
 4) 如使用 AccessKey 代替传统的用户名和口令, 需在控制台的 "账户信息/密钥管理" 中事先生成
 5) 生成数据库节点时如用到 "凭据(credential)" 对象，需在控制台的 "系统管理/凭据管理" 中事先生成
@@ -68,4 +69,3 @@ $ excel_tool.py --deleteObjects --ip centos1 --pwd Info1234 --excel excel/sample
 
 4) 根据Excel工作表中提供的数据库节点/同步规则信息，结合模版文件中同名表单，通过 I2UP API 在控制机中批量创建相关对象，示例
 $ excel_tool.py --createObjects --ip centos1 --pwd Info1234 --excel excel/samples.xlsx --template excel/template.xlsx
-

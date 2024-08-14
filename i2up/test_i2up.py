@@ -7,7 +7,8 @@ from i2up import I2UP
 class I2UPTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        ip = 'centos1'
+        # ip = 'centos1'
+        ip = 'hadoop1'
         port = 58086
         ca_path = 'ca.crt'
         ak_path = 'access.key'
@@ -70,11 +71,12 @@ class I2UPTestCase(unittest.TestCase):
 
     def test_create_db_node(self):
         print("Test to create db node")
-        pprint(self.i2up.create_db_node(I2UP.load_json_file('output/kfk_u_auto.json')))
+        # pprint(self.i2up.create_db_node(I2UP.load_json_file('output/kfk_u_auto.json')))
+        pprint(self.i2up.create_db_node(I2UP.load_json_file('json/hb_t.json')))
 
     def test_delete_db_node(self):
         print("Test to delete db node")
-        pprint(self.i2up.delete_db_node('kfk_u_auto'))
+        pprint(self.i2up.delete_db_node('hb_t'))
 
     def test_list_mysql_rules(self):
         print("Test to list mysql rules")

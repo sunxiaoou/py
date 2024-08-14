@@ -130,6 +130,13 @@ def excel_to_json(xlsx: str, sheet: str, template: str, temp_sheet: str, json_fi
     print(f"Converted sheet({sheet}) in {xlsx} to {json_file}")
 
 
+def sort_json(json_file: str, output_file:str):
+    with open(json_file, 'r') as f:
+        data = json.load(f)
+    with open(output_file, 'w') as f:
+        json.dump(data, f, indent=4, sort_keys=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description='Convert JSON to Excel or Excel to JSON')
     group = parser.add_mutually_exclusive_group(required=True)

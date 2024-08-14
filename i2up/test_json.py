@@ -3,7 +3,8 @@ from pprint import pprint
 
 import pandas as pd
 
-from json_tool import json_to_df, df_to_json, df_to_excel, excel_to_df, json_to_excel, excel_to_json, merge_json
+from json_tool import json_to_df, df_to_json, df_to_excel, excel_to_df, json_to_excel, excel_to_json, merge_json, \
+    sort_json
 
 
 class JsonTestCase(unittest.TestCase):
@@ -136,7 +137,7 @@ class JsonTestCase(unittest.TestCase):
 
     def test_json_to_excel(self):
         print("Test to json_file to excel")
-        json_to_excel('json/msq_u_kfk_auto.json', 'excel/test_json.xlsx', 'msq_u_kfk_auto')
+        json_to_excel('json/hb_t.json', 'excel/test_json.xlsx', 'msq_u_kfk_auto')
 
     def test_excel_to_json(self):
         print("Test to excel to json_file")
@@ -147,6 +148,10 @@ class JsonTestCase(unittest.TestCase):
         print("Test to merge json")
         # merge_json('json/msqdb_tpl.json', 'json/msq_u.json', 'tmp/msq_u_all.json')
         merge_json('json/msq_kfk_tpl.json', 'json/msq_u_kfk.json', 'tmp/msq_u_kfk_all.json')
+
+    def test_sort_json(self):
+        print("Test to sort json")
+        sort_json('json/hb_triple.json', 'json/hb_t.json')
 
 
 if __name__ == '__main__':
