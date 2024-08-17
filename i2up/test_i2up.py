@@ -7,8 +7,8 @@ from i2up import I2UP
 class I2UPTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # ip = 'centos1'
-        ip = 'hadoop1'
+        ip = 'centos1'
+        # ip = 'hadoop1'
         port = 58086
         ca_path = 'ca.crt'
         ak_path = 'access.key'
@@ -49,11 +49,11 @@ class I2UPTestCase(unittest.TestCase):
 
     def test_show_active_node(self):
         print("Test to show active node")
-        pprint(self.i2up.get_active_node('hadoop3'))
+        pprint(self.i2up.get_active_node('centos1'))
 
     def test_activate_node(self):
         print("Test to activate node")
-        pprint(self.i2up.activate_node('hadoop3', None, 'Info@1234', True, False))
+        pprint(self.i2up.activate_node('centos1', None, 'Info@1234', True, True, data_path='/home/sunxo/i2data'))
 
     def test_delete_active_node(self):
         print("Test to delete active node")
