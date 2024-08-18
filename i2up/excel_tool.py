@@ -501,6 +501,9 @@ def delete_all_objects(excel: Excel, i2up: I2UP):
 def create_all_objects(excel: Excel, i2up: I2UP):
     for node in excel.get_nodes(Excel.WORK_NODE):
         name = node['node_name']
+        if i2up.get_active_node(name):
+            print("work_node {name} is active already")
+            continue
         print(f"Activating work_node {name} ...")
         pprint(i2up.activate_node(node))
     for node in excel.get_dbs(Excel.MSQ_NODE):
