@@ -68,26 +68,39 @@ class I2UP:
                 return node
         return {}
 
-    def activate_node(self, name: str, name2: str, password: str, source: bool, target: bool, data_path='/var/iadata') \
-            -> dict:
+    def activate_node(self, node: dict) -> dict:
         url = f"{self.base_url}/active/node"
-        node = self.get_inactive_node(name)
-        assert node
+        node2 = self.get_inactive_node(node['hostname'])
+        assert node2
+        if 'address' in node:
+            assert node2['address'].split(',')[0] == node['address']
         payload = json.dumps({
             "active_flag": "active",
-            "address": node['address'].split(',')[0],
-            "cache_dir": f"{data_path}/cache/",
-            "data_port": "26804",
-            "log_dir": f"{data_path}/log/",
-            "node_name": name if name2 is None else name2,
-            "node_type": f"{1 if source else 0}{1 if target else 0}00",
-            "node_uuid": node['node_uuid'],
-            "password": password,
+            "address": node2['address'],
+            "cache_dir": node['cache_dir'],
+            "data_port": "26804" if 'data_port' not in node else str(node['data_port']),
+            "log_dir": node['log_dir'],
+            "node_name": node['node_name'],
+            "node_type": node['node_type'],
+            "node_uuid": node2['node_uuid'],
+            "password": node['password'],
             "web_uuid": "00000000-0000-0000-0000-000000000000"
         })
         response = requests.request("POST", url, headers=self.headers, data=payload, verify=self.ca_path)
         response.raise_for_status()
         return response.json()['data']
+
+    def activate_node2(self, name: str, name2: str, password: str, source: bool, target: bool, data_path='/var/iadata')\
+            -> dict:
+        dic = {
+            "hostname": name,
+            "cache_dir": f"{data_path}/cache/",
+            "log_dir": f"{data_path}/log/",
+            "node_name": name if name2 is None else name2,
+            "node_type": f"{1 if source else 0}{1 if target else 0}00",
+            "password": password,
+        }
+        return self.activate_node(dic)
 
     def get_active_nodes(self) -> list:
         url = f"{self.base_url}/active/node"
@@ -308,7 +321,7 @@ def main():
         pprint(i2up.get_active_node(args.node))
     elif args.activate_node:
         assert args.node and (args.src or args.tgt)
-        pprint(i2up.activate_node(args.node, args.node2, args.pwd2, args.src, args.tgt))
+        pprint(i2up.activate_node2(args.node, args.node2, args.pwd2, args.src, args.tgt))
     elif args.delete_node:
         assert args.node is not None
         pprint(i2up.delete_active_node(args.node, True))

@@ -8,7 +8,7 @@ class ExcelTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # excel_file = 'excel/samples.xlsx'
-        excel_file = 'excel/sample2.xlsx'
+        excel_file = 'excel/centos1.xlsx'
         template = 'excel/template.xlsx'
         cls.excel = Excel(excel_file, template)
         cls.output = 'output'

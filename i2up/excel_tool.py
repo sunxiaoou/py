@@ -27,7 +27,7 @@ class Excel:
         df = pd.read_excel(self.name, sheet_name=sheet)
         df['节点类型'] = df['节点类型'].apply(lambda x: f"{1 if '源端节点' in x else 0}{1 if '备端节点' in x else 0}00")
         df = df.drop(columns=['序号'])
-        df.columns = ['node_name', 'address', 'data_port', 'cache_dir', 'log_dir', 'password', 'node_type']
+        df.columns = ['node_name', 'hostname', 'address', 'data_port', 'cache_dir', 'log_dir', 'password', 'node_type']
         return df.to_dict(orient='records')
 
     def get_dbs(self, sheet: str) -> list:
@@ -449,6 +449,10 @@ def generate_all_csv(output: str):
 
 
 def generate_all_json(excel: Excel, output: str):
+    for node in excel.get_nodes(Excel.WORK_NODE):
+        file = f"{output}/{node['node_name']}.json"
+        with open(file, 'w') as f:
+            json.dump(node, f, indent=4)
     for node in excel.get_dbs(Excel.MSQ_NODE):
         excel.generate_creation_json(Excel.MSQ_NODE, node, output)
     for node in excel.get_dbs(Excel.HB_NODE):
@@ -488,9 +492,17 @@ def delete_all_objects(excel: Excel, i2up: I2UP):
         name = node["db_name"]
         print(f"Deleting db_node {name} ...")
         pprint(i2up.delete_db_node(name))
+    for node in excel.get_nodes(Excel.WORK_NODE):
+        name = node['node_name']
+        print(f"Inactivating work_node {name} ...")
+        pprint(i2up.delete_active_node(name, True))
 
 
 def create_all_objects(excel: Excel, i2up: I2UP):
+    for node in excel.get_nodes(Excel.WORK_NODE):
+        name = node['node_name']
+        print(f"Activating work_node {name} ...")
+        pprint(i2up.activate_node(node))
     for node in excel.get_dbs(Excel.MSQ_NODE):
         name = node["db_name"]
         print(f"Creating db_node {name} ...")

@@ -51,13 +51,13 @@ class I2UPTestCase(unittest.TestCase):
         print("Test to show active node")
         pprint(self.i2up.get_active_node('centos1'))
 
-    def test_activate_node(self):
+    def test_activate_node2(self):
         print("Test to activate node")
-        pprint(self.i2up.activate_node('centos1', None, 'Info@1234', True, True, data_path='/home/sunxo/i2data'))
+        pprint(self.i2up.activate_node2('centos1', None, 'Info@1234', True, True, data_path='/home/sunxo/i2data'))
 
     def test_delete_active_node(self):
         print("Test to delete active node")
-        pprint(self.i2up.delete_active_node('hadoop3', True))
+        pprint(self.i2up.delete_active_node('centos1', True))
 
     def test_list_db_nodes(self):
         print("Test to list db nodes")
