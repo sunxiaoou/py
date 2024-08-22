@@ -186,9 +186,9 @@ class Excel:
                 if current_record is not None:
                     data_list.append(current_record)
                 dm_track = {}
-                if pd.notna(row['操作装载时间和日期']):
+                if '操作装载时间和日期' in row and pd.notna(row['操作装载时间和日期']):
                     dm_track["date_time_column"] = row['操作装载时间和日期']
-                if pd.notna(row['操作装载标记']):
+                if '操作装载标记' in row and pd.notna(row['操作装载标记']):
                     dm_track["op_column"] = row['操作装载标记']
                 full_sync_custom_cfg = [row['全量自定义配置']] if pd.notna(row['全量自定义配置']) else []
                 incre_full_sync_custom_cfg = [row['增量自定义配置']] if pd.notna(row['增量自定义配置']) else []
@@ -212,21 +212,30 @@ class Excel:
                         }]
                 current_record = {
                     "db_map": db_map,
-                    "full_sync": 1 if row['全量同步'] == 'yes' else 0,
+                    "full_sync": 1 if row['全量同步'] == 'true' else 0,
                     "config": {
                         "full_sync_settings": {
-                            "dump_thd": int(row['全量导出线程数']) if pd.notna(row['全量导出线程数']) else None,
+                            "dump_thd":
+                                int(row['全量导出线程数'])
+                                if '全量导出线程数' in row and pd.notna(row['全量导出线程数'])
+                                else 1,
                             "existing_table": row['全量表覆盖策略'],
                             "full_sync_custom_cfg": full_sync_custom_cfg,
-                            "load_thd": int(row['全量装载线程数']) if pd.notna(row['全量装载线程数']) else None,
+                            "load_thd":
+                                int(row['全量装载线程数'])
+                                if '全量装载线程数' in row and pd.notna(row['全量装载线程数'])
+                                else 1,
                         }
                     },
                     "dml_track": dm_track,
-                    "incre_sync": 1 if row['增量同步'] == 'yes' else 0,
+                    "incre_sync": 1 if row['增量同步'] == 'true' else 0,
                     "mysql_name": row['规则名称'],
                     "map_type": map_type,
                     "other_settings": {
-                        "dyn_thread": int(row['增量装载线程数']) if pd.notna(row['增量装载线程数']) else None,
+                        "dyn_thread":
+                            int(row['增量装载线程数'])
+                            if '增量装载线程数' in row and pd.notna(row['增量装载线程数'])
+                            else 1,
                         "incre_full_sync_custom_cfg": incre_full_sync_custom_cfg
                     },
                     "src_db_uuid": row['源端数据库'],
@@ -361,19 +370,28 @@ class Excel:
                         }]
                 current_record = {
                     "db_map": db_map,
-                    "full_sync": 1 if row['全量同步'] == 'yes' else 0,
+                    "full_sync": 1 if row['全量同步'] == 'true' else 0,
                     "config": {
                         "full_sync_settings": {
-                            "dump_thd": int(row['全量导出线程数']) if pd.notna(row['全量导出线程数']) else None,
+                            "dump_thd":
+                                int(row['全量导出线程数'])
+                                if '全量导出线程数' in row and pd.notna(row['全量导出线程数'])
+                                else 1,
                             "full_sync_custom_cfg": full_sync_custom_cfg,
-                            "load_thd": int(row['全量装载线程数']) if pd.notna(row['全量装载线程数']) else None,
+                            "load_thd":
+                                int(row['全量装载线程数'])
+                                if '全量装载线程数' in row and pd.notna(row['全量装载线程数'])
+                                else 1,
                         }
                     },
-                    "incre_sync": 1 if row['增量同步'] == 'yes' else 0,
+                    "incre_sync": 1 if row['增量同步'] == 'true' else 0,
                     "mysql_name": row['规则名称'],
                     "map_type": map_type,
                     "other_settings": {
-                        "dyn_thread": int(row['增量装载线程数']) if pd.notna(row['增量装载线程数']) else None,
+                        "dyn_thread":
+                            int(row['增量装载线程数'])
+                            if '增量装载线程数' in row and pd.notna(row['增量装载线程数'])
+                            else 1,
                         "incre_full_sync_custom_cfg": incre_full_sync_custom_cfg
                     },
                     "src_db_uuid": row['源端数据库'],

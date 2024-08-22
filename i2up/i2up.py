@@ -229,7 +229,7 @@ class I2UP:
 
     def create_mysql_rule(self, json_data: dict) -> dict:
         url = f"{self.base_url}/stream/rule"
-        if 'hbase' == json_data['src_type']:
+        if 'src_type' in json_data and 'hbase' == json_data['src_type']:
             url = f"{self.base_url}/hbase/rule"
         json_data['src_db_uuid'] = self.get_db_uuid(json_data['src_db_uuid'])
         json_data['tgt_db_uuid'] = self.get_db_uuid(json_data['tgt_db_uuid'])
