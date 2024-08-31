@@ -10,6 +10,7 @@ from matplotlib import dates, pyplot, ticker
 from excel_tool import duplicate_last_sheet, df_to_sheet
 from mysql import MySql
 from snowball import Snowball
+from securities import SECURITIES
 
 # pd.set_option('display.max_rows', 4000)
 pd.set_option('display.max_columns', 10)
@@ -101,7 +102,9 @@ class LoopBack:
             data['code'] = code
             data['name'] = snowball.get_name(code)
             data = data[['date', 'name', 'open']]
-        name = data['name'].iloc[0]
+
+        c2 = code[2:] if code[: 2] in ['SH', 'SZ'] else code
+        name = SECURITIES[c2][0] if c2 in SECURITIES else data['name'].iloc[0]
 
         self.grid = grid
         self.code = code
@@ -213,7 +216,7 @@ GRID_ARGS = [
     '135.00_165.00_5_1'
 ]
 
-GRID_ARG2 = ['31_38.5_5_1', '32_40_5_1']
+GRID_ARG2 = ['90_100_8_0', '31_38.5_5_1', '32_40_5_1']
 
 
 def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.DataFrame:
@@ -323,7 +326,10 @@ def main():
         elif sys.argv[1] == 'loopback':
             a = sys.argv[2].split(',')
             grid = Grid(float(a[0]), float(a[1]), int(a[2]), True if int(a[3]) else False)
-            if re.match(r'\d\d\d\d-\d\d-\d\d', sys.argv[-1]):
+            if 'one_year_ago' == sys.argv[-1]:
+                start_date = (datetime.today() - timedelta(days=365)).strftime('%Y-%m-%d')
+                loopback = LoopBack(grid, sys.argv[3], int(sys.argv[4]), start_date)
+            elif re.match(r'\d\d\d\d-\d\d-\d\d', sys.argv[-1]):
                 loopback = LoopBack(grid, sys.argv[3], int(sys.argv[4]), sys.argv[-1])
             else:
                 loopback = LoopBack(grid, sys.argv[3], int(sys.argv[4]))
