@@ -21,7 +21,7 @@ class Grid:
         self.high = high
         self.is_percent = is_percent
         self.number = number
-        self.name = '%d_%d_%d_%d' % (self.low, self.high, self.number, 1 if self.is_percent else 0)
+        self.name = '%.2f_%.2f_%d_%d' % (self.low, self.high, self.number, 1 if self.is_percent else 0)
         if not self.is_percent:
             self.change = round((high - low) / number, 2)
             self.change2 = - self.change
@@ -206,12 +206,14 @@ GRID_ARGS = [
     # (125, 149, 5, True),    # (125, 149, 5, False),
     # (130, 157, 5, True),    # (130, 157, 5, False),
     # (135, 165, 5, True),    # (135, 165, 5, False)
-    '115_135_5_0',
-    '120_142_5_0',
-    '125_149_5_1',
-    '130_157_5_1',
-    '135_165_5_1'
+    '115.00_135.00_5_0',
+    '120.00_142.00_5_0',
+    '125.00_149.00_5_1',
+    '130.00_157.00_5_1',
+    '135.00_165.00_5_1'
 ]
+
+GRID_ARG2 = ['31_38.5_5_1', '32_40_5_1']
 
 
 def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.DataFrame:
@@ -293,7 +295,7 @@ def batch(quantity: int, start_date: str):
 
 
 def show_grids(quantity: int):
-    for args in GRID_ARGS:
+    for args in GRID_ARGS + GRID_ARG2:
         grid = Grid.make(args)
         print(grid)
         if quantity:
