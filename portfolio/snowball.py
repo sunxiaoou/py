@@ -33,13 +33,15 @@ class Snowball:
         self.headers = {'User-Agent': 'PostmanRuntime/7.29.2'}
         resp = request("GET", url, headers=self.headers)
         resp.raise_for_status()
-        self.cookies = resp.cookies
+        # self.cookies = resp.cookies
         with open('auth/xq_cookie.txt', 'r') as f:
             self.my_cookies = f.read()
+        self.headers['Cookie'] = self.my_cookies
 
     def get_name(self, code: str) -> str:
         url = 'https://stock.xueqiu.com/v5/stock/quote.json?symbol=%s' % code.upper()
-        resp = request("GET", url, headers=self.headers, cookies=self.cookies)
+        # resp = request("GET", url, headers=self.headers, cookies=self.cookies)
+        resp = request("GET", url, headers=self.headers)
         resp.raise_for_status()
         return resp.json()['data']['quote']['name']
 
@@ -70,7 +72,7 @@ class Snowball:
                   "symbol=%s&period=%s&type=%s&begin=%d&count=%d&indicator=%s" % \
                   (symbol, period, typ, begin, -count, indicator)
         # print(url)
-        resp = request("GET", url, headers=self.headers, cookies=self.cookies)
+        resp = request("GET", url, headers=self.headers)
         resp.raise_for_status()
         resp.encoding = 'utf-8'
         data = json.loads(resp.text)
@@ -100,7 +102,8 @@ class Snowball:
             'is_delay_hk': 'true'
         }
         url = 'https://stock.xueqiu.com/v5/stock/batch/quote.json?' + urlencode(params)
-        resp = request("GET", url, headers=self.headers, cookies=self.cookies)
+        # resp = request("GET", url, headers=self.headers, cookies=self.cookies)
+        resp = request("GET", url, headers=self.headers)
         resp.raise_for_status()
         result = []
         items = resp.json()['data']['items']

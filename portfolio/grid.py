@@ -26,12 +26,12 @@ class Grid:
         if not self.is_percent:
             self.change = round((high - low) / number, 2)
             self.change2 = - self.change
-            self.array = [high - self.change * i for i in range(self.number + 1)]
+            self.array = [round(high - self.change * i, 3) for i in range(self.number + 1)]
         else:
             self.change = round((high / low) ** (1 / number) - 1, 4)
             self.change2 = round((low / high) ** (1 / number) - 1, 4)
             self.array = [round(high * (1 + self.change2) ** i, 3) for i in range(self.number + 1)]
-            self.array[-1] = round(self.array[-1])
+            self.array[-1] = round(self.array[-1], 1)
 
     def __str__(self):
         if self.is_percent:
@@ -216,7 +216,7 @@ GRID_ARGS = [
     '135.00_165.00_5_1'
 ]
 
-GRID_ARG2 = ['90_100_8_0', '31_38.5_5_1', '32_40_5_1']
+GRID_ARG2 = ['90_100_8_0', '28_39_5_0', '29_40_5_1', '2.9_3.4_5_0']
 
 
 def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.DataFrame:
@@ -268,8 +268,6 @@ def batch(quantity: int, start_date: str):
     result['code'] = result['code'].apply(lambda x: LoopBack.complete_code(x))
 
     for i, args in enumerate(GRID_ARGS):
-        if start_date == 'one_year_ago':
-            start_date = (datetime.today() - timedelta(days=365)).strftime('%Y-%m-%d')
         df = trade_codes(Grid.make(args), codes, quantity, start_date)
         if i == 0:
             df['code'] = df.apply(lambda x: x['code_name'][: 8], axis=1)
@@ -309,9 +307,9 @@ def usage():
     print('Usage: {} grid low,high,number,is_percent price benchmark [quantity]'.
           format(sys.argv[0]))
     print('       %s grid [quantity]' % sys.argv[0])
-    print('       {} loopback low,high,number,is_percent code quantity [pic start_date(%Y-%m-%d)]'.
+    print('       {} loopback low,high,number,is_percent code quantity [pic start_date(%Y-%m-%d)|-days]'.
           format(sys.argv[0]))
-    print('       {} batch cvt_file quantity start_date(%Y-%m-%d)'.format(sys.argv[0]))
+    print('       {} batch cvt_file quantity start_date(%Y-%m-%d)|-days'.format(sys.argv[0]))
 
 
 def main():
@@ -326,8 +324,8 @@ def main():
         elif sys.argv[1] == 'loopback':
             a = sys.argv[2].split(',')
             grid = Grid(float(a[0]), float(a[1]), int(a[2]), True if int(a[3]) else False)
-            if 'one_year_ago' == sys.argv[-1]:
-                start_date = (datetime.today() - timedelta(days=365)).strftime('%Y-%m-%d')
+            if re.match(r'-\d+', sys.argv[-1]):
+                start_date = (datetime.today() + timedelta(days=int(sys.argv[-1]))).strftime('%Y-%m-%d')
                 loopback = LoopBack(grid, sys.argv[3], int(sys.argv[4]), start_date)
             elif re.match(r'\d\d\d\d-\d\d-\d\d', sys.argv[-1]):
                 loopback = LoopBack(grid, sys.argv[3], int(sys.argv[4]), sys.argv[-1])
@@ -337,7 +335,11 @@ def main():
         else:
             usage()
     elif len(sys.argv) > 3 and sys.argv[1] == 'batch':
-        batch(int(sys.argv[2]), sys.argv[3])
+        if re.match(r'-\d+', sys.argv[-1]):
+            start_date = (datetime.today() + timedelta(days=int(sys.argv[-1]))).strftime('%Y-%m-%d')
+            batch(int(sys.argv[2]), start_date)
+        elif re.match(r'\d\d\d\d-\d\d-\d\d', sys.argv[-1]):
+            batch(int(sys.argv[2]), sys.argv[3])
     elif len(sys.argv) > 1 and sys.argv[1] == 'grid':
         if len(sys.argv) > 2:
             show_grids(int(sys.argv[2]))

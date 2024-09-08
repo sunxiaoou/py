@@ -16,7 +16,7 @@ from openpyxl.utils import get_column_letter
 from currency import hkd_usd_rate
 from excel_tool import duplicate_last_sheet, df_to_sheet
 from mysql import MySql
-from securities import *
+from securities import SECURITIES
 
 pd.set_option('display.max_rows', 200)
 # pd.set_option('display.max_columns', 10)
@@ -57,7 +57,7 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
     while lines[i] != '快速赎回':
         i += 1
     quick_redemption = float(lines[i + 1])
-    assert cash + quick_redemption == active_cash, print(f"{cash} + {quick_redemption} != {active_cash}")
+    assert round(cash + quick_redemption, 2) == active_cash, print(f"{cash} + {quick_redemption} != {active_cash}")
     result.append(('招商银行', 'cny', '快速赎回', '快速赎回', '货币', 0, quick_redemption, 0))
     i += 1
     while not lines[i].startswith('理财'):
@@ -327,7 +327,7 @@ def huasheng(datafile: str) -> pd.DataFrame:
         i += 1
     i += 1
     codes = []
-    while len(lines) - i >= 8 and lines[i] != '行情' and lines[i + 1] != '行情':
+    while len(lines) - i > 6 and lines[i] != '行情' and lines[i + 1] != '行情':
         # name = lines[i]
         # i += 1
         while not re.match(r'^\d+$', lines[i]):
