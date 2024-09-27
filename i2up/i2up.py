@@ -253,6 +253,59 @@ class I2UP:
         response.raise_for_status()
         return response.json()['data']
 
+    def get_offline_rules(self) -> list:
+        url = f"{self.base_url}/offline_rule"
+        response = requests.request("GET", url, headers=self.headers, data={}, verify=self.ca_path)
+        response.raise_for_status()
+        rules = response.json()['data']['info_list']
+        return I2UP.get_subset(rules, ['rule_name', 'rule_uuid', 'src_db_name', 'tgt_db_name'])
+
+    def get_offline_rule_uuid(self, name: str) -> str:
+        for node in self.get_offline_rules():
+            if name == node['rule_name']:
+                return node['rule_uuid']
+        print(f'Cannot find rule "{name}"')
+        return ''
+
+    def get_offline_rule(self, name: str) -> dict:
+        uuid = self.get_offline_rule_uuid(name)
+        if uuid == '':
+            return {}
+        url = f"{self.base_url}/offline_rule/{uuid}"
+        response = requests.request("GET", url, headers=self.headers, data={}, verify=self.ca_path)
+        response.raise_for_status()
+        return response.json()['data']['offline_rule']
+
+    def create_offline_rule(self, json_data: dict) -> dict:
+        url = f"{self.base_url}/offline_rule"
+        if json_data['src_type'] != 'dump_format_file':
+            json_data['src_db_uuid'] = self.get_db_uuid(json_data['src_db_uuid'])
+        else:
+            json_data['src_db_uuid'] = ''
+        if json_data['tgt_type'] != 'dump_format_file':
+            json_data['tgt_db_uuid'] = self.get_db_uuid(json_data['tgt_db_uuid'])
+        else:
+            json_data['tgt_db_uuid'] = ''
+        payload = json.dumps(json_data)
+        response = requests.request("POST", url, headers=self.headers, data=payload, verify=self.ca_path)
+        response.raise_for_status()
+        return response.json()['data']
+
+    def delete_offline_rule(self, name: str) -> dict:
+        uuid = self.get_offline_rule_uuid(name)
+        if uuid == '':
+            return {}
+        url = f"{self.base_url}/offline_rule"
+        payload = json.dumps({
+            "rule_uuids": [
+                uuid
+            ],
+            "force": False
+        })
+        response = requests.request("DELETE", url, headers=self.headers, data=payload, verify=self.ca_path)
+        response.raise_for_status()
+        return response.json()['data']
+
 
 def main():
     parser = argparse.ArgumentParser(description='I2UP utilities')

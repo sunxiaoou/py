@@ -99,6 +99,24 @@ class I2UPTestCase(unittest.TestCase):
         # pprint(self.i2up.delete_mysql_rule('msq_test'))
         pprint(self.i2up.delete_mysql_rule('msq_u_kfk_auto'))
 
+    def test_list_offline_rules(self):
+        print("Test to list offline rules")
+        info_list = self.i2up.get_offline_rules()
+        print("count(%d)" % len(info_list))
+        pprint(info_list)
+
+    def test_show_offline_rule(self):
+        print("Test to show mysql rule")
+        pprint(self.i2up.get_offline_rule('msq_u_c2_off'))
+
+    def test_create_offline_rule(self):
+        print("Test to create offline rule")
+        pprint(self.i2up.create_offline_rule(I2UP.load_json_file('json/msq_u_file_off.json')))
+
+    def test_delete_offline_rule(self):
+        print("Test to delete offline rule")
+        pprint(self.i2up.delete_offline_rule('msq_u_file_off'))
+
 
 if __name__ == '__main__':
     unittest.main()
