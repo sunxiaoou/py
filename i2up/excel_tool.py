@@ -18,6 +18,7 @@ class Excel:
     MSQ_MSQ_RULE = 'msq_msq_rule'
     HB_HB_RULE = 'hb_hb_rule'
     MSQ_KFK_RULE = 'msq_kfk_rule'
+    OFFLINE_RULE = 'offline_rule'
 
     def __init__(self, name: str, template: str):
         self.name = name
@@ -421,6 +422,78 @@ class Excel:
             data_list.append(current_record)
         return data_list
 
+    def get_offline_rules(self, sheet: str) -> list:
+        try:
+            df = pd.read_excel(self.name, sheet_name=sheet)
+        except ValueError:
+            return []
+        data_list = []
+        current_record = None
+        for _, row in df.iterrows():
+            if pd.notna(row['序号']):
+                if current_record is not None:
+                    data_list.append(current_record)
+                map_type = ''
+                db_user_map = []
+                table_map = []
+                if pd.notna(row['源端schema']):
+                    if pd.notna(row['源端表名']):
+                        map_type = 'table'
+                        table_map = [{
+                            "column": [],
+                            "dst_table": row['备端表名'],
+                            "dst_user": row['备端schema'],
+                            "src_table": row['源端表名'],
+                            "src_user": row['源端schema']
+                        }]
+                    else:
+                        map_type = 'database'
+                        db_user_map = [{
+                            "dst_table": row['备端schema'],
+                            "src_table": row['源端schema']
+                        }]
+                current_record = {
+                    "advanced_settings": {
+                        "dump_thd":
+                            int(row['导出线程数'])
+                            if '导出线程数' in row and pd.notna(row['导出线程数'])
+                            else 1,
+                        "load_thd":
+                            int(row['装载线程数'])
+                            if '装载线程数' in row and pd.notna(row['装载线程数'])
+                            else 1,
+                    },
+                    "db_user_map": db_user_map if db_user_map else '',
+                    "existing_table": row['表覆盖策略'],
+                    "map_type": map_type,
+                    "rule_name": row['规则名称'],
+                    "src_type": row['源端类型'],
+                    "src_db_uuid": row['源端库名'] if pd.notna(row['源端库名']) else '',
+                    "src_file_path": row['源端文件目录'] if pd.notna(row['源端文件目录']) else '',
+                    "table_map": table_map if table_map else '',
+                    "tgt_type": row['备端类型'],
+                    "tgt_db_uuid":  row['备端库名'] if pd.notna(row['备端库名']) else '',
+                    "tgt_file_path": row['备端文件目录'] if pd.notna(row['备端文件目录']) else ''
+                }
+            else:
+                if pd.notna(row['源端schema']):
+                    if pd.notna(row['源端表名']):
+                        current_record["table_map"].append({
+                            "column": [],
+                            "dst_table": row['备端表名'],
+                            "dst_user": row['备端schema'],
+                            "src_table": row['源端表名'],
+                            "src_user": row['源端schema']
+                        })
+                    else:
+                        current_record["db_user_map"].append({
+                            "dst_table": row['备端schema'],
+                            "src_table": row['源端schema']
+                        })
+        if current_record is not None:
+            data_list.append(current_record)
+        return data_list
+
     @staticmethod
     def merge_dict(default_dict: dict, subset_dict: dict):
         for key, value in subset_dict.items():
@@ -446,6 +519,8 @@ class Excel:
             key = 'db_name'
         elif t_sheet in [Excel.HB_HB_RULE, Excel.MSQ_KFK_RULE, Excel.MSQ_MSQ_RULE]:
             key = 'mysql_name'
+        else:
+            key = 'rule_name'
         file = f"{output}/{obj_dict[key]}.json"
         with open(file, 'w') as f:
             json.dump(json_data, f, indent=4)

@@ -50,7 +50,8 @@ def traverse_save(data, x: int, y: int, df: pd.DataFrame, last=False) -> (int, p
         if data is None:
             df = save_to_df('Null', x, y, df)
         elif isinstance(data, str):
-            df = save_to_df('"' + data + '"', x, y, df)
+            escaped = data.replace('\\', '\\\\').replace('"', '\\"')
+            df = save_to_df('"' + escaped + '"', x, y, df)
         else:
             s = str(data)
             if isinstance(data, bool):

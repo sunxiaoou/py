@@ -55,6 +55,12 @@ class ExcelTestCase(unittest.TestCase):
         print("count(%d)" % len(rules))
         pprint(rules)
 
+    def test_list_offline_rules(self):
+        print("Test to list offline rules")
+        rules = self.excel.get_offline_rules(Excel.OFFLINE_RULE)
+        print("count(%d)" % len(rules))
+        pprint(rules)
+
     def test_generate_db_json(self):
         print("Test to generate msq json")
         dic = {
@@ -254,6 +260,12 @@ class ExcelTestCase(unittest.TestCase):
             'username': 'admin'
         }
         self.excel.generate_creation_json(Excel.MSQ_KFK_RULE, dic, self.output)
+
+    def test_generate_offline_json(self):
+        print("Test to generate msq json")
+        rules = self.excel.get_offline_rules(Excel.OFFLINE_RULE)
+        assert rules
+        self.excel.generate_creation_json(Excel.OFFLINE_RULE, rules[0], self.output)
 
 
 if __name__ == '__main__':

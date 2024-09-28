@@ -1,0 +1,75 @@
+{
+    "advanced_settings": {
+        "dump_thd": 1,
+        "exclude_table_by_features": {
+            "PK": 0
+        },
+        "load_thd": 1
+    },
+    "advanced_table_map": [],
+    "config": {
+        "one_task": "immediate"
+    },
+    "db_user_map": "",
+    "etl_settings": {
+        "etl_table": []
+    },
+    "existing_table": "truncate",
+    "format": {
+        "byte_encode": "none",
+        "charset": "UTF-8",
+        "date_format": "yyyyMMdd",
+        "datetag": "20240927",
+        "datetime_format": "yyyyMMddHHmmss",
+        "delimiter": ",",
+        "escape": "\\",
+        "force_quote": 0,
+        "header": 0,
+        "null": "\\N",
+        "quote": "`",
+        "time_format": "HHmmss",
+        "timestamp_format": "yyyyMMddHHmmss.SSS"
+    },
+    "full_sync_custom_cfg": [
+        {
+            "enable": 0,
+            "key": "source.to.target.processor.plugin",
+            "value": "{\"classname\":\"org.example.dataconvert.ExampleSourceToTargetProcessorPlugin\",\"config\":{\"organizationCode\":[{\"col\":\"TEST_VALUE\",\"orgmap\":{\"0.32\":\"0.6000000\"}}]}}"
+        },
+        {
+            "enable": 0,
+            "key": "source.to.target.processor.plugin",
+            "value": "{\"classname\":\"org.example.dataconvert.ExampleSourceToTargetProcessorPlugin\",\"config\":{\"organizationCode\":[{\"col\":\"TEST_VALUE\",\"orgmap\":{\"0.32\":\"0.2000000\"}}]}}"
+        }
+    ],
+    "map_type": "table",
+    "map_type_list": [
+        "user"
+    ],
+    "node_uuid": "",
+    "one_time": "",
+    "policies": "",
+    "policy_type": "one_time",
+    "rule_name": "msq_u_file_off",
+    "separator": "",
+    "src_db_auth_uuid": "",
+    "src_db_uuid": "msq_u",
+    "src_file_path": "",
+    "src_node_uuid": "",
+    "src_type": "mysql",
+    "table_map": [
+        {
+            "column": [],
+            "dst_table": "fruit",
+            "dst_user": "manga",
+            "src_table": "fruit",
+            "src_user": "manga"
+        }
+    ],
+    "tgt_db_auth_uuid": "",
+    "tgt_db_uuid": "",
+    "tgt_file_path": "/home/sunxo/i2data/cache/",
+    "tgt_type": "dump_format_file",
+    "time_policy": "",
+    "virtual_table": []
+}
