@@ -1,3 +1,4 @@
+import json
 import unittest
 from pprint import pprint
 
@@ -87,7 +88,7 @@ class I2UPTestCase(unittest.TestCase):
     def test_show_mysql_rule(self):
         print("Test to show mysql rule")
         # pprint(self.i2up.get_mysql_rule('msq_u_c1_auto'))
-        pprint(self.i2up.get_mysql_rule('msq_u_kfk_auto'))
+        pprint(self.i2up.get_mysql_rule('msq_u_c1'))
 
     def test_create_mysql_rule(self):
         print("Test to create mysql rule")
@@ -107,11 +108,13 @@ class I2UPTestCase(unittest.TestCase):
 
     def test_show_offline_rule(self):
         print("Test to show mysql rule")
-        pprint(self.i2up.get_offline_rule('msq_u_c2_off'))
+        dic = self.i2up.get_offline_rule('msq_u_file_off')
+        json_str = json.dumps(dic, indent=4, sort_keys=True)
+        print(json_str)
 
     def test_create_offline_rule(self):
         print("Test to create offline rule")
-        pprint(self.i2up.create_offline_rule(I2UP.load_json_file('json/msq_u_file_off.json')))
+        pprint(self.i2up.create_offline_rule(I2UP.load_json_file('output/msq_u_file_off.json')))
 
     def test_delete_offline_rule(self):
         print("Test to delete offline rule")
