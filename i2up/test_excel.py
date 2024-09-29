@@ -1,7 +1,8 @@
 import unittest
 from pprint import pprint
 
-from excel_tool import Excel
+from excel_tool import Excel, delete_objects, create_objects
+from i2up import I2UP
 
 
 class ExcelTestCase(unittest.TestCase):
@@ -266,6 +267,24 @@ class ExcelTestCase(unittest.TestCase):
         rules = self.excel.get_offline_rules(Excel.OFFLINE_RULE)
         assert rules
         self.excel.generate_creation_json(Excel.OFFLINE_RULE, rules[0], self.output)
+
+    def get_i2up(self) -> I2UP:
+        ip = 'centos1'
+        port = 58086
+        ca_path = 'ca.crt'
+        user = 'admin'
+        pwd = 'Info@1234'
+        return I2UP(ip, port, ca_path, user=user, pwd=pwd)
+
+    def test_delete_objects(self):
+        print("Test to delete objects")
+        sheet = Excel.OFFLINE_RULE
+        pprint(delete_objects(self.excel, sheet, self.get_i2up()))
+
+    def test_create_objects(self):
+        print("Test to create objects")
+        sheet = Excel.OFFLINE_RULE
+        pprint(create_objects(self.excel, sheet, self.get_i2up()))
 
 
 if __name__ == '__main__':

@@ -560,93 +560,246 @@ def generate_all_json(excel: Excel, output: str):
         excel.generate_creation_json(Excel.MSQ_KFK_RULE, rule, output)
 
 
-def delete_all_objects(excel: Excel, i2up: I2UP):
+def delete_offline_rules(excel: Excel, i2up: I2UP) -> list:
+    results = []
+    for rule in excel.get_offline_rules(Excel.OFFLINE_RULE):
+        name = rule['rule_name']
+        print(f"Deleting rule {name} ...")
+        result = i2up.delete_offline_rule(name)
+        results.append(result)
+    return results
+
+
+def delete_msq_kfk_rules(excel: Excel, i2up: I2UP) -> list:
+    results = []
     for rule in excel.get_msq_kfk_rules(Excel.MSQ_KFK_RULE):
         name = rule['mysql_name']
         print(f"Deleting rule {name} ...")
-        pprint(i2up.delete_mysql_rule(name))
+        result = i2up.delete_mysql_rule(name)
+        results.append(result)
+    return results
+
+
+def delete_hb_hb_rules(excel: Excel, i2up: I2UP) -> list:
+    results = []
     for rule in excel.get_hb_hb_rules(Excel.HB_HB_RULE):
         name = rule['mysql_name']
         print(f"Deleting rule {name} ...")
-        pprint(i2up.delete_mysql_rule(name))
+        result = i2up.delete_mysql_rule(name)
+        results.append(result)
+    return results
+
+
+def delete_msq_msq_rules(excel: Excel, i2up: I2UP) -> list:
+    results = []
     for rule in excel.get_msq_msq_rules(Excel.MSQ_MSQ_RULE):
         name = rule['mysql_name']
         print(f"Deleting rule {name} ...")
-        pprint(i2up.delete_mysql_rule(name))
+        result = i2up.delete_mysql_rule(name)
+        results.append(result)
+    return results
+
+
+def delete_kfk_nodes(excel: Excel, i2up: I2UP) -> list:
+    results = []
     for node in excel.get_kfks(Excel.KFK_NODE):
         name = node["db_name"]
         print(f"Deleting db_node {name} ...")
-        pprint(i2up.delete_db_node(name))
+        result = i2up.delete_db_node(name)
+        results.append(result)
+    return results
+
+
+def delete_hb_nodes(excel: Excel, i2up: I2UP) -> list:
+    results = []
     for node in excel.get_dbs(Excel.HB_NODE):
         name = node["db_name"]
         print(f"Deleting db_node {name} ...")
-        pprint(i2up.delete_db_node(name))
+        result = i2up.delete_db_node(name)
+        results.append(result)
+    return results
+
+
+def delete_msq_nodes(excel: Excel, i2up: I2UP) -> list:
+    results = []
     for node in excel.get_dbs(Excel.MSQ_NODE):
         name = node["db_name"]
         print(f"Deleting db_node {name} ...")
-        pprint(i2up.delete_db_node(name))
+        result = i2up.delete_db_node(name)
+        results.append(result)
+    return results
+
+
+def delete_work_nodes(excel: Excel, i2up: I2UP) -> list:
+    results = []
     for node in excel.get_nodes(Excel.WORK_NODE):
         name = node['node_name']
         print(f"Inactivating work_node {name} ...")
-        pprint(i2up.delete_active_node(name, True))
+        result = i2up.delete_active_node(name, True)
+        results.append(result)
+    return results
 
 
-def create_all_objects(excel: Excel, i2up: I2UP):
+def delete_objects(excel: Excel, sheet: str, i2up: I2UP) -> list:
+    if Excel.OFFLINE_RULE == sheet:
+        return delete_offline_rules(excel, i2up)
+    elif Excel.MSQ_KFK_RULE == sheet:
+        return delete_msq_kfk_rules(excel, i2up)
+    elif Excel.HB_HB_RULE == sheet:
+        return delete_hb_hb_rules(excel, i2up)
+    elif Excel.MSQ_MSQ_RULE == sheet:
+        return delete_msq_msq_rules(excel, i2up)
+    elif Excel.KFK_NODE == sheet:
+        return delete_kfk_nodes(excel, i2up)
+    elif Excel.HB_NODE == sheet:
+        return delete_hb_nodes(excel, i2up)
+    elif Excel.MSQ_NODE == sheet:
+        return delete_msq_nodes(excel, i2up)
+    elif Excel.WORK_NODE == sheet:
+        return delete_work_nodes(excel, i2up)
+    else:
+        print(f"sheet {sheet} is invalid")
+        return []
+
+
+def activate_work_nodes(excel: Excel, i2up: I2UP) -> list:
+    results = []
     for node in excel.get_nodes(Excel.WORK_NODE):
         name = node['node_name']
         if i2up.get_active_node(name):
-            print("work_node {name} is active already")
+            print(f"work_node {name} is active already")
             continue
         print(f"Activating work_node {name} ...")
-        pprint(i2up.activate_node(node))
+        result = i2up.activate_node(node)
+        results.append(result)
+    return results
+
+
+def create_msq_nodes(excel: Excel, i2up: I2UP) -> list:
+    results = []
     for node in excel.get_dbs(Excel.MSQ_NODE):
         name = node["db_name"]
         print(f"Creating db_node {name} ...")
         json_data = excel.generate_creation(Excel.MSQ_NODE, node)
         if i2up.get_db_uuid(name) == '':
-            pprint(i2up.create_db_node(json_data))
+            result = i2up.create_db_node(json_data)
+            results.append(result)
         else:
             print(f"db {name} exists already")
+            results.append({})
+    return results
+
+
+def create_hb_nodes(excel: Excel, i2up: I2UP) -> list:
+    results = []
     for node in excel.get_dbs(Excel.HB_NODE):
         name = node["db_name"]
         print(f"Creating db_node {name} ...")
         json_data = excel.generate_creation(Excel.HB_NODE, node)
         if i2up.get_db_uuid(name) == '':
-            pprint(i2up.create_db_node(json_data))
+            result = i2up.create_db_node(json_data)
+            results.append(result)
         else:
             print(f"db {name} exists already")
+            results.append({})
+    return results
+
+
+def create_kfk_nodes(excel: Excel, i2up: I2UP) -> list:
+    results = []
     for node in excel.get_kfks(Excel.KFK_NODE):
         name = node["db_name"]
         print(f"Creating db_node {name} ...")
         json_data = excel.generate_creation(Excel.KFK_NODE, node)
         if i2up.get_db_uuid(name) == '':
-            pprint(i2up.create_db_node(json_data))
+            result = i2up.create_db_node(json_data)
+            results.append(result)
         else:
             print(f"db {name} exists already")
+            results.append({})
+    return results
+
+
+def create_msq_msq_rules(excel: Excel, i2up: I2UP) -> list:
+    results = []
     for rule in excel.get_msq_msq_rules(Excel.MSQ_MSQ_RULE):
         name = rule['mysql_name']
         print(f"Creating rule {name} ...")
         json_data = excel.generate_creation(Excel.MSQ_MSQ_RULE, rule)
         if i2up.get_mysql_rule_uuid(name) == '':
-            pprint(i2up.create_mysql_rule(json_data))
+            result = i2up.create_mysql_rule(json_data)
+            results.append(result)
         else:
             print(f"rule {name} exists already")
+            results.append({})
+    return results
+
+
+def create_hb_hb_rules(excel: Excel, i2up: I2UP) -> list:
+    results = []
     for rule in excel.get_hb_hb_rules(Excel.HB_HB_RULE):
         name = rule['mysql_name']
         print(f"Creating rule {name} ...")
         json_data = excel.generate_creation(Excel.HB_HB_RULE, rule)
         if i2up.get_mysql_rule_uuid(name) == '':
-            pprint(i2up.create_mysql_rule(json_data))
+            result = i2up.create_mysql_rule(json_data)
+            results.append(result)
         else:
             print(f"rule {name} exists already")
+            results.append({})
+    return results
+
+
+def create_msq_kfk_rules(excel: Excel, i2up: I2UP) -> list:
+    results = []
     for rule in excel.get_msq_kfk_rules(Excel.MSQ_KFK_RULE):
         name = rule['mysql_name']
         print(f"Creating rule {name} ...")
         json_data = excel.generate_creation(Excel.MSQ_KFK_RULE, rule)
         if i2up.get_mysql_rule_uuid(name) == '':
-            pprint(i2up.create_mysql_rule(json_data))
+            result = i2up.create_mysql_rule(json_data)
+            results.append(result)
         else:
             print(f"rule {name} exists already")
+            results.append({})
+    return results
+
+
+def create_offline_rules(excel: Excel, i2up: I2UP) -> list:
+    results = []
+    for rule in excel.get_offline_rules(Excel.OFFLINE_RULE):
+        name = rule['rule_name']
+        print(f"Creating rule {name} ...")
+        json_data = excel.generate_creation(Excel.OFFLINE_RULE, rule)
+        if i2up.get_offline_rule_uuid(name) == '':
+            result = i2up.create_offline_rule(json_data)
+            results.append(result)
+        else:
+            print(f"rule {name} exists already")
+            results.append({})
+    return results
+
+
+def create_objects(excel: Excel, sheet: str, i2up: I2UP) -> list:
+    if Excel.WORK_NODE == sheet:
+        return activate_work_nodes(excel, i2up)
+    elif Excel.MSQ_NODE == sheet:
+        return create_msq_nodes(excel, i2up)
+    elif Excel.HB_NODE == sheet:
+        return create_hb_nodes(excel, i2up)
+    elif Excel.KFK_NODE == sheet:
+        return create_kfk_nodes(excel, i2up)
+    elif Excel.MSQ_MSQ_RULE == sheet:
+        return create_msq_msq_rules(excel, i2up)
+    elif Excel.HB_HB_RULE == sheet:
+        return create_hb_hb_rules(excel, i2up)
+    elif Excel.MSQ_KFK_RULE == sheet:
+        return create_msq_kfk_rules(excel, i2up)
+    elif Excel.OFFLINE_RULE == sheet:
+        return create_offline_rules(excel, i2up)
+    else:
+        print(f"sheet {sheet} is invalid")
+        return []
 
 
 def main():
@@ -662,6 +815,7 @@ def main():
     parser.add_argument('--user', required=False, default='admin', help='Username (default: admin)')
     parser.add_argument('--pwd', required=False, help='Password of the user')
     parser.add_argument('--excel', required=True, help='Excel file contains dbNodes/rules')
+    parser.add_argument('--sheet', required=False, help='Excel sheet name')
     parser.add_argument('--template', required=False, help='Excel file contains dbNodes/rules template')
     parser.add_argument('--output', required=False, default='output',
                         help='output path of json files (default: output)')
@@ -679,7 +833,8 @@ def main():
             i2up = I2UP(args.ip, args.port, args.ca, user=args.user, pwd=args.pwd)
         else:
             assert False
-        delete_all_objects(excel, i2up)
+        assert args.sheet is not None
+        pprint(delete_objects(excel, args.sheet, i2up))
     elif args.createObjects:
         assert args.ip is not None and args.template is not None
         if args.ak is not None:
@@ -688,7 +843,8 @@ def main():
             i2up = I2UP(args.ip, args.port, args.ca, user=args.user, pwd=args.pwd)
         else:
             assert False
-        create_all_objects(excel, i2up)
+        assert args.sheet is not None
+        pprint(create_objects(excel, args.sheet, i2up))
 
 
 if __name__ == "__main__":
