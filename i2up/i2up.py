@@ -258,7 +258,12 @@ class I2UP:
         response = requests.request("GET", url, headers=self.headers, data={}, verify=self.ca_path)
         response.raise_for_status()
         rules = response.json()['data']['info_list']
-        return I2UP.get_subset(rules, ['rule_name', 'rule_uuid', 'src_db_name', 'tgt_db_name'])
+        result = []
+        for rule in rules:
+            keys = ['rule_name', 'rule_uuid', 'src_db_name',
+                    'tgt_db_name' if rule['tgt_type'] != 'dump_format_file' else 'tgt_file_path']
+            result.append({key: rule[key] for key in keys})
+        return result
 
     def get_offline_rule_uuid(self, name: str) -> str:
         for node in self.get_offline_rules():
@@ -281,11 +286,11 @@ class I2UP:
         if json_data['src_type'] != 'dump_format_file':
             json_data['src_db_uuid'] = self.get_db_uuid(json_data['src_db_uuid'])
         else:
-            json_data['src_db_uuid'] = ''
+            json_data['src_node_uuid'] = self.get_node_uuid(json_data['src_node_uuid'])
         if json_data['tgt_type'] != 'dump_format_file':
             json_data['tgt_db_uuid'] = self.get_db_uuid(json_data['tgt_db_uuid'])
         else:
-            json_data['tgt_db_uuid'] = ''
+            json_data['node_uuid'] = self.get_node_uuid(json_data['node_uuid'])
         payload = json.dumps(json_data)
         response = requests.request("POST", url, headers=self.headers, data=payload, verify=self.ca_path)
         response.raise_for_status()
