@@ -1,10 +1,11 @@
+import json
 import unittest
 from pprint import pprint
 
 import pandas as pd
 
 from json_tool import json_to_df, df_to_json, df_to_excel, excel_to_df, json_to_excel, excel_to_json, merge_json, \
-    sort_json
+    sort_json, process_uuid
 
 
 class JsonTestCase(unittest.TestCase):
@@ -152,6 +153,35 @@ class JsonTestCase(unittest.TestCase):
     def test_sort_json(self):
         print("Test to sort json")
         sort_json('json/hb_ht_h2.json', 'json/hb_ht_h2_sort.json')
+
+    def test_process_uuid(self):
+        print("Test to process uuid")
+        json_data = {
+            "id": "12345678-1234-1234-1234-1234567890ab",
+            "name": "Example",
+            "items": [
+                "abcdef12-1234-1234-1234-abcdef123456",
+                "not-a-uuid"
+            ],
+            "nested": {
+                "uuid": "87654321-4321-4321-4321-abcdef123456",
+                "list": [
+                    "12345678-1234-1234-1234-1234567890ab",
+                    "another-uuid"
+                ]
+            }
+        }
+
+        json_data = process_uuid(json_data)
+        print(json.dumps(json_data, indent=4))
+
+    def test_process_uuid2(self):
+        json_file = 'rules/test显示_bak.json'
+        json_file2 = 'rules/test显示_bak2.json'
+        with open(json_file, 'r') as f:
+            json_data = process_uuid(json.load(f))
+        with open(json_file2, 'w') as f:
+            json.dump(json_data, f, indent=4, sort_keys=True)
 
 
 if __name__ == '__main__':

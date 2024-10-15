@@ -2,17 +2,16 @@
 import argparse
 import json
 import os
-import re
 import time
 from pprint import pprint
 
 from i2up import I2UP
+from json_tool import process_uuid
 
 
 class Offline:
     def __init__(self, i2up: I2UP):
         self.i2up = i2up
-        self.pattern = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.IGNORECASE)
 
     def list_offline_rules(self):
         info_list = self.i2up.get_offline_rules()
@@ -24,7 +23,8 @@ class Offline:
         dic['rule_name'] = name.strip() + suffix
         dic.pop('state', None)
         dic.pop('status', None)
-        dic = {k: (v if self.pattern.match(str(v)) is None else "") for k, v in dic.items()}     # clear uuid(s)
+
+        dic = process_uuid(dic)
         if dic['src_type'] == "dump_format_file":
             dic['src_node_uuid'] = dic['src_node_name']
         else:

@@ -6,6 +6,30 @@ import os
 import pandas as pd
 
 
+import re
+import json
+
+uuid_pattern = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', re.IGNORECASE)
+
+
+def process_uuid(obj):
+    if isinstance(obj, dict):
+        new_dict = {}
+        for key, value in obj.items():
+            if isinstance(value, str) and uuid_pattern.match(value):
+                new_dict[key] = None  # 将值设为null
+            else:
+                new_dict[key] = process_uuid(value)
+        return new_dict
+    elif isinstance(obj, list):
+        for item in obj:
+            if isinstance(item, str) and uuid_pattern.match(item):
+                return []  # 将整个列表设为空列表
+        return [process_uuid(item) for item in obj]
+    else:
+        return obj  # 非列表或字典的其他值保持不变
+
+
 def save_to_df(string: str, x: int, y: int, df: pd.DataFrame) -> pd.DataFrame:
     if y >= len(df):
         df = df.reindex(range(y + 5))
