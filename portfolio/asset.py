@@ -338,11 +338,10 @@ def huasheng(datafile: str) -> pd.DataFrame:
         i += 1
         nav = float(lines[i])
         i += 1
+        while not re.match(r'[0-9A-Z]+', lines[i]):
+            i += 1
         code = re.search(r'[0-9A-Z]+', lines[i]).group()
-        if currency == 'hkd':
-            code = code[:5]
-        else:
-            code = code[:4]
+        code = code[:5] if currency == 'hkd' else code[:4]
         i += 1
         if code == 'NMI':
             code = 'IWN'
@@ -351,7 +350,7 @@ def huasheng(datafile: str) -> pd.DataFrame:
             i += 1
         market_value = float(lines[i])
         i += 1
-        while not re.match(r'^[\d.]+$', lines[i]):
+        while not re.match(r'^[-\d.]+$', lines[i]):
             i += 1
         cost = float(lines[i])
         i += 1

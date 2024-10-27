@@ -68,7 +68,7 @@ class Market:
                 'ts': datetime.fromtimestamp(i['quote']['timestamp'] / 1000),
                 'name': i['quote']['name'],
                 'price': i['quote']['current'],
-                'premium': i['quote']['premium_rate'],
+                'premium': i['quote']['premium_rate'] if 'premium_rate' in i['quote'] else None,
                 'pct': i['quote']['percent']
             }
             if dic['code'][2:] in SECURITIES:

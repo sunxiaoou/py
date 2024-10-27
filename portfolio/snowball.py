@@ -29,11 +29,9 @@ PID_MISC = 4
 
 class Snowball:
     def __init__(self):
-        url = 'https://xueqiu.com'
-        self.headers = {'User-Agent': 'PostmanRuntime/7.29.2'}
-        resp = request("GET", url, headers=self.headers)
-        resp.raise_for_status()
-        # self.cookies = resp.cookies
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:130.0) Gecko/20100101 Firefox/130.0'
+        }
         with open('auth/xq_cookie.txt', 'r') as f:
             self.my_cookies = f.read()
         self.headers['Cookie'] = self.my_cookies
