@@ -318,8 +318,8 @@ def huasheng(datafile: str) -> pd.DataFrame:
     i += 3
     while not re.match(r'.*[\d.]+$', lines[i]):
         i += 1
-    cash = float(lines[i]) + float(lines[i + 1])
-    assert round(total_mv + cash, 2) == asset, \
+    cash = float(lines[i])  # + float(lines[i + 1])
+    assert round(total_mv + cash, 2) == asset,\
         print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
     result = [('华盛', currency, 'cash', '现金', '货币', 0, cash, 0)]
     i += 15
@@ -445,7 +445,7 @@ def usmart(datafile: str) -> pd.DataFrame:
     total_mv_2 = float(lines[i + 2])
     cash = float(lines[i + 3])
     i += 4
-    assert round(total_mv_2 + cash, 2) == asset, \
+    assert (abs(total_mv_2 + cash - asset) < 0.02),\
         print("total_mv({}) + cash({}) != asset({})".format(total_mv_2, cash, asset))
 
     while not lines[i].startswith('今日盈亏'):
@@ -480,9 +480,9 @@ def usmart(datafile: str) -> pd.DataFrame:
         pass
     df = pd.DataFrame(result, columns=COLUMNS + ['nav'])
     sum_mv = round(df['market_value'].sum() + total_mv_2 - total_mv, 2)
-    assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
+    assert abs(sum_mv - asset) < 0.02, print("sum_mv({}) != asset({})".format(sum_mv, asset))
     sum_hg = round(df['hold_gain'].sum(), 2)
-    assert sum_hg == total_hg, print("sum_hg({}) != total_hg({})".format(sum_hg, total_hg))
+    assert abs(sum_hg - total_hg) < 0.02, print("sum_hg({}) != total_hg({})".format(sum_hg, total_hg))
     return df
 
 

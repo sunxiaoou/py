@@ -153,6 +153,8 @@ def main():
         result = Market.get_stocks(PID_HK)
     elif sys.argv[1] == 'us':
         result = Market.get_stocks(PID_US)
+    elif sys.argv[1] == 'gold':
+        result = Market.get_stocks(PID_CVT_2)
     elif sys.argv[1] == 'qdii':
         result = Market.get_stocks(PID_CVT_3)
     elif sys.argv[1] == 'fund':
@@ -167,8 +169,6 @@ def main():
         result = Market.get_cvtbones()
     elif sys.argv[1] == 'misc':
         result = Market.get_cvtbones(PID_MISC)
-    # elif sys.argv[1] == 'grid':
-    #     result = get_cvtbones(get_list(1, 12))
     else:
         print("Usage: {} a!cvtb|hk|us|fund".format(sys.argv[0]))
         sys.exit(1)
