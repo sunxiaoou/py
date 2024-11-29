@@ -100,18 +100,28 @@ class Market:
         items = response.json()['data']['items']
         for i in items:
             quote = i['quote']
-            redeem = quote['conversion_price'] * 1.3                                # redeem trigger price
-            share = quote['conversion_value'] / 100 * quote['conversion_price']     # share price
+            code = quote['symbol']
+            name = SECURITIES[code[2:]][0] if code[2:] in SECURITIES else quote['name']
+            price = quote['current']
+            premium_rate = quote['premium_rate'] if 'premium_rate' in quote else None
+            pct = quote['percent']
+            if 'conversion_price' in quote:
+                remains = round(quote['outstanding_amt'] / quote['total_issue_scale'] * 100, 2)
+                days = (datetime.fromtimestamp(quote['maturity_date'] / 1000).date() - date.today()).days
+                redeem_price = quote['conversion_price'] * 1.3                          # redeem trigger price
+                share = quote['conversion_value'] / 100 * quote['conversion_price']     # share price
+                redeem_rate = round((redeem_price - share) / share * 100, 2)
+            else:
+                remains = days = redeem_rate = None
             dic = {
-                # 'ts': datetime.fromtimestamp(quote['timestamp'] / 1000),
-                'code': quote['symbol'],
-                'name': quote['name'],
-                'price': quote['current'],
-                'premium': quote['premium_rate'],
-                'remains': round(quote['outstanding_amt'] / quote['total_issue_scale'] * 100, 2),
-                'days': (datetime.fromtimestamp(quote['maturity_date'] / 1000).date() - date.today()).days,
-                'redeem': round((redeem - share) / share * 100, 2),
-                'pct': quote['percent']
+                'code': code,
+                'name': name,
+                'price': price,
+                'premium': premium_rate,
+                'remains': remains,
+                'days': days,
+                'redeem': redeem_rate,
+                'pct': pct
             }
             result.append(dic.copy())
         return result
