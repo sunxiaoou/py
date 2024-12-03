@@ -107,6 +107,8 @@ class Snowball:
         items = resp.json()['data']['items']
         for i in items:
             quote = i['quote']
+            if 'conversion_price' not in quote:
+                continue
             redeem = quote['conversion_price'] * 1.3                                # redeem trigger price
             share = quote['conversion_value'] / 100 * quote['conversion_price']     # share price
             dic = {
