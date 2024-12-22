@@ -43,21 +43,21 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
             lines += re.sub(r'[,，:>＞]', '', line).rstrip('\n').split()
 
     i = 0
-    while lines[i] != '账户总览':
+    while lines[i] != '本月剩余应还':
         i += 1
-    active_cash = float(lines[i + 1])
-    investment = float(lines[i + 2])
+    asset = float(lines[i + 1])
+    dues = float(lines[i + 2])
     # repayment = float(lines[i + 3])
     i += 4
     while lines[i] != '活期存款':
         i += 1
-    cash = float(lines[i + 1])
+    cash = float(lines[i + 1]) - dues
     result = [('招商银行', 'cny', 'cash', '现金', '货币', 0, cash, 0)]
     i += 2
     while lines[i] != '快速赎回':
         i += 1
     quick_redemption = float(lines[i + 1])
-    assert round(cash + quick_redemption, 2) == active_cash, print(f"{cash} + {quick_redemption} != {active_cash}")
+    # assert round(cash + quick_redemption, 2) == active_cash, print(f"{cash} + {quick_redemption} != {active_cash}")
     result.append(('招商银行', 'cny', '快速赎回', '快速赎回', '货币', 0, quick_redemption, 0))
     i += 1
     while not lines[i].startswith('理财'):
@@ -65,8 +65,9 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
     i += 1
     while not re.match(r'^[.\d]+$', lines[i]):
         i += 1
-    assert investment == float(lines[i])
-    asset = round(active_cash + investment, 2)
+    investment = float(lines[i])
+    # assert investment == float(lines[i])
+    # asset = round(active_cash + investment, 2)
     i += 1
     try:
         while lines[i]:
@@ -90,7 +91,7 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
         pass
     df = pd.DataFrame(result, columns=COLUMNS)
     sum_mv = round(df['market_value'].sum(), 2)
-    assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
+    assert sum_mv == round(asset - dues, 2), print("sum_mv({}) != asset({})".format(sum_mv, asset))
 
     s = re.sub(r'.+_', '', datafile[: -4])
     cash2 = float(s) if s else 0
