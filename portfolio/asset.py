@@ -60,6 +60,11 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
     # assert round(cash + quick_redemption, 2) == active_cash, print(f"{cash} + {quick_redemption} != {active_cash}")
     result.append(('招商银行', 'cny', '快速赎回', '快速赎回', '货币', 0, quick_redemption, 0))
     i += 1
+    while not lines[i].startswith('存款'):
+        i += 1
+    deposit = float(lines[i + 1])
+    result.append(('招商银行', 'cny', '存款', '存款', '货币', 0, deposit, 0))
+    i += 1
     while not lines[i].startswith('理财'):
         i += 1
     i += 1
@@ -171,8 +176,10 @@ def yinhe(datafile: str) -> pd.DataFrame:
         i += 1
     cash = float(lines[i])
     i += 1
-    assert round(total_mv + cash, 2) == asset, \
-        print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
+    # assert round(total_mv + cash, 2) == asset, \
+    #     print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
+    if round(total_mv + cash, 2) != asset:
+        print('Waring: total_mv({}) + cash({}) != asset({})'.format(total_mv, cash, asset))
     result = [('银河', 'cny', 'cash', '现金', '货币', 0, cash + cash2, 0)]
     i += 8
     while not lines[i].startswith('参考盈亏'):
@@ -189,7 +196,7 @@ def yinhe(datafile: str) -> pd.DataFrame:
             name, code = lines[i][: -6].rstrip(), lines[i][-6:]
         i += 1
         if code[0] in ['1', '7']:
-            if code[1] in ['1', '2']:
+            if code[0] == '7' or code[1] in ['1', '2']:
                 type, risk = '转债', 3
             else:
                 name, type, risk = SECURITIES[code]
