@@ -71,29 +71,30 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
     while not re.match(r'^[.\d]+$', lines[i]):
         i += 1
     investment = float(lines[i])
+    result.append(('招商银行', 'cny', '理财', '理财', '货币', 0, investment, 0))
     # assert investment == float(lines[i])
     # asset = round(active_cash + investment, 2)
-    i += 1
-    try:
-        while lines[i]:
-            code = lines[i][4:] if lines[i].startswith('招银理财') else lines[i]
-            if code == '保险':
-                break
-            if code.startswith('招赢日日盈'):
-                code = '招赢日日盈'
-            i += 1
-            while not re.match(r'.*[\d.]+', lines[i]):
-                i += 1
-            hold_gain = float(re.sub('[^\d.]+', '', lines[i]))
-            i += 1
-            while not re.match(r'.*[\d.]+', lines[i]):
-                i += 1
-            market_value = float(lines[i])
-            name, type, risk = SECURITIES[code]
-            result.append(('招商银行', 'cny', code, name, type, risk, market_value, hold_gain))
-            i += 4
-    except IndexError:
-        pass
+    # i += 1
+    # try:
+    #     while lines[i]:
+    #         code = lines[i][4:] if lines[i].startswith('招银理财') else lines[i]
+    #         if code == '保险':
+    #             break
+    #         if code.startswith('招赢日日盈'):
+    #             code = '招赢日日盈'
+    #         i += 1
+    #         while not re.match(r'.*[\d.]+', lines[i]):
+    #             i += 1
+    #         hold_gain = float(re.sub('[^\d.]+', '', lines[i]))
+    #         i += 1
+    #         while not re.match(r'.*[\d.]+', lines[i]):
+    #             i += 1
+    #         market_value = float(lines[i])
+    #         name, type, risk = SECURITIES[code]
+    #         result.append(('招商银行', 'cny', code, name, type, risk, market_value, hold_gain))
+    #         i += 4
+    # except IndexError:
+    #     pass
     df = pd.DataFrame(result, columns=COLUMNS)
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == round(asset - dues, 2), print("sum_mv({}) != asset({})".format(sum_mv, asset))
