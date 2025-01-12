@@ -43,7 +43,7 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
             lines += re.sub(r'[,，:>＞]', '', line).rstrip('\n').split()
 
     i = 0
-    while lines[i] != '本月剩余应还':
+    while lines[i] != '预估剩余应还':
         i += 1
     asset = float(lines[i + 1])
     dues = float(lines[i + 2])
