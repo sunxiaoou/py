@@ -117,7 +117,9 @@ def parse_valuations(file: str) -> list:
             dic = {'_id': date}
             i += 1
             while True:
-                while lines[i] not in INDEXES and not lines[i].startswith('中概互联') \
+                while lines[i] not in INDEXES \
+                        and lines[i] != '中证A100' \
+                        and not lines[i].startswith('中概互联') \
                         and not lines[i].startswith('恒生科技') \
                         and not lines[i].startswith('10年期国债'):
                     if lines[i].startswith('永续A') or lines[i].startswith('注'):
@@ -125,7 +127,9 @@ def parse_valuations(file: str) -> list:
                         break
                     i += 1
                 else:
-                    if lines[i].startswith('中概互联'):
+                    if lines[i] == '中证A100':
+                        key = '中证100'
+                    elif lines[i].startswith('中概互联'):
                         key = '中概互联'
                     elif lines[i].startswith('恒生科技'):
                         key = '恒生科技'
