@@ -43,7 +43,7 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
             lines += re.sub(r'[,，:>＞]', '', line).rstrip('\n').split()
 
     i = 0
-    while lines[i] != '预估剩余应还':
+    while not lines[i].endswith('剩余应还'):
         i += 1
     asset = float(lines[i + 1])
     dues = float(lines[i + 2])
@@ -60,41 +60,32 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
     # assert round(cash + quick_redemption, 2) == active_cash, print(f"{cash} + {quick_redemption} != {active_cash}")
     result.append(('招商银行', 'cny', '快速赎回', '快速赎回', '货币', 0, quick_redemption, 0))
     i += 1
-    while not lines[i].startswith('存款'):
+    try:
+        while not lines[i].startswith('存款'):
+            i += 1
+        deposit = float(lines[i + 1])
+        result.append(('招商银行', 'cny', '存款', '存款', '货币', 0, deposit, 0))
         i += 1
-    deposit = float(lines[i + 1])
-    result.append(('招商银行', 'cny', '存款', '存款', '货币', 0, deposit, 0))
-    i += 1
-    while not lines[i].startswith('理财'):
+    except IndexError:
+        pass
+    try:
+        while not lines[i].startswith('基金'):
+            i += 1
+        deposit = float(lines[i + 1])
+        result.append(('招商银行', 'cny', '基金', '基金', '货币', 0, deposit, 0))
         i += 1
-    i += 1
-    while not re.match(r'^[.\d]+$', lines[i]):
+    except IndexError:
+        pass
+    try:
+        while not lines[i].startswith('理财'):
+            i += 1
         i += 1
-    investment = float(lines[i])
-    result.append(('招商银行', 'cny', '理财', '理财', '货币', 0, investment, 0))
-    # assert investment == float(lines[i])
-    # asset = round(active_cash + investment, 2)
-    # i += 1
-    # try:
-    #     while lines[i]:
-    #         code = lines[i][4:] if lines[i].startswith('招银理财') else lines[i]
-    #         if code == '保险':
-    #             break
-    #         if code.startswith('招赢日日盈'):
-    #             code = '招赢日日盈'
-    #         i += 1
-    #         while not re.match(r'.*[\d.]+', lines[i]):
-    #             i += 1
-    #         hold_gain = float(re.sub('[^\d.]+', '', lines[i]))
-    #         i += 1
-    #         while not re.match(r'.*[\d.]+', lines[i]):
-    #             i += 1
-    #         market_value = float(lines[i])
-    #         name, type, risk = SECURITIES[code]
-    #         result.append(('招商银行', 'cny', code, name, type, risk, market_value, hold_gain))
-    #         i += 4
-    # except IndexError:
-    #     pass
+        while not re.match(r'^[.\d]+$', lines[i]):
+            i += 1
+        investment = float(lines[i])
+        result.append(('招商银行', 'cny', '理财', '理财', '货币', 0, investment, 0))
+    except IndexError:
+        pass
     df = pd.DataFrame(result, columns=COLUMNS)
     sum_mv = round(df['market_value'].sum(), 2)
     assert sum_mv == round(asset - dues, 2), print("sum_mv({}) != asset({})".format(sum_mv, asset))
@@ -198,7 +189,7 @@ def yinhe(datafile: str) -> pd.DataFrame:
         i += 1
         if code[0] in ['1', '7']:
             if code[0] == '7' or code[1] in ['1', '2']:
-                type, risk = '转债', 3
+                type, risk = 'A股', 3
             else:
                 name, type, risk = SECURITIES[code]
         elif code[0] == '2':
@@ -289,7 +280,7 @@ def huabao(datafile: str) -> pd.DataFrame:
             if market_value == round(nav * volume * 10, 2):
                 volume *= 10
             if code[0] == '1':
-                typ, risk = '转债', 2
+                typ, risk = 'A股', 2
             else:
                 name, typ, risk = SECURITIES[code]
             i += 6
@@ -683,7 +674,7 @@ def to_execl(xlsx: str, rates: tuple, sheet: str, df: pd.DataFrame):
          'anchor': 'K31'},
         {'location': (last_row + 2, 7),
          'letter': 'E',
-         'labels': ['货币', '债券', '转债', '指数', '主动', '股票', '虚拟币', '中概股'],
+         'labels': ['货币', 'A股', '中债', '美股', '美债', '其它股', '商品', '虚拟币'],
          'category': 'type',
          'anchor': 'K46'}
     ]
