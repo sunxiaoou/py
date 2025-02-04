@@ -216,7 +216,7 @@ GRID_ARGS = [
     '135.00_165.00_5_1'
 ]
 
-GRID_ARG2 = ['91_101_8_0', '29_40_8_1', '28_39_8_1', '2.9_3.4_5_0']
+GRID_ARG2 = ['91_101_8_0', '45_60_8_1', '18_23.5_6_0', '2.9_3.4_5_0']
 
 
 def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.DataFrame:

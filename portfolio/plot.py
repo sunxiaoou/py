@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+import re
 import sys
 from datetime import datetime, timedelta
 
@@ -6,6 +7,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from mysql import MySql
+from securities import SECURITIES
 from snowball import Snowball
 
 
@@ -58,10 +60,12 @@ def plot_code(code: str, begin: str = ''):
                      (code, begin))
     if df.empty:
         df = Snowball().get_data(code, begin)
-        df = df[['date', 'name', 'close']]
+        df = df[['date', 'close']]
+        title, _, _ = SECURITIES[code]
+    else:
+        title = df['name'].iloc[-1]
     df = df.rename({'close': code}, axis=1)
     print(df)
-    title = df['name'].iloc[-1]
     Plot.draw_single(title, df[['date', code]])
     # Plot.save('%s2.png' % code)
     Plot.show()
@@ -126,13 +130,17 @@ def plot_code_valuation(code: str, begin: str = ''):
 def main():
     date = '2017-06-15'
     if len(sys.argv) > 2:
-        date = sys.argv[2]
+        if re.match(r'\d\d\d\d-\d\d-\d\d', sys.argv[2]):
+            date = sys.argv[2]
+        else:
+            date = (datetime.today() + timedelta(days=int(sys.argv[2]))).strftime('%Y-%m-%d')
     elif len(sys.argv) < 2:
         print('Usage: %s code [yyyy-mm-dd]' % sys.argv[0])   # 'SH510310' '2021-07-01'
+        print('       %s code -365' % sys.argv[0])   # 'SH510310' '2021-07-01'
         sys.exit(1)
 
-    # plot_code(sys.argv[1], date)
-    plot_code_valuation(sys.argv[1], date)
+    plot_code(sys.argv[1], date)
+    # plot_code_valuation(sys.argv[1], date)
 
 
 if __name__ == "__main__":
