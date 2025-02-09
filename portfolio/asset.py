@@ -61,18 +61,18 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
     result.append(('招商银行', 'cny', '快速赎回', '快速赎回', '货币', 0, quick_redemption, 0))
     i += 1
     try:
-        while not lines[i].startswith('存款'):
-            i += 1
-        deposit = float(lines[i + 1])
-        result.append(('招商银行', 'cny', '存款', '存款', '货币', 0, deposit, 0))
-        i += 1
-    except IndexError:
-        pass
-    try:
         while not lines[i].startswith('基金'):
             i += 1
         deposit = float(lines[i + 1])
         result.append(('招商银行', 'cny', '基金', '基金', '货币', 0, deposit, 0))
+        i += 1
+    except IndexError:
+        pass
+    try:
+        while not lines[i].startswith('存款'):
+            i += 1
+        deposit = float(lines[i + 1])
+        result.append(('招商银行', 'cny', '存款', '存款', '货币', 0, deposit, 0))
         i += 1
     except IndexError:
         pass
