@@ -45,13 +45,15 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
     i = 0
     while lines[i] != "总资产":
         i += 1
-    asset = float(lines[i + 1])
-    i += 2
-    while not lines[i].endswith('剩余应还'):
+    while not re.match(r'^[.\d]+$', lines[i]):
         i += 1
-    dues = float(lines[i + 1])
+    asset = float(lines[i])
+    i += 1
+    while not re.match(r'^[.\d]+$', lines[i]):
+        i += 1
+    dues = float(lines[i])
     # repayment = float(lines[i + 3])
-    i += 2
+    i += 1
     while lines[i] != '直接可用':
         i += 1
     cash = float(lines[i + 1]) - dues
@@ -457,7 +459,7 @@ def usmart(datafile: str) -> pd.DataFrame:
     total_hg = float(lines[i + 4])
     i += 5
     result = [('盈立', currency, 'cash', '现金', '货币', 0, cash, 0)]
-    while not lines[i].startswith('持仓盈亏'):
+    while not lines[i].startswith('持仓盈'):
         i += 1
     i += 1
     try:
