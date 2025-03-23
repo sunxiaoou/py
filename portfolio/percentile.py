@@ -40,7 +40,7 @@ def main():
         date = '2017-06-15'
     else:
         print('Usage: %s code estimate_step [yyyy-mm-dd]' % sys.argv[0])   # 'SH510310' '2021-07-01'
-        print('       %s code estimate_step -365' % sys.argv[0])   # 'SH510310' '2021-07-01'
+        print('       %s code estimate_step -365' % sys.argv[0])   # SZ159659 0.03 -182
         sys.exit(1)
     df = get_data_from_snowball(sys.argv[1], date)
     print(get_grid(float(sys.argv[2]), df))
