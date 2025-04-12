@@ -122,7 +122,7 @@ def parse_valuations(file: str) -> list:
                         and not lines[i].startswith('中概互联') \
                         and not lines[i].startswith('恒生科技') \
                         and not lines[i].startswith('10年期国债'):
-                    if lines[i].startswith('永续A') or lines[i].startswith('注'):
+                    if lines[i].startswith('永续A') or lines[i].startswith('注') or lines[i].startswith('By'):
                         i += 1
                         break
                     i += 1

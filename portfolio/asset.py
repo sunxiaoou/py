@@ -199,6 +199,8 @@ def yinhe(datafile: str) -> pd.DataFrame:
                 name, type, risk = SECURITIES[code]
         elif code[0] == '2':
             type, risk = '货币', 0
+        elif code[0] == '3':
+            type, risk = 'A股', 3
         else:
             name, type, risk = SECURITIES[code]
 
@@ -679,7 +681,7 @@ def to_execl(xlsx: str, rates: tuple, sheet: str, df: pd.DataFrame):
          'anchor': 'K31'},
         {'location': (last_row + 2, 7),
          'letter': 'E',
-         'labels': ['货币', 'A股', '中债', '美股', '美债', '其它股', '商品', '虚拟币'],
+         'labels': ['货币', '中债', '美债', 'A股', '美股大盘', '美股价值', '美股中小', '美股生科', '其它股', '商品', '虚拟币'],
          'category': 'type',
          'anchor': 'K46'}
     ]
