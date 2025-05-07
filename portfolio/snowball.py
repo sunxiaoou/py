@@ -93,7 +93,7 @@ class Snowball:
         dic[name] = round(dic.pop('close'), 2)
         return dic
 
-    def get_cvt_bones(self, codes: list) -> pd.DataFrame:
+    def get_cvt_bonds(self, codes: list) -> pd.DataFrame:
         params = {
             'symbol': ','.join(codes),
             'extend': 'detail',
@@ -139,8 +139,8 @@ class Snowball:
         stocks = resp.json()['data']['stocks']
         return [x['symbol'] for x in stocks]
 
-    def my_cvt_bones(self):
-        return self.get_cvt_bones(self.my_list(1, PID_CVT))     # + self.my_list(1, 12)
+    def my_cvt_bonds(self):
+        return self.get_cvt_bonds(self.my_list(1, PID_CVT))     # + self.my_list(1, 12)
 
 
 def draw(df: pd.DataFrame, name: str):
@@ -171,7 +171,7 @@ def get_codes(file: str) -> list:
 
 
 def get_data(code: str, db: MySql, snowball: Snowball) -> pd.DataFrame:
-    dic = db.last_row('cvtbone_daily', 'date', 'code = "%s"' % code)
+    dic = db.last_row('cvtbond_daily', 'date', 'code = "%s"' % code)
     if not dic:
         df = snowball.get_data(code)
         dic['name'] = snowball.get_name(code)
@@ -195,7 +195,7 @@ def batch(file: str):
         df = get_data(code, db, snowball)
         if not df.empty:
             print(df)
-            db.from_frame('cvtbone_daily', df)
+            db.from_frame('cvtbond_daily', df)
         time.sleep(0.2)
 
 

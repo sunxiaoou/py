@@ -94,7 +94,7 @@ class LoopBack:
         where = 'code = "%s"' % code
         if start_date:
             where += ' AND date >= "%s"' % start_date
-        data = db.to_frame('cvtbone_daily', ['date', 'name', 'open'], where)
+        data = db.to_frame('cvtbond_daily', ['date', 'name', 'open'], where)
         if data.empty:
             snowball = Snowball()
             data = snowball.get_data(code, start_date)
@@ -216,13 +216,14 @@ GRID_ARGS = [
     '135.00_165.00_5_1']
 
 GRID_ARG2 = [
-    '85_97_8_0',
-    '43.5_59.5_8_0',
-    '18.5_27.5_9_0',
-    '1.0_1.38_8_1',
-    '1.27_1.75_8_1'
-]
-
+    '85_97_8_1',        # TLT
+    '43.5_59.5_8_1',    # IBIT
+    '18.5_27.5_9_0',    # UVXY
+    '1.32_1.75_7_1',    # SZ159655 标普华夏
+    '1.0_1.38_8_1',     # SZ159513 纳指大成
+    '1.27_1.75_8_1',    # SSZ159659	纳指招商
+    '0.98_1.24_6_1',    # SH513290	生科汇添富
+    '1.85_2.20_5_1']    # SZ159985	豆粕华夏
 
 def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.DataFrame:
     result = []
@@ -268,7 +269,7 @@ def batch(quantity: int, start_date: str):
     snowball = Snowball()
     dic = snowball.last_close(codes[0])
     date = dic['date'].strftime('%y%m%d')
-    df = snowball.get_cvt_bones(codes)
+    df = snowball.get_cvt_bonds(codes)
     result = df[['代码', '价格', '涨跌幅%']].rename({'代码': 'code', '价格': 'price', '涨跌幅%': 'percent'}, axis=1)
     result['code'] = result['code'].apply(lambda x: LoopBack.complete_code(x))
 

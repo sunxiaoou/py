@@ -471,7 +471,7 @@ def usmart(datafile: str) -> pd.DataFrame:
             market_value = float(lines[i])
             nav = float(lines[i + 1])
             i += 2
-            while not re.match(r'^[A-Z]{4}$', lines[i]):
+            while not re.match(r'^[A-Z]{3,4}$', lines[i]):
                 i += 1
             code = lines[i]
             i += 1

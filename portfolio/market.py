@@ -77,7 +77,7 @@ class Market:
         return result
 
     @staticmethod
-    def get_cvtbones(pid: int = None) -> list:
+    def get_cvtbonds(pid: int = None) -> list:
         Market.HEADERS['Host'] = Market.URL_STOCK.split('/')[2]
         if pid == PID_MISC:
             codes = Market.get_list(1, pid)
@@ -176,9 +176,9 @@ def main():
             '501050', '519671', '540003', '540006']
         result = Market.get_funds(Market.fund_base, funds)
     elif sys.argv[1] == 'cvtb':
-        result = Market.get_cvtbones()
+        result = Market.get_cvtbonds()
     elif sys.argv[1] == 'misc':
-        result = Market.get_cvtbones(PID_MISC)
+        result = Market.get_cvtbonds(PID_MISC)
     else:
         print("Usage: {} a!cvtb|hk|us|fund".format(sys.argv[0]))
         sys.exit(1)

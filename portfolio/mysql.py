@@ -149,9 +149,9 @@ def main():
     # print(df)
     db = MySql(database='portfolio')
     # print(db.to_frame('cvtb_rank_daily', None, 'date = (select max(`date`) from cvtb_rank_daily)'))
-    # print(db.to_frame('cvtbone_daily', ['timestamp', 'name', 'open'],
+    # print(db.to_frame('cvtbond_daily', ['timestamp', 'name', 'open'],
     #                   'code = "%s"' % 'SZ127007'))
-    # pprint(db.last_row('cvtbone_daily', 'date', 'code = "%s"' % 'SZ127007'))
+    # pprint(db.last_row('cvtbond_daily', 'date', 'code = "%s"' % 'SZ127007'))
     # db = MySql(database='portfolio')
     # print(db.last_row('valuation', 'timestamp'))
     print(db.last_row('threshold', 'name', "code = 'H30533'"))

@@ -19,8 +19,8 @@ class TestSnowball(unittest.TestCase):
     def test_get_data(self):
         print(self.snowball.get_data('SPY', '2004-01-01'))
 
-    def test_my_cvt_bones(self):
-        print(self.snowball.my_cvt_bones())
+    def test_my_cvt_bonds(self):
+        print(self.snowball.my_cvt_bonds())
 
     def test_postman(self):
         import requests

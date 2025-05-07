@@ -17,7 +17,7 @@ pd.set_option('display.max_columns', 100)
 MAX_COLUMN = 29
 
 
-def get_bones(xlsx: str) -> (dict, pd.DataFrame):
+def get_bonds(xlsx: str) -> (dict, pd.DataFrame):
     wb = load_workbook(xlsx, data_only=True)
 
     ws = wb['强赎预警']
@@ -93,7 +93,7 @@ def to_excel(xlsx: str, sheet: str, df: pd.DataFrame):
 
 
 def update_price(codes: list, db: MySql):
-    table = 'cvtbone_daily'
+    table = 'cvtbond_daily'
     snowball = Snowball()
     for code in codes:
         dic = db.last_row(table, 'date', 'code = "%s"' % code)
@@ -126,7 +126,7 @@ def main():
         sys.exit(1)
 
     in_xlsx = sys.argv[1]
-    warning, bones = get_bones(in_xlsx)
+    warning, bonds = get_bonds(in_xlsx)
     out_xlsx = None
     title = '无阈值排名'
     if len(sys.argv) > 3:
@@ -137,22 +137,22 @@ def main():
             out_xlsx = sys.argv[2]
         else:
             rank130 = int(sys.argv[2])
-            df = bones.loc[bones['130排名'] == rank130]
+            df = bonds.loc[bonds['130排名'] == rank130]
             r = df.iloc[0, df.columns.get_loc('无阈值排名')]
-            bones = bones[bones['无阈值排名'] <= r]
+            bonds = bonds[bonds['无阈值排名'] <= r]
             title += '(截止到<130的第{}名)'.format(rank130)
     print(title)
-    print(bones)
+    print(bonds)
     date = re.search(r'\d{8}', in_xlsx)[0]
     if out_xlsx:
-        to_excel(out_xlsx, date, bones)
+        to_excel(out_xlsx, date, bonds)
 
-    mine = Snowball().my_cvt_bones()
-    owned = pd.merge(bones, mine[['代码']], on=['代码'])
+    mine = Snowball().my_cvt_bonds()
+    owned = pd.merge(bonds, mine[['代码']], on=['代码'])
     print('已持有的上榜转债({})'.format(len(owned)))
     print(owned)
 
-    unowned = pd.concat([bones, owned]).drop_duplicates(keep=False)
+    unowned = pd.concat([bonds, owned]).drop_duplicates(keep=False)
     unowned = unowned[unowned['价格'] < 170]
     print('未持有的<170的上榜转债({})'.format(len(unowned)))
     print(unowned)
