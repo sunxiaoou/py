@@ -17,12 +17,13 @@ pd.set_option('display.max_columns', 10)
 
 
 class Grid:
-    def __init__(self, low: float, high: float, number: int, is_percent: bool):
+    def __init__(self, low: float, high: float, number: int, is_percent: bool, title: str = ''):
         self.low = low
         self.high = high
         self.is_percent = is_percent
         self.number = number
-        self.name = '%.2f_%.2f_%d_%d' % (self.low, self.high, self.number, 1 if self.is_percent else 0)
+        s = '%.2f_%.2f_%d_%d' if self.low.is_integer() and self.high.is_integer() else '%.3f_%.3f_%d_%d'
+        self.name = s % (self.low, self.high, self.number, 1 if self.is_percent else 0)
         if not self.is_percent:
             self.change = round((high - low) / number, 2)
             self.change2 = - self.change
@@ -32,6 +33,8 @@ class Grid:
             self.change2 = round((low / high) ** (1 / number) - 1, 4)
             self.array = [round(high * (1 + self.change2) ** i, 3) for i in range(self.number + 1)]
             self.array[-1] = round(self.array[-1], 1)
+        if title:
+            self.name = title + '-' + self.name
 
     def __str__(self):
         if self.is_percent:
@@ -70,9 +73,11 @@ class Grid:
         return df
 
     @classmethod
-    def make(cls, s: str):
+    def make(cls, s: str, name: str = '') -> 'Grid':
         a = s.split('_')
         args = [float(a[0]), float(a[1]), int(a[2]), True if int(a[3]) else False]
+        if name:
+            args.append(name)
         return cls(*args)
 
 
@@ -216,14 +221,23 @@ GRID_ARGS = [
     '135.00_165.00_5_1']
 
 GRID_ARG2 = [
-    '85_97_8_1',        # TLT
-    '43.5_59.5_8_1',    # IBIT
-    '18.5_27.5_9_0',    # UVXY
-    '1.32_1.75_7_1',    # SZ159655 标普华夏
-    '1.0_1.38_8_1',     # SZ159513 纳指大成
-    '1.27_1.75_8_1',    # SSZ159659	纳指招商
-    '0.98_1.24_6_1',    # SH513290	生科汇添富
-    '1.85_2.20_5_1']    # SZ159985	豆粕华夏
+    ('1.32_1.75_7_1', 'SZ159655', '标普'),
+    ('1.27_1.75_8_1', 'SZ159659', '纳指'),
+    ('0.492_0.595_5_1', 'SZ159781', '双创'),
+    ('1.783_2.199_5_1', 'SZ159985', '豆粕'),
+    ('0.67_0.82_5_1', 'SZ159992', '创新药'),
+    ('1.359_1.644_5_1', 'SZ164824', '印度'),
+    ('1.29_1.575_5_1', 'SH513050', '中概'),
+    ('0.98_1.24_6_1', 'SH513290',  '生科'),
+    ('1.327_1.555_5_1', 'SH513520', '日经'),
+    ('1.265_1.454_5_1', 'SH515180', '红利'),
+    ('6.312_7.419_5_1', 'SH518800',  '黄金'),
+    ('43.5_59.5_8_1', 'IBIT', 'IBIT'),
+    ('84.8_105.8_5_1', 'IGV', 'IGV'),
+    ('43_56_6_1', 'MAGS', 'MAGS'),
+    ('84_97_5_1', 'TLT', 'TLT'),
+    ('18.5_27.5_9_1', 'UVXY', 'UVXY')]
+
 
 def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.DataFrame:
     result = []
@@ -302,11 +316,14 @@ def batch(quantity: int, start_date: str):
 
 
 def show_grids(quantity: int):
-    for args in GRID_ARGS + GRID_ARG2:
-        grid = Grid.make(args)
+    for arg in GRID_ARGS:
+        grid = Grid.make(arg)
         print(grid)
         if quantity:
             print(grid.show_grid(quantity))
+    for arg in GRID_ARG2:
+        grid = Grid.make(arg[0], arg[2])
+        print(grid)
 
 
 def usage():
