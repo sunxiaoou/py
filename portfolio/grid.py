@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+import math
 import re
 import sys
 from datetime import datetime, timedelta
@@ -41,7 +42,7 @@ class Grid:
             changes = '({}%, {}%)'.format(round(self.change * 100, 2), round(self.change2 * 100, 2))
         else:
             changes = '(%.2f, %.2f)' % (self.change, self.change2)
-        return self.name + ': ' + str(changes) + ' ' + str(self.array)
+        return self.name + ': ' + str(changes) + ' ' + str(self.array) + ' ' + str(self.get_margin())
 
     def get_name(self) -> str:
         return self.name
@@ -59,6 +60,20 @@ class Grid:
             index -= 1
             count -= 1
         return index, np.nan if index > len(self.array) - 2 else self.array[index + 1], self.array[index], count
+
+    def get_margin(self) -> float:
+        average = (self.high + self.low) / 2 * 0.05
+        exponent = math.floor(math.log10(average))
+        scale = 10 ** exponent
+        first_digit = average / scale
+        first_two_digits = first_digit * 10
+        second_digit = int(first_two_digits) % 10
+        if second_digit > 5:
+            first_digit = math.floor(first_digit) + 1
+        else:
+            first_digit = math.floor(first_digit)
+        result = first_digit * scale
+        return result
 
     def show_grid(self, quantity: int) -> pd.DataFrame:
         df = pd.DataFrame([self.array, [0] + [quantity] * self.number],
@@ -221,21 +236,10 @@ GRID_ARGS = [
     '135.00_165.00_5_1']
 
 GRID_ARG2 = [
-    ('1.32_1.75_7_1', 'SZ159655', '标普'),
     ('1.27_1.75_8_1', 'SZ159659', '纳指'),
-    ('0.492_0.595_5_1', 'SZ159781', '双创'),
-    ('1.783_2.199_5_1', 'SZ159985', '豆粕'),
-    ('0.67_0.82_5_1', 'SZ159992', '创新药'),
-    ('1.359_1.644_5_1', 'SZ164824', '印度'),
-    ('1.29_1.575_5_1', 'SH513050', '中概'),
-    ('0.98_1.24_6_1', 'SH513290',  '生科'),
-    ('1.327_1.555_5_1', 'SH513520', '日经'),
-    ('1.265_1.454_5_1', 'SH515180', '红利'),
-    ('6.312_7.419_5_1', 'SH518800',  '黄金'),
     ('43.5_59.5_8_1', 'IBIT', 'IBIT'),
-    ('84.8_105.8_5_1', 'IGV', 'IGV'),
     ('43_56_6_1', 'MAGS', 'MAGS'),
-    ('84_97_5_1', 'TLT', 'TLT'),
+    ('83.5_90.5_5_1', 'TLT', 'TLT'),
     ('18.5_27.5_9_1', 'UVXY', 'UVXY')]
 
 

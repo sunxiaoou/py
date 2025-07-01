@@ -103,7 +103,7 @@ def zhaoshang_bank(datafile: str) -> pd.DataFrame:
 
 def hangseng_bank(datafile: str) -> pd.DataFrame:
     cash = float(re.sub(r'.+_', '', datafile[: -4]))
-    result = [('恒生银行', 'cny', 'cash', '现金', '货币', 0, cash, 0)]
+    result = [('恒生银行', 'cny', 'cash', '现金', '货币', 0, cash, 0.0)]
 
     with open(datafile) as fp:
         lines = [re.sub(r'[,＋]', '', re.sub('－', '-', line)).rstrip('\n') for line in fp.readlines()]
@@ -177,7 +177,7 @@ def yinhe(datafile: str) -> pd.DataFrame:
     #     print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
     if round(total_mv + cash, 2) != asset:
         print('Waring: total_mv({}) + cash({}) != asset({})'.format(total_mv, cash, asset))
-    result = [('银河', 'cny', 'cash', '现金', '货币', 0, cash + cash2, 0)]
+    result = [('银河', 'cny', 'cash', '现金', '货币', 0, cash + cash2, 0.0)]
     i += 8
     while not lines[i].startswith('参考盈亏'):
         i += 1
@@ -194,13 +194,13 @@ def yinhe(datafile: str) -> pd.DataFrame:
         i += 1
         if code[0] in ['1', '7']:
             if code[0] == '7' or code[1] in ['1', '2']:
-                type, risk = 'A股', 3
+                type, risk = '可转债', 3
             else:
                 name, type, risk = SECURITIES[code]
         elif code[0] == '2':
             type, risk = '货币', 0
         elif code[0] == '3':
-            type, risk = 'A股', 3
+            type, risk = '可转债', 3
         else:
             name, type, risk = SECURITIES[code]
 
@@ -681,7 +681,7 @@ def to_execl(xlsx: str, rates: tuple, sheet: str, df: pd.DataFrame):
          'anchor': 'K31'},
         {'location': (last_row + 2, 7),
          'letter': 'E',
-         'labels': ['货币', '中债', '美债', 'A股', '美股大盘', '美股价值', '美股中小', '美股生科', '其它股', '商品', '虚拟币'],
+         'labels': ['货币', '中债', '美债', 'A股', '美股大盘', '美股价值', '可转债', '美股生科', '其它股', '商品', '虚拟币'],
          'category': 'type',
          'anchor': 'K46'}
     ]
