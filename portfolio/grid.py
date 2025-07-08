@@ -224,11 +224,6 @@ class LoopBack:
 
 
 GRID_ARGS = [
-    # (115, 135, 5, False),   # (115, 135, 5, True),
-    # (120, 142, 5, False),   # (120, 142, 5, True),
-    # (125, 149, 5, True),    # (125, 149, 5, False),
-    # (130, 157, 5, True),    # (130, 157, 5, False),
-    # (135, 165, 5, True),    # (135, 165, 5, False)
     '115.00_135.00_5_0',
     '120.00_142.00_5_0',
     '125.00_149.00_5_1',
@@ -240,7 +235,7 @@ GRID_ARG2 = [
     ('43.5_59.5_8_1', 'IBIT', 'IBIT'),
     ('43_56_6_1', 'MAGS', 'MAGS'),
     ('83.5_90.5_5_1', 'TLT', 'TLT'),
-    ('18.5_27.5_9_1', 'UVXY', 'UVXY')]
+    ('18_27_9_1', 'UVXY', 'UVXY')]
 
 
 def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.DataFrame:
