@@ -192,8 +192,8 @@ def yinhe(datafile: str) -> pd.DataFrame:
         else:
             name, code = lines[i][: -6].rstrip(), lines[i][-6:]
         i += 1
-        if code[0] in ['1', '7']:
-            if code[0] == '7' or code[1] in ['1', '2']:
+        if code[0] in ['0', '1', '7']:
+            if code[0] in ['0', '7'] or code[1] in ['1', '2']:
                 type, risk = '可转债', 3
             else:
                 name, type, risk = SECURITIES[code]
@@ -681,7 +681,7 @@ def to_execl(xlsx: str, rates: tuple, sheet: str, df: pd.DataFrame):
          'anchor': 'K31'},
         {'location': (last_row + 2, 7),
          'letter': 'E',
-         'labels': ['货币', '中债', '美债', 'A股', '美股大盘', '美股价值', '可转债', '美股生科', '其它股', '商品', '虚拟币'],
+         'labels': ['货币', '中债', '美债', 'A股', '美股宽基', '美股价值', '可转债', '美股科技', '其它市场', '商品', '加密货币'],
          'category': 'type',
          'anchor': 'K46'}
     ]
