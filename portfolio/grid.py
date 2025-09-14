@@ -23,8 +23,6 @@ class Grid:
         self.high = high
         self.is_percent = is_percent
         self.number = number
-        s = '%.2f_%.2f_%d_%d' if self.low.is_integer() and self.high.is_integer() else '%.3f_%.3f_%d_%d'
-        self.name = s % (self.low, self.high, self.number, 1 if self.is_percent else 0)
         if not self.is_percent:
             self.change = round((high - low) / number, 2)
             self.change2 = - self.change
@@ -34,15 +32,20 @@ class Grid:
             self.change2 = round((low / high) ** (1 / number) - 1, 4)
             self.array = [round(high * (1 + self.change2) ** i, 3) for i in range(self.number + 1)]
             self.array[-1] = round(self.array[-1], 1)
+        margin = self.get_margin()
+        s = '%.2f_%.2f_%d_%d' if self.low.is_integer() and self.high.is_integer() else '%.3f_%.3f_%d_%d'
         if title:
-            self.name = title + '-' + self.name
+            self.name = (title + '-' +
+                         s % (self.low - margin, self.high + margin, self.number, 1 if self.is_percent else 0))
+        else:
+            self.name = s % (self.low, self.high, self.number, 1 if self.is_percent else 0)
 
     def __str__(self):
         if self.is_percent:
             changes = '({}%, {}%)'.format(round(self.change * 100, 2), round(self.change2 * 100, 2))
         else:
             changes = '(%.2f, %.2f)' % (self.change, self.change2)
-        return self.name + ': ' + str(changes) + ' ' + str(self.array) + ' ' + str(self.get_margin())
+        return self.name + ': ' + str(changes) + ' ' + str(self.array) # + ' ' + str(self.get_margin())
 
     def get_name(self) -> str:
         return self.name
@@ -231,11 +234,10 @@ GRID_ARGS = [
     '135.00_165.00_5_1']
 
 GRID_ARG2 = [
-    ('1.27_1.75_8_1', 'SZ159659', '纳指'),
-    ('43.5_59.5_8_1', 'IBIT', 'IBIT'),
+    ('52.66_66.78_5_1', 'IBIT', 'IBIT'),
     ('43_56_6_1', 'MAGS', 'MAGS'),
     ('83.5_90.5_5_1', 'TLT', 'TLT'),
-    ('18_27_9_1', 'UVXY', 'UVXY')]
+    ('14.5_18.5_5_1', 'UVXY', 'UVXY')]
 
 
 def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.DataFrame:
