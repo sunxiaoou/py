@@ -337,9 +337,9 @@ def huasheng(datafile: str) -> pd.DataFrame:
     while len(lines) - i > 6 and lines[i] != '行情' and lines[i + 1] != '行情':
         # name = lines[i]
         # i += 1
-        while not re.match(r'^\d+$', lines[i]):
+        while not re.match(r'^[\d.]+$', lines[i]):
             i += 1
-        volume = int(lines[i])
+        market_value = float(lines[i])
         i += 1
         hold_gain = float(lines[i])
         i += 1
@@ -355,7 +355,7 @@ def huasheng(datafile: str) -> pd.DataFrame:
         name, type, risk = SECURITIES[code]
         while not re.match(r'^[\d.]+$', lines[i]):
             i += 1
-        market_value = float(lines[i])
+        volume = int(lines[i])
         i += 1
         while not re.match(r'^[-\d.]+$', lines[i]):
             i += 1
@@ -461,7 +461,7 @@ def usmart(datafile: str) -> pd.DataFrame:
     total_hg = float(lines[i + 4])
     i += 5
     result = [('盈立', currency, 'cash', '现金', '货币', 0, cash, 0)]
-    while not lines[i].startswith('持仓盈'):
+    while not lines[i].startswith('现价'):
         i += 1
     i += 1
     try:
@@ -470,19 +470,19 @@ def usmart(datafile: str) -> pd.DataFrame:
                 i += 1
             market_value = float(lines[i])
             nav = float(lines[i + 1])
-            i += 2
-            while not re.match(r'^[A-Z]{3,4}$', lines[i]):
-                i += 1
-            code = lines[i]
             i += 1
             while not re.match(r'^[\d]+$', lines[i]):
                 i += 1
             volume = int(lines[i])
             cost = float(lines[i + 1])
+            i += 2
+            while not re.match(r'^[A-Z]{3,4}$', lines[i]):
+                i += 1
+            code = lines[i]
             name, type, risk = SECURITIES[code]
             hold_gain = round(market_value - cost * volume, 2)
             result.append(('盈立', currency, code, name, type, risk, market_value, hold_gain, nav))
-            i += 3
+            i += 1
     except IndexError:
         pass
     df = pd.DataFrame(result, columns=COLUMNS + ['nav'])
