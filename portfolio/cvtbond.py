@@ -50,24 +50,26 @@ def get_bonds(xlsx: str) -> (dict, pd.DataFrame):
             data[0][i] = title
         else:
             title = data[0][i]
-    cols = ['代码', '名称', '价格', '涨幅']
     frame = pd.DataFrame(data[2:], columns=[data[0], data[1]])
-
-    df = pd.concat([frame[i][cols] for i in titles]).drop_duplicates()
-    df = df[df['价格'] != '#N/A']
-    df.index = np.arange(1, len(df) + 1)
-    df = df.reindex(axis=1)
+    base_cols = ['代码', '名称', '价格', '涨幅', '强赎提示']
+    base1 = frame['无阈值'][base_cols]
+    base2 = frame['150元阈值'][base_cols]
+    base3 = frame['浮动阈值'][base_cols]
+    base4 = frame['130元阈值'][base_cols]
+    df = pd.concat([base1, base2, base3, base4], ignore_index=True) \
+        .drop_duplicates(subset='代码', keep='first')
+    rank1 = frame['无阈值'][['代码', '最新排名']].rename(columns={'最新排名': '无阈值排名'})
+    rank2 = frame['150元阈值'][['代码', '最新排名']].rename(columns={'最新排名': '150阈值排名'})
+    rank3 = frame['浮动阈值'][['代码', '最新排名']].rename(columns={'最新排名': '浮动阈值排名'})
+    rank4 = frame['130元阈值'][['代码', '最新排名']].rename(columns={'最新排名': '130阈值排名'})
+    df = df.merge(rank1, on='代码', how='left')
+    df = df.merge(rank2, on='代码', how='left')
+    df = df.merge(rank3, on='代码', how='left')
+    df = df.merge(rank4, on='代码', how='left')
+    df = df.rename(columns={'涨幅': '涨跌幅%', '强赎提示': '强赎天计数'})
     df['代码'] = df['代码'].apply(lambda x: str(x))
-    df['无阈值排名'] = df.index
-    df['170阈值排名'] = df['无阈值排名'][df['价格'] < 170].rank()
-    df['150阈值排名'] = df['170阈值排名'][df['价格'] < 150].rank()
-    df['130阈值排名'] = df['150阈值排名'][df['价格'] < 130].rank()
-    # print(df.dtypes)
-    df['强赎天计数'] = df['代码'].apply(lambda x: warning[x] if x in warning else np.nan)
-    df.rename({'170阈值排名': '170排名', '150阈值排名': '150排名', '130阈值排名': '130排名', '涨幅': '涨跌幅%'},
-              axis=1, inplace=True)
+    df['涨跌幅%'] = df['涨跌幅%'].apply(lambda x: float(x) * 100)
     # print(df)
-
     return warning, df
 
 
@@ -141,11 +143,14 @@ def main():
             r = df.iloc[0, df.columns.get_loc('无阈值排名')]
             bonds = bonds[bonds['无阈值排名'] <= r]
             title += '(截止到<130的第{}名)'.format(rank130)
-    print(title)
-    print(bonds)
+    out = bonds[['代码', '名称', '价格', '涨跌幅%', '无阈值排名', '150阈值排名', '浮动阈值排名', '130阈值排名', '强赎天计数']]
     date = re.search(r'\d{8}', in_xlsx)[0]
+    print(date)
     if out_xlsx:
-        to_excel(out_xlsx, date, bonds)
+        to_excel(out_xlsx, date, out)
+
+    bonds['170排名'] = bonds['无阈值排名'][bonds['价格'] < 170].rank()
+    bonds = bonds[['代码', '名称', '价格', '涨跌幅%', '170排名', '强赎天计数']]
 
     mine = Snowball().my_cvt_bonds()
     owned = pd.merge(bonds, mine[['代码']], on=['代码'])

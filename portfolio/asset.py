@@ -435,7 +435,7 @@ def usmart(datafile: str) -> pd.DataFrame:
     with open(datafile) as f:
         lines = []
         for line in f.readlines():
-            line = re.sub(r'[,，]', '', re.sub(r'[+＋]', ' ', re.sub('[-－]', ' -', line)))
+            line = re.sub(r'[,，]', '', re.sub(r'[+＋]', ' +', re.sub('[-－]', ' -', line)))
             lines += line.rstrip('\n').split()
 
     currency = 'usd'
@@ -470,7 +470,7 @@ def usmart(datafile: str) -> pd.DataFrame:
                 i += 1
             market_value = float(lines[i])
             nav = float(lines[i + 1])
-            i += 1
+            i += 2
             while not re.match(r'^[\d]+$', lines[i]):
                 i += 1
             volume = int(lines[i])
