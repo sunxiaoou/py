@@ -15,7 +15,7 @@ BACKUP_DIR=$3
 REMOTE_HOST=$4
 
 # List of tables to back up
-TABLES=("asset" "cvtb_rank_daily" "cvtbone_daily" "etf_daily" "threshold" "valuation")
+TABLES=("asset" "cvtb_rank_daily" "cvtbond_daily" "etf_daily" "threshold" "valuation")
 
 # Ensure the backup directory exists
 mkdir -p $BACKUP_DIR
