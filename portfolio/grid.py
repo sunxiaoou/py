@@ -234,10 +234,10 @@ GRID_ARGS = [
     '135.00_165.00_5_1']
 
 GRID_ARG2 = [
-    ('52.66_66.78_5_1', 'IBIT', 'IBIT'),
+    ('49_67_6_1', 'IBIT', 'IBIT'),
     ('43_56_6_1', 'MAGS', 'MAGS'),
     ('83.5_92.0_5_1', 'TLT', 'TLT'),
-    ('9.8_12.5_5_1', 'UVXY', 'UVXY')]
+    ('49.5_66.5_6_1', 'UVXY', 'UVXY')]
 
 
 def trade_codes(grid: Grid, codes: list, quantity: int, start_date: str) -> pd.DataFrame:

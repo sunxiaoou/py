@@ -149,7 +149,9 @@ def main():
     if out_xlsx:
         to_excel(out_xlsx, date, out)
 
-    bonds['170排名'] = bonds['无阈值排名'][bonds['价格'] < 170].rank()
+    mask = bonds['价格'] <= 170
+    bonds['170排名'] = np.nan
+    bonds.loc[mask, '170排名'] = range(1, mask.sum() + 1)
     bonds = bonds[['代码', '名称', '价格', '涨跌幅%', '170排名', '强赎天计数']]
 
     mine = Snowball().my_cvt_bonds()
