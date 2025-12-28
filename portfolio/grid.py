@@ -31,7 +31,8 @@ class Grid:
             self.change = round((high / low) ** (1 / number) - 1, 4)
             self.change2 = round((low / high) ** (1 / number) - 1, 4)
             self.array = [round(high * (1 + self.change2) ** i, 3) for i in range(self.number + 1)]
-            self.array[-1] = round(self.array[-1], 1)
+            if not title:
+                self.array[-1] = round(self.array[-1], 1)
         margin = self.get_margin()
         s = '%.2f_%.2f_%d_%d' if self.low.is_integer() and self.high.is_integer() else '%.3f_%.3f_%d_%d'
         if title:
