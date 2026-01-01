@@ -9,6 +9,7 @@ from decimal import Decimal, ROUND_HALF_UP
 # 业务类型映射
 BIZ_MAP = {
     "股息": "DIVIDEND",
+    "股息修正": "DIVIDEND_ADJ",
     "股息税": "DIVIDEND_TAX",
     "股息税修正": "DIVIDEND_TAX_ADJ",
 
@@ -26,6 +27,7 @@ BIZ_MAP = {
     # 港股部分出现
     "股息手续费": "DIVIDEND_FEE",
     "紅股手续费": "BONUS_SHARE_FEE",
+    "红股过户费": "BONUS_SHARE_TRANSFER_FEE",
     "融资利息归本": "MARGIN_INTEREST_PRINCIPAL",
 
     # 美股里出现
@@ -34,7 +36,13 @@ BIZ_MAP = {
     "基金申购": "FUND_SUBSCRIPTION",
     "基金赎回": "FUND_REDEMPTION",
 
-    "换汇": "CURRENCY_EXCHANGE"
+    "换汇": "CURRENCY_EXCHANGE",
+
+    "IPO手续费": "IPO_FEE",
+    "IPO认购": "IPO_SUBSCRIPTION",
+    "IPO退款": "IPO_REFUND",
+
+    "返佣": "REBATE"
 }
 
 # --- 正则 ---
