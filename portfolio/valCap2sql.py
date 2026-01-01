@@ -10,6 +10,7 @@ from decimal import Decimal, ROUND_HALF_UP
 BIZ_MAP = {
     "股息": "DIVIDEND",
     "股息税": "DIVIDEND_TAX",
+    "股息税修正": "DIVIDEND_TAX_ADJ",
 
     "买入证券": "BUY",
     "卖出证券": "SELL",
@@ -20,13 +21,20 @@ BIZ_MAP = {
     "资金转入": "CASH_IN",
     "存入资金": "CASH_IN",
     "资金转出": "CASH_OUT",
+    "取出资金": "CASH_OUT",
 
     # 港股部分出现
     "股息手续费": "DIVIDEND_FEE",
     "紅股手续费": "BONUS_SHARE_FEE",
+    "融资利息归本": "MARGIN_INTEREST_PRINCIPAL",
 
     # 美股里出现
     "ADR保管费": "ADR_FEE",
+
+    "基金申购": "FUND_SUBSCRIPTION",
+    "基金赎回": "FUND_REDEMPTION",
+
+    "换汇": "CURRENCY_EXCHANGE"
 }
 
 # --- 正则 ---
@@ -263,9 +271,14 @@ def parse_records(lines: list[str], default_cash_symbol_prefix: str = "CASH_", s
             else:
                 msec = RE_SEC.match(lines[idx].strip())
                 if not msec:
-                    raise SystemExit(f"[人工检查] 预期证券行或时间行，但得到(行 {idx+1}): {lines[idx]!r}，月份 {year}-{month:02d}")
-                symbol = msec.group(1).strip()
-                security_name = (msec.group(2) or "").strip() or None
+                    if biz_name == "基金申购" or biz_name == "基金赎回":
+                        symbol = None
+                        security_name = lines[idx].strip()
+                    else:
+                        raise SystemExit(f"[人工检查] 预期证券行或时间行，但得到(行 {idx+1}): {lines[idx]!r}，月份 {year}-{month:02d}")
+                else:
+                    symbol = msec.group(1).strip()
+                    security_name = (msec.group(2) or "").strip() or None
                 idx += 1
 
                 idx = _skip_blanks_and_noise(lines, idx)
