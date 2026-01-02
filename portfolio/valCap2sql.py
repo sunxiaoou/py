@@ -13,8 +13,8 @@ BIZ_MAP = {
     "股息税": "DIVIDEND_TAX",
     "股息税修正": "DIVIDEND_TAX_ADJ",
 
-    "买入证券": "BUY",
-    "卖出证券": "SELL",
+    "买入证券": "TRADE_BUY",
+    "卖出证券": "TRADE_SELL",
 
     "证券交易费用": "TRADE_FEE",
 
@@ -259,6 +259,9 @@ def parse_records(lines: list[str], default_cash_symbol_prefix: str = "CASH_", s
                 raise SystemExit(f"[人工检查] 金额行解析失败(行 {idx+1}): {lines[idx]!r}，月份 {year}-{month:02d}，错误: {e}")
             idx += 1
 
+            if biz_type_code == "CURRENCY_EXCHANGE" and amount > 0:
+                biz_type_code = "CURRENCY_EXCHANGE_IN"
+
             # 更新本月汇总
             if amount >= 0:
                 month_in_sum += amount
@@ -298,6 +301,12 @@ def parse_records(lines: list[str], default_cash_symbol_prefix: str = "CASH_", s
             # 没有证券的流水（资金进出），用 CASH_<CUR>
             if symbol is None:
                 symbol = f"{default_cash_symbol_prefix}{cur}"
+            elif symbol.startswith("BRK"):
+                symbol = "BRK"
+            elif symbol.startswith("EWJ"):
+                symbol = "EWJ"
+            elif symbol.startswith("TLT"):
+                symbol = "TLT"
 
             records.append({
                 "occurred_at": occurred_at,
@@ -342,6 +351,7 @@ def records_to_inserts(records, table="trade_ledger") -> str:
             f"'{sql_escape(r['symbol'])}'"
             f");"
         )
+        # out.append(f"{sql_escape(r['symbol'])}")
     return "\n".join(out)
 
 
