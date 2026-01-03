@@ -1,8 +1,5 @@
 import unittest
 
-import pandas as pd
-from sqlalchemy import create_engine, text
-
 from mysql import MySql
 
 class MySqlTestCase(unittest.TestCase):
@@ -20,20 +17,27 @@ class MySqlTestCase(unittest.TestCase):
     def test_sql(self):
         sql = """
             SELECT
-                id,
-                occurred_at,
-                biz_type_code,
-                amount,
-                symbol,
-                direction
-            FROM trade_ledger
-            WHERE occurred_at >= :start AND occurred_at < :end
-            ORDER BY occurred_at, id
+                l.id,
+                l.occurred_at,
+                l.biz_type_code,
+                l.amount,
+                l.symbol,
+                l.direction,
+                s.security_name,
+                b.affect_position,
+                b.taxable_flag
+            FROM trade_ledger l
+            JOIN security_master s ON l.symbol = s.symbol
+            JOIN biz_type_dict b ON l.biz_type_code = b.biz_type_code
+            WHERE
+                l.occurred_at >= :start AND l.occurred_at < :end AND s.currency = :currency
+            ORDER BY
+                l.occurred_at, l.id;
         """
         year = 2022
         start = f"{year}-01-01 00:00:00"
         end = f"{year+1}-01-01 00:00:00"
-        print(self.db.to_frame_with_interval(sql, start, end))
+        print(self.db.to_frame_with_interval(sql, start, end, 'USD'))
 
 
 if __name__ == '__main__':

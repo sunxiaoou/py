@@ -44,10 +44,10 @@ class MySql:
             sql += ' where ' + where
         return pd.read_sql(sql, self.db)
 
-    def to_frame_with_interval(self, sql: str, start: str, end: str) -> pd.DataFrame:
+    def to_frame_with_interval(self, sql: str, start: str, end: str, currency: str) -> pd.DataFrame:
         sql = text(sql)
         with self.db.connect() as conn:
-            frame = pd.read_sql(sql, conn, params={"start": start, "end": end})
+            frame = pd.read_sql(sql, conn, params={'start': start, 'end': end, 'currency': currency})
         return frame
 
     def from_frame(self, table: str, frame: pd.DataFrame):
