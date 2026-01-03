@@ -13,7 +13,8 @@ pd.set_option('display.max_rows', 4000)
 
 class MySql:
     def __init__(self, host='localhost', port=3306, user='manga', password='manga', database='portfolio'):
-        self.db = create_engine('mysql+pymysql://%s:%s@%s:%s/%s' % (user, password, host, port, database))
+        self.db = create_engine('mysql+pymysql://%s:%s@%s:%s/%s' % (user, password, host, port, database),
+                                pool_pre_ping=True)
 
     # def close(self):
     #     self.db.close()
@@ -42,6 +43,12 @@ class MySql:
         if where:
             sql += ' where ' + where
         return pd.read_sql(sql, self.db)
+
+    def to_frame_with_interval(self, sql: str, start: str, end: str) -> pd.DataFrame:
+        sql = text(sql)
+        with self.db.connect() as conn:
+            frame = pd.read_sql(sql, conn, params={"start": start, "end": end})
+        return frame
 
     def from_frame(self, table: str, frame: pd.DataFrame):
         try:
