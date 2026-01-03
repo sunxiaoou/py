@@ -440,7 +440,7 @@ def usmart(datafile: str) -> pd.DataFrame:
 
     currency = 'usd'
     i = 0
-    while not lines[i].startswith('我的资产'):
+    while not lines[i].startswith('总净资产'):
         i += 1
     i += 1
     while not re.match(r'\d+\.\d\d', lines[i]):
