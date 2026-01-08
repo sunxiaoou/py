@@ -60,10 +60,11 @@ RE_SUMMARY_SPLIT_HEAD = re.compile(r"^\s*(流入|流出)\s*$")
 RE_SUMMARY_SPLIT_TAIL = re.compile(r"^\s*([\d,]+(?:\.\d+)?)\s*([A-Z]{3})\s*$")
 
 # 金额行：＋25.00 / －2.50 / -5,344.00
-RE_AMOUNT = re.compile(r"^\s*([＋\+－-])\s*([\d,]+(?:\.\d+)?)\s*$")
+RE_AMOUNT = re.compile(r"^\s*([＋\+－-])\s*([\d,，]+(?:\.\d+)?)\s*$")
 
 # 时间行：12-30 16:04:03
-RE_DT = re.compile(r"^\s*(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s*$")
+RE_DT = re.compile(r"^\s*(\d{2})-(\d{2})\s*(\d{2}):(\d{2}):(\d{2})\s*$")
+RE_DT2 = re.compile(r"\s*(\d{2})-(\d{2})\s*(\d{2}):(\d{2}):(\d{2})\s*$")
 
 # 证券行：允许 symbol 与名称之间没空格（AAPL苹果 / GS高盛 / 00388香港交易所）
 # 规则：开头一段作为symbol（字母/数字/._-），后面剩余作为名字（可为空）
@@ -132,7 +133,7 @@ def _read_month_summary(lines, idx):
         if idx >= len(lines):
             break
 
-        line = lines[idx].strip()
+        line = re.sub(r'[,，]', '', lines[idx].rstrip())
 
         # 如果遇到下个月标题，说明本月summary不完整（OCR坏了）
         if RE_MONTH.match(line):
@@ -254,7 +255,8 @@ def parse_records(lines: list[str], default_cash_symbol_prefix: str = "CASH_", s
             if idx >= n:
                 raise SystemExit(f"[人工检查] {biz_name} 后缺少金额行，月份 {year}-{month:02d}")
             try:
-                amount = _to_decimal_amount(lines[idx].strip())
+                line = re.sub(r'[,，]', '', lines[idx].rstrip())
+                amount = _to_decimal_amount(line)
             except Exception as e:
                 raise SystemExit(f"[人工检查] 金额行解析失败(行 {idx+1}): {lines[idx]!r}，月份 {year}-{month:02d}，错误: {e}")
             idx += 1
@@ -291,12 +293,18 @@ def parse_records(lines: list[str], default_cash_symbol_prefix: str = "CASH_", s
                     symbol = msec.group(1).strip()
                     security_name = (msec.group(2) or "").strip() or None
                 idx += 1
-
-                idx = _skip_blanks_and_noise(lines, idx)
-                if idx >= n or not RE_DT.match(lines[idx].strip()):
-                    raise SystemExit(f"[人工检查] 证券行后缺少时间行(行 {idx+1})，月份 {year}-{month:02d}")
-                occurred_at = _parse_datetime_with_year(lines[idx].strip(), year)
-                idx += 1
+                occurred_at = None
+                if security_name:
+                    m_dt_inline = RE_DT2.search(security_name)
+                    if m_dt_inline:
+                        occurred_at = _parse_datetime_with_year(m_dt_inline.group(0), year)
+                        security_name = security_name[:m_dt_inline.start()].strip() or None
+                if occurred_at is None:
+                    idx = _skip_blanks_and_noise(lines, idx)
+                    if idx >= n or not RE_DT.match(lines[idx].strip()):
+                        raise SystemExit(f"[人工检查] 证券行后缺少时间行(行 {idx+1})，月份 {year}-{month:02d}")
+                    occurred_at = _parse_datetime_with_year(lines[idx].strip(), year)
+                    idx += 1
 
             # 没有证券的流水（资金进出），用 CASH_<CUR>
             if symbol is None:
