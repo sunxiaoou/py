@@ -363,6 +363,24 @@ def records_to_inserts(records, table="trade_ledger") -> str:
     return "\n".join(out)
 
 
+def records_to_updates(records, table="trade_ledger") -> str:
+    out = []
+    for r in records:
+        amt = r["amount"].quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        if r["biz_type_code"] == 'CASH_OUT':
+            r["biz_type_code"] = 'FUND_SUBSCRIPTION'
+        elif r["biz_type_code"] == 'CASH_IN':
+            r["biz_type_code"] = 'FUND_REDEMPTION'
+        out.append(
+            f"UPDATE {table} SET biz_type_code = '{sql_escape(r['biz_type_code'])}' "
+            f"WHERE "
+            f"occurred_at = '{sql_escape(r['occurred_at'])}' AND "
+            f"amount = {amt} AND "
+            f"symbol = '{sql_escape(r['symbol'])}';"
+        )
+    return "\n".join(out)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("-i", "--input", required=True, help="OCR text file")
@@ -383,6 +401,7 @@ def main():
     )
 
     print(records_to_inserts(records, table=args.table))
+    # print(records_to_updates(records, table=args.table))
 
 
 if __name__ == "__main__":
