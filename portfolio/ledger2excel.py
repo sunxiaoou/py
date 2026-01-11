@@ -31,9 +31,10 @@ def ledger_to_df(db: MySql, xlsx: str, year: int, currency: str):
 
 def main():
     tuples = [
-        (2022, 'HKD'), (2022, 'USD'),
-        (2023, 'HKD'), (2023, 'USD'),
-        (2024, 'HKD'), (2024, 'USD')
+        # (2022, 'HKD'), (2022, 'USD'),
+        # (2023, 'HKD'), (2023, 'USD'),
+        # (2024, 'HKD'), (2024, 'USD'),
+        (2025, 'HKD'), (2025, 'USD')
     ]
     db = MySql(database='portfolio')
     for t in tuples:

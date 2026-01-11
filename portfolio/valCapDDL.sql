@@ -98,3 +98,33 @@ CREATE TABLE trade_ledger (
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
   COMMENT='交易流水事实表（证券/资金/税费等）';
+
+  -- 月结单（头表）
+  CREATE TABLE broker_statement_monthly (
+    id               BIGINT AUTO_INCREMENT PRIMARY KEY,
+    broker_name      VARCHAR(64) NOT NULL DEFAULT 'ValuableCapital',
+    period_yyyymm    INT NOT NULL,                 -- 202112
+    -- statement_date   DATE NOT NULL,
+    base_ccy         VARCHAR(8) NOT NULL DEFAULT 'HKD',
+    total_hkd_equiv  DECIMAL(20,6) NOT NULL,
+    -- created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_broker_period (broker_name, period_yyyymm)
+  );
+
+  CREATE TABLE broker_statement_monthly_item (
+    id               BIGINT AUTO_INCREMENT PRIMARY KEY,
+    broker_name      VARCHAR(64) NOT NULL DEFAULT 'DEFAULT',
+    period_yyyymm    INT NOT NULL,
+    item_type        ENUM('POSITION','CASH') NOT NULL,
+    symbol           VARCHAR(64) NOT NULL,
+    volume           DECIMAL(20,6),
+    currency         VARCHAR(8),
+    closing_price    DECIMAL(20,6),
+    market_value     DECIMAL(20,6),
+    exchange_rate    DECIMAL(20,6),
+    hkd_equivalent   DECIMAL(20,6) NOT NULL,
+    raw_row_no       INT,
+    -- created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_broker_period_symbol (broker_name, period_yyyymm, symbol),
+    INDEX idx_period (broker_name, period_yyyymm)
+  );

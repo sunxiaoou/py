@@ -264,9 +264,16 @@ def main():
         "AAPL", "AMZN", "ARKG", "ARKK", "ARKW", "BABA", "BILI", "BRK.B",
         "DVY", "EMXC", "EWJ", "EWJiShares", "GS", "IBB", "IEF", "IWN",
         "KWEB", "MAGS", "MSFT", "NVDA", "PDD", "QQQ", "SPY", "TLT", "TLT20",
-        "UVXY", "XBI"
-    ]
-    for code in val_cap:
+        "UVXY", "XBI"]
+
+    val_cap2025 = [
+        'CASH_HKD', 'CASH_USD',
+        '03110', '03690',
+        'AAPL', 'DVY', 'EMXC', 'EWJ', 'FDN', 'GS', 'IBB', 'IGV',
+        'INDA', 'IWM', 'IWN', 'KRE', 'MAGS', 'MSFT', 'NVDA', 'SHV',
+        'SPY', 'TLT', 'UVXY', 'XBI', 'XLE', 'XLF', 'XLV']
+
+    for code in val_cap2025:
         if code not in SECURITIES:
             print(f"{code}: Not found in securities list.")
 

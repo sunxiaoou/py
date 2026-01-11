@@ -308,7 +308,7 @@ def huasheng(datafile: str) -> pd.DataFrame:
     with open(datafile) as f:
         lines = []
         for line in f.readlines():
-            lines += re.sub(r'[,＋]', '', re.sub('－', '-', line)).rstrip('\n').split()
+            lines += re.sub(r'[,，＋]', '', re.sub('－', '-', line)).rstrip('\n').split()
 
     i = 0
     while not lines[i].startswith('资产净值'):
