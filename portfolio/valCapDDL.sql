@@ -99,6 +99,9 @@ CREATE TABLE trade_ledger (
   DEFAULT CHARSET=utf8mb4
   COMMENT='交易流水事实表（证券/资金/税费等）';
 
+  ALTER TABLE trade_ledger
+    ADD COLUMN volume BIGINT NULL COMMENT '成交数量(仅TRADE_BUY/TRADE_SELL有值)' AFTER amount;
+
   -- 月结单（头表）
   CREATE TABLE broker_statement_monthly (
     id               BIGINT AUTO_INCREMENT PRIMARY KEY,
