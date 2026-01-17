@@ -61,9 +61,9 @@ def main():
         print(f"\n-- ===== {sheet} / {BROKER_NAME} =====")
         print(
             f"""INSERT INTO broker_statement_monthly
-(broker_name, period_yyyymm, base_ccy, total_hkd_equiv)
+(broker_name, period_yyyymm, base_ccy, exchange_rate, total_hkd_equiv)
 VALUES
-({sql_value(BROKER_NAME)}, {period}, 'HKD', {total_hkd})
+({sql_value(BROKER_NAME)}, {period}, 'HKD', {df['exchange_rate'][1]}, {total_hkd})
 ON DUPLICATE KEY UPDATE
   total_hkd_equiv = VALUES(total_hkd_equiv);
 """
