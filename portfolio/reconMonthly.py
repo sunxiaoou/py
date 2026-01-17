@@ -72,11 +72,11 @@ def compute_from_trade_ledger(trades: pd.DataFrame):
         cash = pd.DataFrame(columns=["currency", "cash_balance"])
 
     # 2) positions
-    trd = trades[trades["biz_type_code"].isin(["TRADE_BUY", "TRADE_SELL"])].copy()
+    trd = trades[trades["biz_type_code"].isin(["TRADE_BUY", "TRADE_SELL", "IPO_REFUND", "OTHER"])].copy()
     trd = trd[trd["volume"].notna()].copy()
     if not trd.empty:
         trd["signed_qty"] = trd.apply(
-            lambda r: (r["volume"] if r["biz_type_code"] == "TRADE_BUY" else -r["volume"]),
+            lambda r: (r["volume"] if r["biz_type_code"] in ["TRADE_BUY", "IPO_REFUND", "OTHER"] else -r["volume"]),
             axis=1
         )
         pos = (trd.groupby("symbol", as_index=False)["signed_qty"]
