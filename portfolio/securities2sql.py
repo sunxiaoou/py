@@ -66,6 +66,7 @@ SECURITIES = {
     'SHV': ('美国短期国债', 'USD', 'US_TREASURY_BOND', 1),
     'SPY': ('标普500', 'USD', 'US_EQ_INDEX', 2),
     'TLT': ('美国20年期国债', 'USD', 'US_TREASURY_BOND', 2),
+    'TSLA': ('特斯拉', 'USD', 'US_EQ_TECH', 3),
     'UVXY': ('恐慌1.5X做多', 'USD', 'US_EQ_INDEX', 3),
     'XBI': ('生科ETF', 'USD', 'US_EQ_TECH', 3),
     'XLE': ('能源ETF', 'USD', 'US_EQ_VALUE', 3),

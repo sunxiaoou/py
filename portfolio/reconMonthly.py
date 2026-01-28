@@ -31,7 +31,7 @@ SELECT
   s.currency
 FROM trade_ledger l
 JOIN security_master s ON l.symbol = s.symbol
-WHERE l.occurred_at < :month_end
+WHERE l.occurred_at < :month_end AND l.broker_name = :broker_name
 ORDER BY l.occurred_at, l.id;
 """
 
@@ -145,7 +145,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--mysql-url", default=os.getenv("MYSQL_URL"),
                     help="SQLAlchemy URL, e.g. mysql+pymysql://user:pass@host:3306/db?charset=utf8mb4")
-    ap.add_argument("--broker", default="DEFAULT", help="broker_name, default DEFAULT")
+    ap.add_argument("--broker", default="ValuableCapital", help="broker_name, default DEFAULT")
     ap.add_argument("--period", type=int, required=True, help="period_yyyymm, e.g. 202012")
     ap.add_argument("--out-dir", default=".", help="output dir for CSV diffs")
     ap.add_argument("--tolerance", type=float, default=0.0, help="tolerance for diff (e.g. 1e-6)")
@@ -158,7 +158,7 @@ def main():
     engine = create_engine(args.mysql_url, pool_pre_ping=True)
 
     with engine.connect() as conn:
-        trades = pd.read_sql(text(TRADE_LEDGER_SQL), conn, params={"month_end": month_end})
+        trades = pd.read_sql(text(TRADE_LEDGER_SQL), conn, params={"month_end": month_end, "broker_name": args.broker})
         stmt_items = pd.read_sql(text(STMT_ITEMS_SQL), conn, params={"broker_name": args.broker, "yyyymm": args.period})
 
     calc_cash, calc_pos = compute_from_trade_ledger(trades)

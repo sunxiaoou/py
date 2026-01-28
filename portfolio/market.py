@@ -14,6 +14,7 @@ from mysql import MySql
 from securities import SECURITIES
 
 PID_ETF_A = 0
+PID_ETF_A2 = 6
 PID_HK = -7
 PID_US = -6
 PID_CVT = 8
@@ -69,6 +70,7 @@ class Market:
                 'name': i['quote']['name'],
                 'price': i['quote']['current'],
                 'premium': i['quote']['premium_rate'] if 'premium_rate' in i['quote'] else None,
+                'volume': i['quote']['volume'] / 1000000,
                 'pct': i['quote']['percent']
             }
             if dic['code'][2:] in SECURITIES:
@@ -159,6 +161,8 @@ def main():
 
     if sys.argv[1] == 'a':
         result = Market.get_stocks(PID_ETF_A)
+    elif sys.argv[1] == 'a2':
+        result = Market.get_stocks(PID_ETF_A2)
     elif sys.argv[1] == 'hk':
         result = Market.get_stocks(PID_HK)
     elif sys.argv[1] == 'us':

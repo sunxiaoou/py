@@ -122,6 +122,37 @@ def generate_updates_from_excel(
     print(f"Generated {len(id_to_volume)} UPDATE statements into: {out_sql_path}")
 
 
+def generate_updates2(
+        xlsx_path: str,
+        out_sql_path: str,
+        table: str = "trade_ledger",
+):
+    xl = pd.ExcelFile(xlsx_path)
+    tuples = []
+    for sheet in xl.sheet_names:
+        df = xl.parse(sheet_name=sheet)
+        for _, row in df[['occurred_at', 'biz_type_code', 'volume']].iterrows():
+            vol = row['volume']
+            vol_int = to_int_volume(vol)
+            if vol_int is None:
+                continue
+            tuples.append((row['occurred_at'], row['biz_type_code'], vol_int))
+        break
+
+    # 生成 SQL
+    with open(out_sql_path, "w", encoding="utf-8") as f:
+        f.write("START TRANSACTION;\n\n")
+        for occurred_at, biz_type_code, vol_int in tuples:
+            f.write(
+                f"UPDATE {table} "
+                f"SET volume = {vol_int} "
+                f"WHERE occurred_at = '{occurred_at}' AND biz_type_code = '{biz_type_code}' "
+                f"AND broker_name = 'uSmart';\n"
+            )
+        f.write("\nCOMMIT;\n")
+    print(f"Generated {len(tuples)} UPDATE statements into: {out_sql_path}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("-i", "--input", required=True, help="tradeLedger.xlsx path")
@@ -133,13 +164,13 @@ def main():
                     help="do not restrict updates to TRADE_BUY/TRADE_SELL")
     args = ap.parse_args()
 
-    generate_updates_from_excel(
+    generate_updates2(
         xlsx_path=args.input,
         out_sql_path=args.out,
-        table=args.table,
-        id_col=args.id_col,
-        volume_col=args.volume_col,
-        safe_trade_only=(not args.no_trade_only),
+        table=args.table
+        # id_col=args.id_col,
+        # volume_col=args.volume_col,
+        # safe_trade_only=(not args.no_trade_only),
     )
 
 
