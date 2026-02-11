@@ -73,8 +73,10 @@ SECURITIES = {
     'XLF': ('金融ETF', 'USD', 'US_EQ_VALUE', 3),
     'XLV': ('医疗ETF', 'USD', 'US_EQ_VALUE', 3),
 
+    'HK0000548419': ('DaCheng', 'USD', 'CASH', 0),
     'HK0000584737': ('PingAn', 'USD', 'CASH', 0),
     'HK0000720752': ('GaoTeng', 'USD', 'CASH', 0),
+    'HK0000921376': ('GuangFa', 'USD', 'CASH', 0),
 
     # 现金
     'CASH_HKD': ('港币现金', 'HKD', 'CASH', 0),

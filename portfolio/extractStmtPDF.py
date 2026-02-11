@@ -108,7 +108,14 @@ def parse_holding_summary(tokens):
                 if m:
                     vol = as_number(m.group(1))
                     ccy = m.group(2)
-                    # 期望后面两个是 price / value
+                    if j + 1 < len(hold_sec):
+                        closing_price = as_number(hold_sec[j+1])
+                    if j + 2 < len(hold_sec):
+                        market_value = as_number(hold_sec[j+2])
+                    break
+                elif hold_sec[j] in ("HKD", "USD", "CNY") and _num_re.match(hold_sec[j-1]):
+                    vol = as_number(hold_sec[j-1])
+                    ccy = hold_sec[j]
                     if j + 1 < len(hold_sec):
                         closing_price = as_number(hold_sec[j+1])
                     if j + 2 < len(hold_sec):
