@@ -1,6 +1,6 @@
 #! /usr/local/bin/python3
 # -*- coding: utf-8 -*-
-
+import os
 import sys
 from pprint import pprint
 
@@ -90,20 +90,19 @@ def extract_unsettled_totals(tokens):
             i += 1
     return round(hkd_total, 2), round(usd_total, 2)
 
-def parse_overview_us(tokens):
+def parse_overview_old(tokens: list[str]) -> dict:
     subs = slice_between(tokens, "孖展戶口", "中央編號：")
-    return {
-        "statement_at": pick_kv(tokens, "到"),
-        # "balance": as_number(pick_next_number_after(subs, "未到期結餘：")),
+    dic =  {
+        "period_yyyymm": os.path.basename(sys.argv[1])[:6],
         "market_value": as_number(pick_next_number_after(subs, "投資組合價值：")),
-        "net_equity": as_number(pick_next_number_after(subs, "資產淨值（不含利息）：")),
-        # "hkd_cash": as_number(pick_next_number_after(subs, "港元")),
-        "usd_cash": as_number(pick_next_number_after(subs, "未到期結餘："))}
-        # "hk_stock": as_number(pick_next_number_after(subs, "港股")),
-        # "us_stock": as_number(pick_next_number_after(subs, "美股")),
-        # "fund": as_number(pick_next_number_after(subs, "基金"))}
+        "net_equity": as_number(pick_next_number_after(subs, "資產淨值（不含利息）："))}
+    if "hk" in sys.argv[1].lower():
+        dic['hkd_cash'] = as_number(pick_next_number_after(subs, "未到期結餘："))
+    elif "us" in sys.argv[1].lower():
+        dic['usd_cash'] = as_number(pick_next_number_after(subs, "未到期結餘："))
+    return dic
 
-def parse_holding_summary_us(tokens) -> list[dict]:
+def parse_holding_summary_old(tokens) -> list[dict]:
     sec = slice_between(tokens, "投資總結", "總額：")
     rows = []
     i = 0
@@ -122,7 +121,7 @@ def parse_holding_summary_us(tokens) -> list[dict]:
             if len(nums) == 6:
                 rows.append({"symbol": symbol,
                              "volume": nums[3],
-                             "currency": "USD",
+                             "currency": "HKD" if "hk" in sys.argv[1].lower() else "USD",
                              "closing_price": nums[4],
                              "market_value": nums[5]})
             i = k
@@ -130,14 +129,17 @@ def parse_holding_summary_us(tokens) -> list[dict]:
             i += 1
     return rows
 
-def convert_holding_summary_us(tokens: list[str]) -> pd.DataFrame:
-    overview = parse_overview_us(tokens)
+def convert_holding_summary_old(tokens: list[str]) -> pd.DataFrame:
+    overview = parse_overview_old(tokens)
     pprint(overview)
-    rows = parse_holding_summary_us(tokens)
-    rows.append({"symbol": 'CASH_USD', "currency": 'USD', "market_value": overview["usd_cash"]})
+    rows = parse_holding_summary_old(tokens)
+    if 'hkd_cash' in overview:
+        rows.append({"symbol": 'CASH_HKD', "currency": 'HKD', "market_value": overview["hkd_cash"]})
+    elif 'usd_cash' in overview:
+        rows.append({"symbol": 'CASH_USD', "currency": 'USD', "market_value": overview["usd_cash"]})
     df = pd.DataFrame(rows, columns=["symbol", "volume", "currency", "closing_price", "market_value"])
     df['broker_name'] = "ValuableCapital"
-    df['period_yyyymm'] = int(overview['statement_at'][:7].replace("-", ""))
+    df['period_yyyymm'] = int(overview['period_yyyymm'])
     df['usd_hkd_rate'] = np.nan
     df['cny_rate'] = np.nan
     return df[["broker_name", "period_yyyymm", "symbol", "currency", "volume", "closing_price", "market_value",
@@ -146,7 +148,7 @@ def convert_holding_summary_us(tokens: list[str]) -> pd.DataFrame:
 def parse_overview(tokens) -> dict:
     subs = slice_between(tokens, "財務概況", "財務明細")
     return {
-        "statement_at": pick_kv(tokens, "結單日期："),
+        "period_yyyymm": os.path.basename(sys.argv[1])[:6],
         "balance": as_number(pick_next_number_after(subs, "現金結餘：")),
         "unsettled": as_number(pick_next_number_after(subs, "待交收金額：")),
         "usd_hkd_rate": as_number(pick_kv(subs, "参考匯率：USD->HKD")),
@@ -218,7 +220,7 @@ def convert_holding_summary(tokens: list[str]) -> pd.DataFrame:
     rows.append({"symbol": 'CASH_USD', "currency": 'USD', "market_value": round(overview["usd_cash"] + u, 2)})
     df = pd.DataFrame(rows, columns=["symbol", "volume", "currency", "closing_price", "market_value"])
     df['broker_name'] = "ValuableCapital"
-    df['period_yyyymm'] = int(overview['statement_at'][:7].replace("-", ""))
+    df['period_yyyymm'] = int(overview['period_yyyymm'])
     df['usd_hkd_rate'] = df['currency'].apply(lambda x: 1 if x == 'HKD' else overview['usd_hkd_rate'])
     hr = round(1 / overview['cny_hkd_rate'], 4)
     ur = round(overview['usd_hkd_rate'] / overview['cny_hkd_rate'], 4)
@@ -242,7 +244,10 @@ def main():
             for ln in page_lines:
                 tokens.extend(re.sub('；', ' ', ln).split())
     # pprint(tokens)
-    df = convert_holding_summary_us(tokens)
+    if int(os.path.basename(sys.argv[1])[:6]) < 202209:
+        df = convert_holding_summary_old(tokens)
+    else:
+        df = convert_holding_summary(tokens)
     csv = re.sub('.pdf', '.csv', sys.argv[1])
     df.to_csv(csv, index=False, encoding='utf-8-sig')
     print(f"Extracted {len(df)} rows from {sys.argv[1]} to {csv}")
