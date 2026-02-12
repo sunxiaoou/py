@@ -56,7 +56,10 @@ def pick_next_number_after(seq, key, alt=None):
     i = idx_of(seq, key)
     if i < 0:
         assert alt is not None, f"Neither '{key}' nor alt is found in sequence"
-        i = idx_of(seq, alt)
+        for k in alt:
+            i = idx_of(seq, k)
+            if i >= 0:
+                break
         assert i >= 0, f"Neither '{key}' nor '{alt}' is found in sequence"
     for j in range(i+1, min(i+20, len(seq))):
         if isinstance(seq[j], str) and _num_re.match(seq[j].strip()):
@@ -65,6 +68,8 @@ def pick_next_number_after(seq, key, alt=None):
 
 def extract_unsettled_totals(tokens):
     sec = slice_between(tokens, "待结算交易", "持倉摘要")
+    if not sec:
+        sec = slice_between(tokens, "待結算交易", "持倉摘要")
     hkd_total = 0.0
     usd_total = 0.0
     i = 0
@@ -93,7 +98,7 @@ def extract_unsettled_totals(tokens):
     return round(hkd_total, 2), round(usd_total, 2)
 
 def parse_overview_old(tokens: list[str]) -> dict:
-    subs = slice_between(tokens, "孖展戶口", "中央編號：")
+    subs = slice_between(tokens, "賬號：", "中央編號：")
     dic =  {
         "period_yyyymm": os.path.basename(sys.argv[1])[:6],
         "market_value": as_number(pick_next_number_after(subs, "投資組合價值：")),
@@ -154,17 +159,17 @@ def parse_overview(tokens) -> dict:
     subs = slice_between(tokens, "財務概況", "財務明細")
     return {
         "period_yyyymm": os.path.basename(sys.argv[1])[:6],
-        "balance": as_number(pick_next_number_after(subs, "現金結餘：", "現金結餘①：")),
-        "unsettled": as_number(pick_next_number_after(subs, "待交收金額：", "待交收金額②：")),
+        "balance": as_number(pick_next_number_after(subs, "現金結餘：", ["現⾦結餘：", "現金結餘①："])),
+        "unsettled": as_number(pick_next_number_after(subs, "待交收金額：", ["待交收⾦額：", "待交收金額②："])),
         "usd_hkd_rate": as_number(pick_kv(subs, "参考匯率：USD->HKD")),
         "cny_hkd_rate": as_number(pick_kv(subs, "CNY->HKD")),
         "market_value": as_number(pick_next_number_after(subs, "總市值：", "總市值③：")),
         "net_equity": as_number(pick_next_number_after(subs, "資產淨值（不含利息）：", "資產淨值（不含利息）④：")),
         "hkd_cash": as_number(pick_next_number_after(subs, "港元")),
         "usd_cash": as_number(pick_next_number_after(subs, "美元")),
-        "hk_stock": as_number(pick_next_number_after(subs, "港股")),
-        "us_stock": as_number(pick_next_number_after(subs, "美股")),
-        "fund": as_number(pick_next_number_after(subs, "基金"))}
+        "hk_stock": as_number(pick_next_number_after(subs, "港股", ["股票"])),
+        "us_stock": as_number(pick_next_number_after(subs, "美股", ["債券及結構性"])),
+        "fund": as_number(pick_next_number_after(subs, "基金", ["基⾦"]))}
 
 def parse_holding_summary(tokens) -> list[dict]:
     vol_ccy_re = re.compile(r"^([\d,]+(?:\.\d+)?)(HKD|USD|CNY)$")
@@ -218,7 +223,7 @@ def parse_holding_summary(tokens) -> list[dict]:
 
 def convert_holding_summary(tokens: list[str]) -> pd.DataFrame:
     overview = parse_overview(tokens)
-    pprint(overview)
+    # pprint(overview)
     h, u = extract_unsettled_totals(tokens)
     rows = parse_holding_summary(tokens)
     rows.append({"symbol": 'CASH_HKD', "currency": 'HKD', "market_value": round(overview["hkd_cash"] + h, 2)})
@@ -227,7 +232,8 @@ def convert_holding_summary(tokens: list[str]) -> pd.DataFrame:
     df['broker_name'] = "ValuableCapital"
     df['period_yyyymm'] = int(overview['period_yyyymm'])
     df['usd_hkd_rate'] = df['currency'].apply(lambda x: 1 if x == 'HKD' else overview['usd_hkd_rate'])
-    total_mv = round(overview['net_equity'] - overview['unsettled'], 2)
+    # total_mv = round(overview['net_equity'] + overview['unsettled'], 2)
+    total_mv = overview['net_equity']
     df['hkd_equivalent'] = df['market_value'] * df['usd_hkd_rate']
     mv_sum = round(df['hkd_equivalent'].sum(), 2)
     assert abs(total_mv - mv_sum) < 0.1, print("total_mv({}) != mv_sum({})".format(total_mv, mv_sum))
