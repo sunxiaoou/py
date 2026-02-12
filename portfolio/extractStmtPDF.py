@@ -1,5 +1,6 @@
 #! /usr/local/bin/python3
 # -*- coding: utf-8 -*-
+
 import os
 import sys
 from pprint import pprint
@@ -50,21 +51,6 @@ def pick_kv(seq, key, default=None):
     if i >= 0 and i + 1 < len(seq):
         return seq[i+1]
     return default
-
-def pick_next_number_after2(seq, key, alt=None):
-    """在 seq 中找 key，返回其后第一个“像数字”的 token"""
-    i = idx_of(seq, key)
-    if i < 0:
-        assert alt is not None, f"Neither '{key}' nor alt is found in sequence"
-        for k in alt:
-            i = idx_of(seq, k)
-            if i >= 0:
-                break
-        assert i >= 0, f"Neither '{key}' nor '{alt}' is found in sequence"
-    for j in range(i+1, min(i+20, len(seq))):       # fix me - may find a same key word before real key
-        if isinstance(seq[j], str) and _num_re.match(seq[j].strip()):
-            return seq[j]
-    assert False, f"Cannot find number after '{key}' (or alt '{alt}') in sequence"
 
 def pick_next_number_after(seq, key, alt=None):
     keys = [key]
