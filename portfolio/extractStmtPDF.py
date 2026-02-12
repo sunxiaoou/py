@@ -61,7 +61,7 @@ def pick_next_number_after(seq, key, alt=None):
             if i >= 0:
                 break
         assert i >= 0, f"Neither '{key}' nor '{alt}' is found in sequence"
-    for j in range(i+1, min(i+20, len(seq))):
+    for j in range(i+1, min(i+20, len(seq))):       # fix me - may find a same key word before real key
         if isinstance(seq[j], str) and _num_re.match(seq[j].strip()):
             return seq[j]
     assert False, f"Cannot find number after '{key}' (or alt '{alt}') in sequence"
@@ -76,23 +76,19 @@ def extract_unsettled_totals(tokens):
     while i < len(sec):
         tok = sec[i]
         if tok in ("HKD", "USD"):
-            ccy = tok
-            amt = None
-            for j in range(i + 1, min(i + 10, len(sec))):
-                t = sec[j]
-                if isinstance(t, str) and _num_re.match(t.strip()):
-                    amt = as_number(t)
-                    if amt < 0:
-                        break
-                # 如果中途又遇到币种或段落结束标记，就认为这一笔缺金额
-                if t in ("HKD", "USD", "持倉摘要"):
+            nums = []
+            j = i + 1
+            while j < len(sec) and len(nums) < 3:
+                if not _num_re.match(sec[j]):
                     break
-            if amt is not None:
-                if ccy == "HKD":
-                    hkd_total += amt
+                nums.append(as_number(sec[j]))
+                j += 1
+            if len(nums) == 3 or 'SAFEKEEPING' == sec[j]:
+                if tok == "HKD":
+                    hkd_total += nums[-1]
                 else:
-                    usd_total += amt
-            i = j  # 跳到已扫描位置附近
+                    usd_total += nums[-1]
+            i = j
         else:
             i += 1
     return round(hkd_total, 2), round(usd_total, 2)
@@ -163,8 +159,8 @@ def parse_overview(tokens) -> dict:
         "unsettled": as_number(pick_next_number_after(subs, "待交收金額：", ["待交收⾦額：", "待交收金額②："])),
         "usd_hkd_rate": as_number(pick_kv(subs, "参考匯率：USD->HKD")),
         "cny_hkd_rate": as_number(pick_kv(subs, "CNY->HKD")),
-        "market_value": as_number(pick_next_number_after(subs, "總市值：", "總市值③：")),
-        "net_equity": as_number(pick_next_number_after(subs, "資產淨值（不含利息）：", "資產淨值（不含利息）④：")),
+        "market_value": as_number(pick_next_number_after(subs, "總市值：", ["總市值③："])),
+        "net_equity": as_number(pick_next_number_after(subs, "資產淨值（不含利息）：", ["資產淨值（不含利息）④："])),
         "hkd_cash": as_number(pick_next_number_after(subs, "港元")),
         "usd_cash": as_number(pick_next_number_after(subs, "美元")),
         "hk_stock": as_number(pick_next_number_after(subs, "港股", ["股票"])),
@@ -232,11 +228,11 @@ def convert_holding_summary(tokens: list[str]) -> pd.DataFrame:
     df['broker_name'] = "ValuableCapital"
     df['period_yyyymm'] = int(overview['period_yyyymm'])
     df['usd_hkd_rate'] = df['currency'].apply(lambda x: 1 if x == 'HKD' else overview['usd_hkd_rate'])
-    # total_mv = round(overview['net_equity'] + overview['unsettled'], 2)
     total_mv = overview['net_equity']
     df['hkd_equivalent'] = df['market_value'] * df['usd_hkd_rate']
     mv_sum = round(df['hkd_equivalent'].sum(), 2)
-    assert abs(total_mv - mv_sum) < 0.1, print("total_mv({}) != mv_sum({})".format(total_mv, mv_sum))
+    assert abs(total_mv - mv_sum) < 0.1, \
+        print("total_mv({}) - mv_sum({}) = {}".format(total_mv, mv_sum, round(total_mv - mv_sum, 2)))
     hr = round(1 / overview['cny_hkd_rate'], 4)
     ur = round(overview['usd_hkd_rate'] / overview['cny_hkd_rate'], 4)
     df['cny_rate'] = df['currency'].apply(lambda x: hr if x == 'HKD' else ur)
