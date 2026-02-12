@@ -51,15 +51,17 @@ def pick_kv(seq, key, default=None):
         return seq[i+1]
     return default
 
-def pick_next_number_after(seq, key, default=None):
+def pick_next_number_after(seq, key, alt=None):
     """在 seq 中找 key，返回其后第一个“像数字”的 token"""
     i = idx_of(seq, key)
     if i < 0:
-        return default
+        assert alt is not None, f"Neither '{key}' nor alt is found in sequence"
+        i = idx_of(seq, alt)
+        assert i >= 0, f"Neither '{key}' nor '{alt}' is found in sequence"
     for j in range(i+1, min(i+20, len(seq))):
         if isinstance(seq[j], str) and _num_re.match(seq[j].strip()):
             return seq[j]
-    return default
+    assert False, f"Cannot find number after '{key}' (or alt '{alt}') in sequence"
 
 def extract_unsettled_totals(tokens):
     sec = slice_between(tokens, "待结算交易", "持倉摘要")
@@ -131,13 +133,16 @@ def parse_holding_summary_old(tokens) -> list[dict]:
 
 def convert_holding_summary_old(tokens: list[str]) -> pd.DataFrame:
     overview = parse_overview_old(tokens)
-    pprint(overview)
+    # pprint(overview)
     rows = parse_holding_summary_old(tokens)
     if 'hkd_cash' in overview:
         rows.append({"symbol": 'CASH_HKD', "currency": 'HKD', "market_value": overview["hkd_cash"]})
     elif 'usd_cash' in overview:
         rows.append({"symbol": 'CASH_USD', "currency": 'USD', "market_value": overview["usd_cash"]})
     df = pd.DataFrame(rows, columns=["symbol", "volume", "currency", "closing_price", "market_value"])
+    total_mv = overview['net_equity']
+    mv_sum = round(df['market_value'].sum(), 2)
+    assert total_mv == mv_sum, print("total_mv({}) != mv_sum({})".format(total_mv, mv_sum))
     df['broker_name'] = "ValuableCapital"
     df['period_yyyymm'] = int(overview['period_yyyymm'])
     df['usd_hkd_rate'] = np.nan
@@ -149,12 +154,12 @@ def parse_overview(tokens) -> dict:
     subs = slice_between(tokens, "財務概況", "財務明細")
     return {
         "period_yyyymm": os.path.basename(sys.argv[1])[:6],
-        "balance": as_number(pick_next_number_after(subs, "現金結餘：")),
-        "unsettled": as_number(pick_next_number_after(subs, "待交收金額：")),
+        "balance": as_number(pick_next_number_after(subs, "現金結餘：", "現金結餘①：")),
+        "unsettled": as_number(pick_next_number_after(subs, "待交收金額：", "待交收金額②：")),
         "usd_hkd_rate": as_number(pick_kv(subs, "参考匯率：USD->HKD")),
         "cny_hkd_rate": as_number(pick_kv(subs, "CNY->HKD")),
-        "market_value": as_number(pick_next_number_after(subs, "總市值：")),
-        "net_equity": as_number(pick_next_number_after(subs, "資產淨值（不含利息）：")),
+        "market_value": as_number(pick_next_number_after(subs, "總市值：", "總市值③：")),
+        "net_equity": as_number(pick_next_number_after(subs, "資產淨值（不含利息）：", "資產淨值（不含利息）④：")),
         "hkd_cash": as_number(pick_next_number_after(subs, "港元")),
         "usd_cash": as_number(pick_next_number_after(subs, "美元")),
         "hk_stock": as_number(pick_next_number_after(subs, "港股")),
@@ -222,6 +227,10 @@ def convert_holding_summary(tokens: list[str]) -> pd.DataFrame:
     df['broker_name'] = "ValuableCapital"
     df['period_yyyymm'] = int(overview['period_yyyymm'])
     df['usd_hkd_rate'] = df['currency'].apply(lambda x: 1 if x == 'HKD' else overview['usd_hkd_rate'])
+    total_mv = round(overview['net_equity'] - overview['unsettled'], 2)
+    df['hkd_equivalent'] = df['market_value'] * df['usd_hkd_rate']
+    mv_sum = round(df['hkd_equivalent'].sum(), 2)
+    assert abs(total_mv - mv_sum) < 0.1, print("total_mv({}) != mv_sum({})".format(total_mv, mv_sum))
     hr = round(1 / overview['cny_hkd_rate'], 4)
     ur = round(overview['usd_hkd_rate'] / overview['cny_hkd_rate'], 4)
     df['cny_rate'] = df['currency'].apply(lambda x: hr if x == 'HKD' else ur)
@@ -229,8 +238,8 @@ def convert_holding_summary(tokens: list[str]) -> pd.DataFrame:
              "usd_hkd_rate", "cny_rate"]]
 
 def main():
-    if len(sys.argv) < 2:
-        print('Usage: {} "statement.pdf"'.format(sys.argv[0]))
+    if len(sys.argv) < 3:
+        print('Usage: {} "statement.pdf" "out_dir"'.format(sys.argv[0]))
         sys.exit(1)
 
     password = None
@@ -244,11 +253,15 @@ def main():
             for ln in page_lines:
                 tokens.extend(re.sub('；', ' ', ln).split())
     # pprint(tokens)
-    if int(os.path.basename(sys.argv[1])[:6]) < 202209:
+    basename = os.path.basename(sys.argv[1])
+    out_dir = sys.argv[2].rstrip('/')
+    os.makedirs(out_dir, exist_ok=True)
+    if int(basename[:6]) < 202209:
         df = convert_holding_summary_old(tokens)
+        csv = out_dir + '/' + basename[:6] + ('_hk.csv' if 'HK' in basename else '_us.csv')
     else:
         df = convert_holding_summary(tokens)
-    csv = re.sub('.pdf', '.csv', sys.argv[1])
+        csv = out_dir + '/' + basename[:6] + '.csv'
     df.to_csv(csv, index=False, encoding='utf-8-sig')
     print(f"Extracted {len(df)} rows from {sys.argv[1]} to {csv}")
 
