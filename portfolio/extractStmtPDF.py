@@ -51,7 +51,7 @@ def pick_kv(seq, key, default=None):
         return seq[i+1]
     return default
 
-def pick_next_number_after(seq, key, alt=None):
+def pick_next_number_after2(seq, key, alt=None):
     """在 seq 中找 key，返回其后第一个“像数字”的 token"""
     i = idx_of(seq, key)
     if i < 0:
@@ -64,6 +64,21 @@ def pick_next_number_after(seq, key, alt=None):
     for j in range(i+1, min(i+20, len(seq))):       # fix me - may find a same key word before real key
         if isinstance(seq[j], str) and _num_re.match(seq[j].strip()):
             return seq[j]
+    assert False, f"Cannot find number after '{key}' (or alt '{alt}') in sequence"
+
+def pick_next_number_after(seq, key, alt=None):
+    keys = [key]
+    if alt is not None:
+        if isinstance(alt, (list, tuple, set)):
+            keys.extend(list(alt))
+        else:
+            keys.append(alt)
+    for i, tok in enumerate(seq):
+        if tok not in keys:
+            continue
+        i += 1
+        if _num_re.match(seq[i]):
+            return seq[i]
     assert False, f"Cannot find number after '{key}' (or alt '{alt}') in sequence"
 
 def extract_unsettled_totals(tokens):
