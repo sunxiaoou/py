@@ -1,101 +1,125 @@
 #! /usr/local/bin/python3
 # -*- coding: utf-8 -*-
 
-import argparse
-import pandas as pd
+import csv
+import sys
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 
-def is_na(x) -> bool:
-    try:
-        return pd.isna(x)
-    except Exception:
-        return x is None
-
-def sql_value(v) -> str:
-    if v is None or (isinstance(v, float) and pd.isna(v)):
-        return "NULL"
-    if isinstance(v, str):
-        return "'" + v.replace("'", "''") + "'"
-    return str(v)
-
-def to_datetime_str(x) -> str:
-    """Return 'YYYY-MM-DD HH:MM:SS' or None."""
-    if is_na(x):
-        return None
-    dt = pd.to_datetime(x, errors="coerce")
-    if pd.isna(dt):
-        return None
-    return dt.strftime("%Y-%m-%d %H:%M:%S")
+TABLE = "broker_statement_monthly"
 
 
-def to_dec_str(x, scale=6) -> str:
-    """Return decimal string with fixed scale or None."""
-    if is_na(x):
+DEC_COLS = {
+    "volume",
+    "closing_price",
+    "market_value",
+    "usd_hkd_rate",
+    "cny_rate",
+}
+
+STR_COLS = {
+    "broker_name",
+    "period_yyyymm",
+    "symbol",
+    "currency",
+}
+
+
+def esc_sql(s: str) -> str:
+    return s.replace("\\", "\\\\").replace("'", "''")
+
+
+def to_decimal_or_none(s: str, scale=6):
+    if s is None:
         return None
-    s = str(x).strip().replace(",", "")
-    if not s:
+    s = s.strip()
+    if s == "":
         return None
+    s = s.replace(",", "")
     try:
         d = Decimal(s)
     except (InvalidOperation, ValueError):
         return None
     q = Decimal("1." + "0" * scale)
-    d = d.quantize(q, rounding=ROUND_HALF_UP)
-    return format(d, "f")
+    return d.quantize(q, rounding=ROUND_HALF_UP)
+
+
+def sql_val(v):
+    """Render python value to SQL literal."""
+    if v is None:
+        return "NULL"
+    if isinstance(v, Decimal):
+        return format(v, "f")
+    if isinstance(v, int):
+        return str(v)
+    # string
+    return f"'{esc_sql(str(v))}'"
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("-i", "--input", required=True, help="Excel file path")
-    ap.add_argument("-o", "--out", default="stmtInsert.sql", help="Output SQL file")
-    ap.add_argument("--sheet", default=None, help="Sheet name (default: first sheet)")
-    ap.add_argument("--table", default="broker_statement_monthly_item", help="Target table name")
-    ap.add_argument("--scale", type=int, default=6, help="Decimal scale for rates (default 6)")
-    args = ap.parse_args()
+    if len(sys.argv) < 3:
+        print('Usage: {} "csv_name" "sql_name"'.format(sys.argv[0]))
+        sys.exit(1)
 
-    xl = pd.ExcelFile(args.input)
-    sheet = args.sheet or xl.sheet_names[0]
-    df = xl.parse(sheet_name=sheet)
+    with open(sys.argv[1], "r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        cols = reader.fieldnames
+        if not cols:
+            raise SystemExit("CSV has no header")
 
-    # 统一列名
-    df.columns = [str(c).strip().lower() for c in df.columns]
-    required = ["broker_name", "period_yyyymm", "symbol", "currency", "market_value", "volume", 'closing_price']
-    for c in required:
-        if c not in df.columns:
-            raise SystemExit(f"Missing required column: {c}")
+        # 简单校验（可按需删）
+        missing = [c for c in STR_COLS.union(DEC_COLS) if c not in cols]
+        if missing:
+            raise SystemExit(f"CSV missing columns: {missing}")
 
-    lines = ["START TRANSACTION;"]
-    inserted = 0
-    for idx, row in df.iterrows():
-        broker_name = None if is_na(row.get("broker_name")) else str(row.get("broker_name")).strip()
-        period = None if is_na(row.get("period_yyyymm")) else int(row.get("period_yyyymm"))
-        symbol = None if is_na(row.get("symbol")) else str(row.get("symbol")).strip()
-        if broker_name is None or period is None or symbol is None:
-            continue
-        currency = row["currency"]
-        if currency not in ("HKD", "USD"):
-            raise SystemExit(f"[解析失败] currency : {currency} (idx={idx} + 2)")
+        rows = list(reader)
 
-        item_type = "CASH" if symbol.upper().startswith("CASH_") else "POSITION"
-        market_value = to_dec_str(row.get("market_value"))
-        volume = to_dec_str(row.get("volume"))
-        closing_price = to_dec_str(row.get("closing_price"))
+    with open(sys.argv[2], "w", encoding="utf-8") as out:
+        out.write("START TRANSACTION;\n\n")
 
-        lines.append(
-            f"INSERT INTO {args.table} "
-            f"(broker_name, period_yyyymm, item_type, symbol, currency, market_value, volume, closing_price, raw_row_no) "
-            f"VALUES ({sql_value(broker_name)}, {period}, {sql_value(item_type)}, {sql_value(symbol)}, "
-            f"{sql_value(currency)}, {market_value}, {sql_value(volume)}, {sql_value(closing_price)}, {idx + 2});"
-        )
-        inserted += 1
+        for r in rows:
+            # 字符列
+            broker_name = (r.get("broker_name") or "").strip() or None
+            period_yyyymm = (r.get("period_yyyymm") or "").strip() or None
+            symbol = (r.get("symbol") or "").strip() or None
+            currency = (r.get("currency") or "").strip() or None
 
-    lines.append("COMMIT;")
+            # period_yyyymm 转 int（若你表里是 INT）
+            period_int = None
+            if period_yyyymm and period_yyyymm.isdigit():
+                period_int = int(period_yyyymm)
 
-    with open(args.out, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines) + "\n")
+            # 数字列（空->NULL）
+            volume = to_decimal_or_none(r.get("volume"))
+            closing_price = to_decimal_or_none(r.get("closing_price"))
+            market_value = to_decimal_or_none(r.get("market_value"))
+            usd_hkd_rate = to_decimal_or_none(r.get("usd_hkd_rate"))
+            cny_rate = to_decimal_or_none(r.get("cny_rate"))
 
-    print(f"OK: wrote {inserted} INSERT statements to {args.out} (sheet={sheet})")
+            # 跳过明显空行
+            if not broker_name or period_int is None or not symbol:
+                continue
+
+            # 生成 INSERT（字段名按 CSV）
+            out.write(
+                f"INSERT INTO {TABLE} "
+                f"(broker_name, period_yyyymm, symbol, currency, volume, closing_price, market_value, usd_hkd_rate, cny_rate) "
+                f"VALUES ("
+                f"{sql_val(broker_name)}, "
+                f"{sql_val(period_int)}, "
+                f"{sql_val(symbol)}, "
+                f"{sql_val(currency)}, "
+                f"{sql_val(volume)}, "
+                f"{sql_val(closing_price)}, "
+                f"{sql_val(market_value)}, "
+                f"{sql_val(usd_hkd_rate)}, "
+                f"{sql_val(cny_rate)}"
+                f");\n"
+            )
+
+        out.write("\nCOMMIT;\n")
+
+    print(f"OK: wrote {len(rows)} rows to {sys.argv[2]}")
 
 
 if __name__ == "__main__":
