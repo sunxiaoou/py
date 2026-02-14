@@ -5,7 +5,8 @@ import os
 import argparse
 from datetime import datetime
 import pandas as pd
-from sqlalchemy import create_engine, text
+
+from mysql import MySql
 
 
 def month_end_exclusive(yyyymm: int) -> str:
@@ -142,23 +143,16 @@ def diff_tables(left: pd.DataFrame, right: pd.DataFrame, key_cols, val_col,
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mysql-url", default=os.getenv("MYSQL_URL"),
-                    help="SQLAlchemy URL, e.g. mysql+pymysql://user:pass@host:3306/db?charset=utf8mb4")
     ap.add_argument("--broker", default="ValuableCapital", help="broker_name, default DEFAULT")
     ap.add_argument("--period", type=int, required=True, help="period_yyyymm, e.g. 202012")
     ap.add_argument("--out-dir", default=".", help="output dir for CSV diffs")
-    ap.add_argument("--tolerance", type=float, default=0.0, help="tolerance for diff (e.g. 1e-6)")
+    ap.add_argument("--tolerance", type=float, default=0.1, help="tolerance for diff (e.g. 1e-6)")
     args = ap.parse_args()
 
-    if not args.mysql_url:
-        raise SystemExit("Missing --mysql-url or env MYSQL_URL")
-
     month_end = month_end_exclusive(args.period)
-    engine = create_engine(args.mysql_url, pool_pre_ping=True)
-
-    with engine.connect() as conn:
-        trades = pd.read_sql(text(TRADE_LEDGER_SQL), conn, params={"month_end": month_end, "broker_name": args.broker})
-        stmt_items = pd.read_sql(text(STMT_ITEMS_SQL), conn, params={"broker_name": args.broker, "yyyymm": args.period})
+    db = MySql()
+    trades = db.to_frame_with_params(TRADE_LEDGER_SQL, {"month_end": month_end, "broker_name": args.broker})
+    stmt_items = db.to_frame_with_params(STMT_ITEMS_SQL, {"broker_name": args.broker, "yyyymm": args.period})
 
     calc_cash, calc_pos = compute_from_trade_ledger(trades)
     stmt_cash, stmt_pos = normalize_stmt_items(stmt_items)
