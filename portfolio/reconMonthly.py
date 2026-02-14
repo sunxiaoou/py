@@ -38,12 +38,11 @@ ORDER BY l.occurred_at, l.id;
 # === SQL: 读取月结单 item ===
 STMT_ITEMS_SQL = """
 SELECT
-  item_type,
   symbol,
   volume,
   currency,
   market_value
-FROM broker_statement_monthly_item
+FROM broker_statement_monthly
 WHERE broker_name = :broker_name
   AND period_yyyymm = :yyyymm;
 """
@@ -101,7 +100,7 @@ def normalize_stmt_items(stmt_items: pd.DataFrame):
         )
 
     # CASH
-    cash = stmt_items[stmt_items["item_type"].astype(str).str.upper() == "CASH"].copy()
+    cash = stmt_items[stmt_items["symbol"].str.startswith("CASH")].copy()
     if not cash.empty:
         # 允许一币种多行：groupby 汇总（通常你是 unique(symbol)，但这里更稳）
         stmt_cash = (cash.groupby("currency", as_index=False)["market_value"]
@@ -111,7 +110,7 @@ def normalize_stmt_items(stmt_items: pd.DataFrame):
         stmt_cash = pd.DataFrame(columns=["currency", "cash_balance"])
 
     # POSITION
-    pos = stmt_items[stmt_items["item_type"].astype(str).str.upper() == "POSITION"].copy()
+    pos = stmt_items[~(stmt_items["symbol"].str.startswith("CASH") | stmt_items["symbol"].str.startswith("HK0"))].copy()
     if not pos.empty:
         stmt_pos = (pos.groupby("symbol", as_index=False)["volume"]
                     .sum()
