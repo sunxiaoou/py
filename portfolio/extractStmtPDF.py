@@ -152,10 +152,16 @@ def convert_holding_summary_old(tokens: list[str]) -> pd.DataFrame:
     return df[["broker_name", "period_yyyymm", "symbol", "currency", "volume", "closing_price", "market_value",
                "usd_hkd_rate", "cny_rate"]]
 
+def extract_numeric_prefix(s: str) -> str:
+    match = re.match(r'^\d+', s)
+    if match:
+        return match.group()
+    raise ValueError(f"Cannot extract numeric prefix from '{s}'")
+
 def parse_overview(tokens) -> dict:
     subs = slice_between(tokens, "財務概況", "財務明細")
     return {
-        "period_yyyymm": os.path.basename(sys.argv[1])[:6],
+        "period_yyyymm": extract_numeric_prefix(os.path.basename(sys.argv[1])),
         "balance": as_number(pick_next_number_after(subs, "現金結餘：", ["現⾦結餘：", "現金結餘①："])),
         "unsettled": as_number(pick_next_number_after(subs, "待交收金額：", ["待交收⾦額：", "待交收金額②："])),
         "usd_hkd_rate": as_number(pick_kv(subs, "参考匯率：USD->HKD")),
@@ -218,12 +224,17 @@ def parse_holding_summary(tokens) -> list[dict]:
             i += 1
     return rows
 
+def insert_hkd_row(rows: list, new_row: dict) -> list:
+    hkd_count = sum(1 for row in rows if row.get("currency") == "HKD")
+    return rows[:hkd_count] + [new_row] + rows[hkd_count:]
+
 def convert_holding_summary(tokens: list[str]) -> pd.DataFrame:
     overview = parse_overview(tokens)
     # pprint(overview)
     h, u = extract_unsettled_totals(tokens)
     rows = parse_holding_summary(tokens)
-    rows.append({"symbol": 'CASH_HKD', "currency": 'HKD', "market_value": round(overview["hkd_cash"] + h, 2)})
+    rows = insert_hkd_row(
+        rows, {"symbol": 'CASH_HKD', "currency": 'HKD', "market_value": round(overview["hkd_cash"] + h, 2)})
     rows.append({"symbol": 'CASH_USD', "currency": 'USD', "market_value": round(overview["usd_cash"] + u, 2)})
     df = pd.DataFrame(rows, columns=["symbol", "volume", "currency", "closing_price", "market_value"])
     df['broker_name'] = "ValuableCapital"
@@ -234,6 +245,7 @@ def convert_holding_summary(tokens: list[str]) -> pd.DataFrame:
     mv_sum = round(df['hkd_equivalent'].sum(), 2)
     assert abs(total_mv - mv_sum) < 0.1, \
         print("total_mv({}) - mv_sum({}) = {}".format(total_mv, mv_sum, round(total_mv - mv_sum, 2)))
+    print("total_mv({})".format(total_mv))
     hr = round(1 / overview['cny_hkd_rate'], 4)
     ur = round(overview['usd_hkd_rate'] / overview['cny_hkd_rate'], 4)
     df['cny_rate'] = df['currency'].apply(lambda x: hr if x == 'HKD' else ur)
@@ -264,7 +276,7 @@ def main():
         csv = out_dir + '/' + basename[:6] + ('_hk.csv' if 'HK' in basename else '_us.csv')
     else:
         df = convert_holding_summary(tokens)
-        csv = out_dir + '/' + basename[:6] + '.csv'
+        csv = out_dir + '/' + extract_numeric_prefix(basename) + '.csv'
     df.to_csv(csv, index=False, encoding='utf-8-sig')
     print(f"Extracted {len(df)} rows from {sys.argv[1]} to {csv}")
 
