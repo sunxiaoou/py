@@ -10,6 +10,8 @@ import pdfplumber
 import pandas as pd
 import re
 
+from fxRate import FX_RATE
+
 
 def idx_of(seq, needle) -> int:
     """返回 needle 在 seq 中首次出现的位置，不存在返回 -1"""
@@ -66,6 +68,68 @@ def pick_next_number_after(seq, key, alt=None):
         if _num_re.match(seq[i]):
             return seq[i]
     assert False, f"Cannot find number after '{key}' (or alt '{alt}') in sequence"
+
+def parse_overview_usmart(tokens: list[str]) -> dict:
+    subs = slice_between(tokens, "⽉结单", "资产变动")
+    i = 0
+    while not re.match(_num_re, subs[i]):
+        i += 1
+    dic = {
+        "period_yyyymm": os.path.basename(sys.argv[1])[:6],
+        "market_value": as_number(subs[i]),
+        "usd_cash": as_number(subs[i+1]),
+        "net_equity": as_number(subs[i+2])
+    }
+    return dic
+
+def parse_holding_summary_usmart(tokens) -> list[dict]:
+    sec = slice_between(tokens, "股票持仓明细", "期权做多持仓记录")
+    rows = []
+    i = 0
+    while i < len(sec):
+        if sec[i] == '抵押市值':
+            j = i + 1
+            while j < len(sec):
+                if sec[j] in ['市值汇总', '暂⽆数据']:
+                    i = j + 1
+                    break
+                symbol = sec[j]
+                k = j + 1
+                while k < len(sec) and not sec[k] in ["HKD", "USD"]:
+                    k += 1
+                currency = sec[k]
+                k += 1
+                nums = []
+                while k < len(sec) and len(nums) < 4 and _num_re.match(sec[k]):
+                    nums.append(as_number(sec[k]))
+                    k += 1
+                if len(nums) == 4:
+                    rows.append({"symbol": symbol,
+                                 "volume": nums[0],
+                                 "currency": currency,
+                                 "closing_price": nums[2],
+                                 "market_value": nums[3]})
+                j = k + 2
+        else:
+            i += 1
+    return rows
+
+def convert_holding_summary_usmart(tokens: list[str]) -> pd.DataFrame:
+    overview = parse_overview_usmart(tokens)
+    rows = parse_holding_summary_usmart(tokens)
+    rows.append({"symbol": 'CASH_USD', "currency": 'USD', "market_value": overview["usd_cash"]})
+    df = pd.DataFrame(rows, columns=["symbol", "volume", "currency", "closing_price", "market_value"])
+    total_mv = overview['net_equity']
+    mv_sum = round(df['market_value'].sum(), 2)
+    assert total_mv == mv_sum, print("total_mv({}) != mv_sum({})".format(total_mv, mv_sum))
+    print("total_mv({})".format(total_mv))
+    df['broker_name'] = "uSmart"
+    df['period_yyyymm'] = int(overview['period_yyyymm'])
+    _, usd_hdk_rate, cny_rate = FX_RATE[overview['period_yyyymm']]
+    df['usd_hkd_rate'] = usd_hdk_rate
+    df['cny_rate'] =  cny_rate
+    return df[["broker_name", "period_yyyymm", "symbol", "currency", "volume", "closing_price", "market_value",
+               "usd_hkd_rate", "cny_rate"]]
 
 def extract_unsettled_totals(tokens):
     sec = slice_between(tokens, "待结算交易", "持倉摘要")
@@ -271,12 +335,16 @@ def main():
     basename = os.path.basename(sys.argv[1])
     out_dir = sys.argv[2].rstrip('/')
     os.makedirs(out_dir, exist_ok=True)
-    if int(basename[:6]) < 202209:
-        df = convert_holding_summary_old(tokens)
-        csv = out_dir + '/' + basename[:6] + ('_hk.csv' if 'HK' in basename else '_us.csv')
-    else:
-        df = convert_holding_summary(tokens)
-        csv = out_dir + '/' + extract_numeric_prefix(basename) + '.csv'
+    if 'M21' in basename:
+        df = convert_holding_summary_usmart(tokens)
+        csv = out_dir + '/' + basename[:6] + '_usmart.csv'
+    else:   # valuableCapital 的 stmt 在 2022-09 前后格式差异较大，分别处理
+        if int(basename[:6]) < 202209:
+            df = convert_holding_summary_old(tokens)
+            csv = out_dir + '/' + basename[:6] + ('_hk.csv' if 'HK' in basename else '_us.csv')
+        else:
+            df = convert_holding_summary(tokens)
+            csv = out_dir + '/' + extract_numeric_prefix(basename) + '.csv'
     df.to_csv(csv, index=False, encoding='utf-8-sig')
     print(f"Extracted {len(df)} rows from {sys.argv[1]} to {csv}")
 
