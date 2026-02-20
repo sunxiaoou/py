@@ -90,6 +90,8 @@ def parse_holding_summary_usmart(tokens) -> list[dict]:
         if sec[i] == '抵押市值':
             j = i + 1
             while j < len(sec):
+                if _num_re.match(sec[j]):   # skip page number
+                    j += 1
                 if sec[j] in ['市值汇总', '暂⽆数据']:
                     i = j + 1
                     break
