@@ -12,6 +12,19 @@ import re
 
 from fxRate import FX_RATE
 
+def get_tokens_from_pdf(pdf_path: str) -> list[str]:
+    auth = 'auth/' + ('stmt_futu' if '1771' in pdf_path.lower() else 'stmt') + '.txt'
+    password = None
+    with open(auth, 'r') as f:
+        password = f.read()[:-1]
+    tokens = []
+    with pdfplumber.open(pdf_path, password=password) as pdf:
+        for page in pdf.pages:
+            text = page.extract_text() or ""
+            page_lines = [l.strip() for l in text.splitlines() if l.strip()]
+            for ln in page_lines:
+                tokens.extend(re.sub('；', ' ', ln).split())
+    return tokens
 
 def idx_of(seq, needle) -> int:
     """返回 needle 在 seq 中首次出现的位置，不存在返回 -1"""
@@ -69,6 +82,63 @@ def pick_next_number_after(seq, key, alt=None):
             return seq[i]
     assert False, f"Cannot find number after '{key}' (or alt '{alt}') in sequence"
 
+def parse_overview_futu(tokens: list[str]) -> dict:
+    subs = slice_between(tokens, '賬戶號碼', '期初總覽')
+    dic = {
+        "period_yyyymm": os.path.basename(sys.argv[1])[:6],
+        "market_value": as_number(pick_next_number_after(subs, '證券市值')),
+        "usd_cash": as_number(pick_next_number_after(subs, '現金結餘')),
+        "net_equity": as_number(pick_next_number_after(subs, '資產淨值'))
+    }
+    return dic
+
+def parse_holding_summary_futu(tokens) -> list[dict]:
+    sec = slice_between(tokens, '期末總覽', '期末證券市值：')
+    rows = []
+    i = 0
+    while i < len(sec):
+        if sec[i] == '率':
+            j = i + 1
+            while j < len(sec):
+                if sec[j] == '股票':
+                    j += 1
+                symbol = sec[j].split('(')[0]
+                k = j + 1
+                while k < len(sec) and not _num_re.match(sec[k]):
+                    k += 1
+                nums = []
+                while k < len(sec) and len(nums) < 3 and _num_re.match(sec[k]):
+                    nums.append(as_number(sec[k]))
+                    k += 1
+                if len(nums) == 3:
+                    rows.append({"symbol": symbol,
+                                 "volume": nums[0],
+                                 "currency": "USD",
+                                 "closing_price": nums[1],
+                                 "market_value": nums[2]})
+                j = k + 3
+            i = j
+        else:
+            i += 1
+    return rows
+
+def convert_holding_summary_futu(tokens: list[str]) -> pd.DataFrame:
+    overview = parse_overview_futu(tokens)
+    rows = parse_holding_summary_futu(tokens)
+    rows.append({"symbol": 'CASH_USD', "currency": 'USD', "market_value": overview["usd_cash"]})
+    df = pd.DataFrame(rows, columns=["symbol", "volume", "currency", "closing_price", "market_value"])
+    total_mv = overview['net_equity']
+    mv_sum = round(df['market_value'].sum(), 2)
+    assert total_mv == mv_sum, print("total_mv({}) != mv_sum({})".format(total_mv, mv_sum))
+    print("total_mv({})".format(total_mv))
+    df['broker_name'] = "FuTu"
+    df['period_yyyymm'] = int(overview['period_yyyymm'])
+    _, usd_hdk_rate, cny_rate = FX_RATE[overview['period_yyyymm']]
+    df['usd_hkd_rate'] = usd_hdk_rate
+    df['cny_rate'] =  cny_rate
+    return df[["broker_name", "period_yyyymm", "symbol", "currency", "volume", "closing_price", "market_value",
+               "usd_hkd_rate", "cny_rate"]]
+
 def parse_overview_usmart(tokens: list[str]) -> dict:
     subs = slice_between(tokens, "⽉结单", "资产变动")
     i = 0
@@ -112,6 +182,7 @@ def parse_holding_summary_usmart(tokens) -> list[dict]:
                                  "closing_price": nums[2],
                                  "market_value": nums[3]})
                 j = k + 2
+            i = j
         else:
             i += 1
     return rows
@@ -323,21 +394,15 @@ def main():
         print('Usage: {} "statement.pdf" "out_dir"'.format(sys.argv[0]))
         sys.exit(1)
 
-    password = None
-    with open('auth/stmt.txt', 'r') as f:
-        password = f.read()[:-1]
-    tokens = []
-    with pdfplumber.open(sys.argv[1], password=password) as pdf:
-        for page in pdf.pages:
-            text = page.extract_text() or ""
-            page_lines = [l.strip() for l in text.splitlines() if l.strip()]
-            for ln in page_lines:
-                tokens.extend(re.sub('；', ' ', ln).split())
+    tokens = get_tokens_from_pdf(sys.argv[1])
     # pprint(tokens)
     basename = os.path.basename(sys.argv[1])
     out_dir = sys.argv[2].rstrip('/')
     os.makedirs(out_dir, exist_ok=True)
-    if 'M21' in basename:
+    if '1771' in basename:
+        df = convert_holding_summary_futu(tokens)
+        csv = out_dir + '/' + basename[:6] + '_futu.csv'
+    elif 'M21' in basename:
         df = convert_holding_summary_usmart(tokens)
         csv = out_dir + '/' + basename[:6] + '_usmart.csv'
     else:   # valuableCapital 的 stmt 在 2022-09 前后格式差异较大，分别处理
