@@ -39,7 +39,52 @@ cash AS (
   WHERE l.biz_type_code IN ('CASH_IN', 'CASH_OUT')
   GROUP BY (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at))
 ),
-dividend AS (
+nd AS (
+  SELECT
+  (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at)) AS period_yyyymm,
+  SUM(
+    CASE
+      WHEN l.currency = 'HKD' THEN l.amount * fx.hkd_cny_rate
+      WHEN l.currency = 'USD' THEN l.amount * fx.usd_cny_rate
+      ELSE 0
+    END
+  ) AS cny_net_dividend
+  FROM trade_ledger l
+  JOIN fx_rate_monthly fx ON fx.period_yyyymm = (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at))
+  WHERE l.biz_type_code IN ('DIVIDEND', 'DIVIDEND_ADJ', 'DIVIDEND_TAX', 'DIVIDEND_TAX_ADJ')
+  GROUP BY (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at))
+),
+monthly_data AS (
+  SELECT
+    fx.period_yyyymm AS period_yyyymm,
+    n.cny_net AS cny_net,
+    n.cny_net - LAG(n.cny_net, 1) OVER (ORDER BY fx.period_yyyymm) AS cny_net_diff,
+    COALESCE(c.cny_cash, 0) AS cny_cash,
+    COALESCE(d.cny_net_dividend, 0) AS cny_net_dividend
+  FROM fx_rate_monthly fx
+  LEFT JOIN net n ON fx.period_yyyymm = n.period_yyyymm
+  LEFT JOIN cash c ON fx.period_yyyymm = c.period_yyyymm
+  LEFT JOIN nd d ON fx.period_yyyymm = d.period_yyyymm
+)
+SELECT
+  period_yyyymm,
+  cny_net,
+  cny_net_diff,
+  cny_cash,
+  cny_net_dividend,
+  cny_net_diff - cny_cash - cny_net_dividend AS cny_profit,
+  CASE
+  	WHEN MOD(period_yyyymm, 100) = 12 THEN
+  	  SUM(cny_net_diff - cny_cash - cny_net_dividend) OVER (
+        PARTITION BY FLOOR(period_yyyymm / 100)
+        ORDER BY period_yyyymm
+      )
+    ELSE NULL  
+  END AS cny_profit_ytd
+FROM monthly_data
+ORDER BY period_yyyymm;
+
+WITH dividend AS (
   SELECT
   (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at)) AS period_yyyymm,
   SUM(
@@ -51,36 +96,52 @@ dividend AS (
   ) AS cny_dividend
   FROM trade_ledger l
   JOIN fx_rate_monthly fx ON fx.period_yyyymm = (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at))
-  WHERE l.biz_type_code IN ('DIVIDEND', 'DIVIDEND_ADJ', 'DIVIDEND_TAX', 'DIVIDEND_TAX_ADJ')
+  WHERE l.biz_type_code IN ('DIVIDEND', 'DIVIDEND_ADJ')
   GROUP BY (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at))
 ),
-monthly_data AS (
+deduction AS (
   SELECT
-    fx.period_yyyymm,
-    n.cny_net AS cny_net,
-    n.cny_net - LAG(n.cny_net, 1) OVER (ORDER BY fx.period_yyyymm) AS cny_net_diff,
-    COALESCE(c.cny_cash, 0) AS cny_cash,
-    COALESCE(d.cny_dividend, 0) AS cny_dividend
+  (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at)) AS period_yyyymm,
+  SUM(
+    CASE
+      WHEN l.currency = 'HKD' THEN l.amount * fx.hkd_cny_rate
+      WHEN l.currency = 'USD' THEN l.amount * fx.usd_cny_rate
+      ELSE 0
+    END
+  ) AS cny_deduction
+  FROM trade_ledger l
+  JOIN fx_rate_monthly fx ON fx.period_yyyymm = (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at))
+  WHERE l.biz_type_code IN ('DIVIDEND_TAX', 'DIVIDEND_TAX_ADJ')
+  GROUP BY (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at))
+),
+dividend_monthly AS (
+  SELECT
+    fx.period_yyyymm AS period_yyyymm,
+    COALESCE(td.cny_dividend, 0) AS cny_dividend,
+    COALESCE(de.cny_deduction, 0) AS cny_deduction
   FROM fx_rate_monthly fx
-  LEFT JOIN net n ON fx.period_yyyymm = n.period_yyyymm
-  LEFT JOIN cash c ON fx.period_yyyymm = c.period_yyyymm
-  LEFT JOIN dividend d ON fx.period_yyyymm = d.period_yyyymm
+  LEFT JOIN dividend td ON fx.period_yyyymm = td.period_yyyymm
+  LEFT JOIN deduction de ON fx.period_yyyymm = de.period_yyyymm
 )
 SELECT
   period_yyyymm,
-  cny_net,
-  cny_net_diff,
-  cny_cash,
   cny_dividend,
-  cny_net_diff - cny_cash - cny_dividend AS cny_profit,
   CASE
   	WHEN MOD(period_yyyymm, 100) = 12 THEN
-  	  SUM(cny_net_diff - cny_cash - cny_dividend) OVER (
+  	  SUM(cny_dividend) OVER (
         PARTITION BY FLOOR(period_yyyymm / 100)
         ORDER BY period_yyyymm
       )
-    ELSE NULL  
-  END AS cny_profit_ytd
-FROM monthly_data
+    ELSE NULL
+  END AS cny_dividend_ytd,
+  cny_deduction,
+  CASE
+    WHEN MOD(period_yyyymm, 100) = 12 THEN
+  	  SUM(cny_deduction) OVER (
+        PARTITION BY FLOOR(period_yyyymm / 100)
+        ORDER BY period_yyyymm
+      )
+    ELSE NULL
+  END AS cny_deduction_ytd
+FROM dividend_monthly
 ORDER BY period_yyyymm;
-ORDER BY fx.period_yyyymm;
