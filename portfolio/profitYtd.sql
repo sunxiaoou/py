@@ -104,8 +104,8 @@ deduction AS (
   (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at)) AS period_yyyymm,
   SUM(
     CASE
-      WHEN l.currency = 'HKD' THEN l.amount * fx.hkd_cny_rate
-      WHEN l.currency = 'USD' THEN l.amount * fx.usd_cny_rate
+      WHEN l.currency = 'HKD' THEN -l.amount * fx.hkd_cny_rate
+      WHEN l.currency = 'USD' THEN -l.amount * fx.usd_cny_rate
       ELSE 0
     END
   ) AS cny_deduction
