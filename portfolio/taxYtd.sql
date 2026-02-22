@@ -11,6 +11,7 @@ CREATE VIEW fx_rate_monthly AS SELECT
      AND usd_cny_rate IS NOT NULL;
 
 WITH net AS (
+  -- 将月结单中的现金结余、个股市值、个基市值等按当月hkd/usd汇率统一折算为cny后求和,得到每月的cny资产净值
   SELECT
   b.period_yyyymm,
   SUM(
@@ -25,6 +26,7 @@ WITH net AS (
   GROUP BY b.period_yyyymm
 ),
 cash AS (
+  -- 将交易流水中的出入金记录按当月hkd/usd汇率统一折算为cny后求和,得到每月的cny出入金合计
   SELECT
   (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at)) AS period_yyyymm,
   SUM(
@@ -40,6 +42,7 @@ cash AS (
   GROUP BY (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at))
 ),
 nd AS (
+  -- 将交易流水中的派息及税费扣除记录按当月hkd/usd汇率统一折算为cny后求和,得到每月的cny净派息合计
   SELECT
   (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at)) AS period_yyyymm,
   SUM(
@@ -51,10 +54,11 @@ nd AS (
   ) AS cny_net_dividend
   FROM trade_ledger l
   JOIN fx_rate_monthly fx ON fx.period_yyyymm = (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at))
-  WHERE l.biz_type_code IN ('DIVIDEND', 'DIVIDEND_ADJ', 'DIVIDEND_TAX', 'DIVIDEND_TAX_ADJ')
+  WHERE l.biz_type_code IN ('DIVIDEND', 'DIVIDEND_ADJ', 'DIVIDEND_FEE', 'DIVIDEND_TAX', 'DIVIDEND_TAX_ADJ')
   GROUP BY (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at))
 ),
 monthly_data AS (
+  -- 将上述三个子查询的结果按月合并,得到每月的cny资产净值、cny资产净值月度变化 、cny出入金合计、cny净派息合计
   SELECT
     fx.period_yyyymm AS period_yyyymm,
     n.cny_net AS cny_net,
@@ -66,6 +70,7 @@ monthly_data AS (
   LEFT JOIN cash c ON fx.period_yyyymm = c.period_yyyymm
   LEFT JOIN nd d ON fx.period_yyyymm = d.period_yyyymm
 )
+-- 最后计算每月的cny盈亏(资产净值月度变化 - 出入金 - 净派息),以及每年盈亏累计, 每年盈亏累计只在12月显示,其他月份显示NULL
 SELECT
   period_yyyymm,
   cny_net,
@@ -85,6 +90,7 @@ FROM monthly_data
 ORDER BY period_yyyymm;
 
 WITH dividend AS (
+  -- 将交易流水中的派息记录按当月hkd/usd汇率统一折算为cny后求和,得到每月的cny派息合计
   SELECT
   (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at)) AS period_yyyymm,
   SUM(
@@ -100,6 +106,8 @@ WITH dividend AS (
   GROUP BY (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at))
 ),
 deduction AS (
+  -- 将交易流水中的税扣除记录按当月hkd/usd汇率统一折算为cny后求和,得到每月的cny税扣除合计
+  -- 不包括DIVIDEND_FEE, 因为它是手续费, 不属于税扣除
   SELECT
   (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at)) AS period_yyyymm,
   SUM(
@@ -115,6 +123,7 @@ deduction AS (
   GROUP BY (YEAR(l.occurred_at) * 100 + MONTH(l.occurred_at))
 ),
 dividend_monthly AS (
+  -- 将上述两个子查询的结果按月合并,得到每月的cny派息合计和cny税扣除合计
   SELECT
     fx.period_yyyymm AS period_yyyymm,
     COALESCE(td.cny_dividend, 0) AS cny_dividend,
@@ -123,6 +132,7 @@ dividend_monthly AS (
   LEFT JOIN dividend td ON fx.period_yyyymm = td.period_yyyymm
   LEFT JOIN deduction de ON fx.period_yyyymm = de.period_yyyymm
 )
+-- 最后计算每月的cny派息合计、cny税扣除合计,以及每年派息累计和每年税扣除累计, 每年累计只在12月显示,其他月份显示NULL
 SELECT
   period_yyyymm,
   cny_dividend,
