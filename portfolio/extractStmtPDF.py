@@ -33,15 +33,17 @@ def idx_of(seq, needle) -> int:
     except ValueError:
         return -1
 
-def slice_between(seq, start_token, end_token) -> list:
+def slice_between(seq: list, start_token: str, end_token: str, end_token2=None) -> list:
     """截取 seq 中 (start_token 之后) 到 (end_token 之前) 的子序列；找不到则返回空"""
     s = idx_of(seq, start_token)
     if s < 0:
         return []
-    e = idx_of(seq, end_token)
-    if e < 0 or e <= s:
-        return seq[s+1:]
-    return seq[s+1: e]
+    e = idx_of(seq[s+1:], end_token)
+    if e < 0:
+        e = idx_of(seq[s+1:], end_token2) if end_token2 else -1
+        if e < 0:
+            return []
+    return seq[s+1: s+1+e]
 
 _num_re = re.compile(r"^\(?-?[\d,]+(?:\.\d+)?\)?$")  # 允许 (32,385.45)
 

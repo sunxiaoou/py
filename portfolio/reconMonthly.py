@@ -29,9 +29,9 @@ SELECT
   l.amount,
   l.volume,
   l.symbol,
-  s.currency
+  l.currency
 FROM trade_ledger l
-JOIN security_master s ON l.symbol = s.symbol
+-- JOIN security_master s ON l.symbol = s.symbol
 WHERE l.occurred_at < :month_end AND l.broker_name = :broker_name
 ORDER BY l.occurred_at, l.id;
 """
@@ -72,11 +72,13 @@ def compute_from_trade_ledger(trades: pd.DataFrame):
         cash = pd.DataFrame(columns=["currency", "cash_balance"])
 
     # 2) positions
-    trd = trades[trades["biz_type_code"].isin(["TRADE_BUY", "TRADE_SELL", "IPO_REFUND", "OTHER"])].copy()
+    trd = trades[trades["biz_type_code"]
+        .isin(["TRADE_BUY", "TRADE_SELL", "FUND_SUBSCRIPTION", "FUND_REDEMPTION", "IPO_REFUND", "OTHER"])].copy()
     trd = trd[trd["volume"].notna()].copy()
     if not trd.empty:
         trd["signed_qty"] = trd.apply(
-            lambda r: (r["volume"] if r["biz_type_code"] in ["TRADE_BUY", "IPO_REFUND", "OTHER"] else -r["volume"]),
+            lambda r: (r["volume"] if r["biz_type_code"] in ["TRADE_BUY", "FUND_SUBSCRIPTION", "IPO_REFUND", "OTHER"]
+                       else -r["volume"]),
             axis=1
         )
         pos = (trd.groupby("symbol", as_index=False)["signed_qty"]
@@ -111,7 +113,7 @@ def normalize_stmt_items(stmt_items: pd.DataFrame):
         stmt_cash = pd.DataFrame(columns=["currency", "cash_balance"])
 
     # POSITION
-    pos = stmt_items[~(stmt_items["symbol"].str.startswith("CASH") | stmt_items["symbol"].str.startswith("HK0"))].copy()
+    pos = stmt_items[~(stmt_items["symbol"].str.startswith("CASH"))].copy()
     if not pos.empty:
         stmt_pos = (pos.groupby("symbol", as_index=False)["volume"]
                     .sum()
