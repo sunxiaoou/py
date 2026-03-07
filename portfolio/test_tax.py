@@ -60,7 +60,8 @@ class MySqlTestCase(unittest.TestCase):
               SELECT
                 fx.period_yyyymm AS period_yyyymm,
                 n.{currency}_net AS {currency}_net,
-                n.{currency}_net - LAG(n.{currency}_net, 1) OVER (ORDER BY fx.period_yyyymm) AS {currency}_net_diff,
+                n.{currency}_net - COALESCE(LAG(n.{currency}_net, 1) OVER (ORDER BY fx.period_yyyymm), 0)
+                 AS {currency}_net_diff,
                 COALESCE(cd.{currency}_cash_dividend, 0) AS {currency}_cash_dividend
               FROM fx_rate_monthly fx
               LEFT JOIN net n ON fx.period_yyyymm = n.period_yyyymm
@@ -94,8 +95,8 @@ class MySqlTestCase(unittest.TestCase):
     def test_tax_sql(self):
         # self.run_tax_sql('hkd', 'ValuableCapital')
         self.run_tax_sql('cny', 'ValuableCapital')
-        # self.run_tax_sql('cny', 'uSmart')
-        # self.run_tax_sql('cny', 'Futu')
+        self.run_tax_sql('cny', 'uSmart')
+        self.run_tax_sql('cny', 'Futu')
         # self.run_tax_sql('cny')
 
 
