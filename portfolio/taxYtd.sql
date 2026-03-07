@@ -47,7 +47,7 @@ monthly_data AS (
   SELECT
     fx.period_yyyymm AS period_yyyymm,
     n.cny_net AS cny_net,
-    n.cny_net - LAG(n.cny_net, 1) OVER (ORDER BY fx.period_yyyymm) AS cny_net_diff,
+    n.cny_net - COALESCE(LAG(n.cny_net, 1) OVER (ORDER BY fx.period_yyyymm), 0) AS cny_net_diff,
     COALESCE(cd.cny_cash_dividend, 0) AS cny_cash_dividend
   FROM fx_rate_monthly fx
   LEFT JOIN net n ON fx.period_yyyymm = n.period_yyyymm
