@@ -465,24 +465,24 @@ def usmart(datafile: str) -> pd.DataFrame:
         i += 1
     i += 1
     try:
-        while len(lines) - i >= 7:
+        while len(lines) - i >= 6:
             while not re.match(r'^[\d]+\.\d\d$', lines[i]):
                 i += 1
             market_value = float(lines[i])
             nav = float(lines[i + 1])
             i += 2
-            while not re.match(r'^[\d]+$', lines[i]):
-                i += 1
-            volume = int(lines[i])
-            cost = float(lines[i + 1])
-            i += 2
             while not re.match(r'^[A-Z]{3,4}$', lines[i]):
                 i += 1
             code = lines[i]
             name, type, risk = SECURITIES[code]
+            i += 1
+            while not re.match(r'^[\d]+$', lines[i]):
+                i += 1
+            volume = int(lines[i])
+            cost = float(lines[i + 1])
             hold_gain = round(market_value - cost * volume, 2)
             result.append(('盈立', currency, code, name, type, risk, market_value, hold_gain, nav))
-            i += 1
+            i += 2
     except IndexError:
         pass
     df = pd.DataFrame(result, columns=COLUMNS + ['nav'])

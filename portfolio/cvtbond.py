@@ -67,7 +67,7 @@ def get_bonds(xlsx: str) -> (dict, pd.DataFrame):
     df = df.merge(rank3, on='代码', how='left')
     df = df.merge(rank4, on='代码', how='left')
     df = df.rename(columns={'涨幅': '涨跌幅%', '强赎提示': '强赎天计数'})
-    df['代码'] = df['代码'].apply(lambda x: str(x))
+    df['代码'] = df['代码'].apply(lambda x: str(x)[:6])
     df['涨跌幅%'] = df['涨跌幅%'].apply(lambda x: float(x) * 100)
     # print(df)
     return warning, df
