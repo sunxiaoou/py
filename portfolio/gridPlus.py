@@ -14,7 +14,9 @@ def gridPlus(xlsx: str, sheet: str):
     df = pd.read_excel(xlsx, sheet_name=sheet)
     # df.iloc[:, 0] = df.iloc[:, 0].fillna(method='ffill')
     df.iloc[:, 0] = df.iloc[:, 0].ffill()
-    df['网格'] = df['底格'].astype(str) + '_' + df['顶格'].astype(str) + '_5_1'
+    columns = list(df.columns)
+    gridNumber = columns.index('顶格') - columns.index('底格')
+    df['网格'] = df['底格'].astype(str) + '_' + df['顶格'].astype(str) + f'_{gridNumber}_1'
     df['名称'] = df.apply(lambda row: row['代码'] if row.iloc[0] == '海外' else row['标的'], axis=1)
     df = df[['网格', '名称']]
     # print(df)

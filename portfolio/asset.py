@@ -305,71 +305,171 @@ def huabao(datafile: str) -> pd.DataFrame:
 
 
 def huasheng(datafile: str) -> pd.DataFrame:
+    def normalize_number(s: str) -> str:
+        return re.sub(r'[,，＋]', '', re.sub('－', '-', s))
+
+    def is_number(s: str) -> bool:
+        return bool(re.match(r'^[-\d]+(?:\.\d+)?$', s))
+
+    def is_percent(s: str) -> bool:
+        return bool(re.match(r'^[-\d]+(?:\.\d+)?%$', s))
+
+    def is_code(s: str) -> bool:
+        return bool(re.match(r'^\d{5}', s) or re.match(r'^[A-Z]{2,5}(?:\.[A-Z])?', s))
+
+    def normalize_code(s: str) -> str:
+        match = re.match(r'^\d{5}', s)
+        if match:
+            return match.group()
+        code = re.match(r'^[A-Z]{2,5}(?:\.[A-Z])?', s).group()
+        if code == 'NMI':
+            return 'IWN'
+        if code not in SECURITIES and '.' in code:
+            code = code.split('.')[0]
+        return code
+
+    def infer_currency(code: str) -> str:
+        return 'hkd' if code.isdigit() else 'usd'
+
+    def next_values(start: int, end_words: tuple) -> list:
+        values = []
+        j = start
+        while j < len(lines) and not any(lines[j].startswith(word) for word in end_words):
+            if is_number(lines[j]):
+                values.append(float(lines[j]))
+            j += 1
+        return values
+
+    def next_holding_index(start: int) -> int:
+        j = start
+        while j < len(lines) - 4:
+            if is_number(lines[j]) and is_number(lines[j + 1]) and is_number(lines[j + 2]):
+                for k in range(j + 3, min(j + 7, len(lines))):
+                    if is_code(lines[k]):
+                        return j
+            j += 1
+        return len(lines)
+
+    def next_section_index(start: int) -> int:
+        j = start
+        while j < len(lines):
+            if lines[j].startswith('持仓市值·'):
+                return j
+            j += 1
+        return len(lines)
+
+    def convert_currency(value: float, from_currency: str, to_currency: str, rate: float) -> float:
+        if from_currency == to_currency:
+            return value
+        if from_currency == 'hkd' and to_currency == 'usd':
+            return value * rate
+        if from_currency == 'usd' and to_currency == 'hkd':
+            return value / rate
+        return value
+
     with open(datafile) as f:
         lines = []
         for line in f.readlines():
-            lines += re.sub(r'[,，＋]', '', re.sub('－', '-', line)).rstrip('\n').split()
+            lines += normalize_number(line).rstrip('\n').split()
 
     i = 0
     while not lines[i].startswith('资产净值'):
         i += 1
-    currency = 'hkd' if '港币' in lines[i] else 'usd'
-    while not re.match(r'^[-\d]+\.\d\d$', lines[i]):
+
+    account_currency = 'hkd' if '港币' in lines[i] else 'usd'
+    asset_values = next_values(i + 1, ('持仓市值',))
+    asset = max(asset_values)
+
+    section_totals = {}
+    for j, line in enumerate(lines):
+        if not line.startswith('持仓市值·'):
+            continue
+        currency = 'hkd' if 'HKD' in line else 'usd' if 'USD' in line else None
+        values = next_values(j + 1, ('名称代码',))
+        if currency and len(values) >= 3:
+            section_totals[currency] = (values[0], values[2])
+
+    while not lines[i].startswith('持仓市值'):
         i += 1
-    asset = float(lines[i + 1])
-    i += 2
-    while not re.match(r'^[.\d]+$', lines[i]):
+    holding_values = next_values(i + 1, ('总现金',))
+    total_mv, total_hg = holding_values[:2]
+
+    while not lines[i].startswith('总现金'):
         i += 1
-    total_mv = float(lines[i])
-    total_hg = float(lines[i + 2])
-    i += 3
-    while not re.match(r'.*[\d.]+$', lines[i]):
-        i += 1
-    cash = float(lines[i])  # + float(lines[i + 1])
-    assert round(total_mv + cash, 2) == asset,\
-        print("total_mv({}) + cash({}) != asset({})".format(total_mv, cash, asset))
-    result = [('华盛', currency, 'cash', '现金', '货币', 0, cash, 0)]
-    i += 15
-    while '成本价' not in lines[i]:
+    cash = next_values(i + 1, ('新股认购',))[0]
+
+    result = [('华盛', account_currency, 'cash', '现金', '货币', 0, cash, 0, None, None, None)]
+    while not lines[i].startswith('名称代码'):
         i += 1
     i += 1
+
     codes = []
-    while len(lines) - i > 6 and lines[i] != '行情' and lines[i + 1] != '行情':
-        # name = lines[i]
-        # i += 1
-        while not re.match(r'^[\d.]+$', lines[i]):
-            i += 1
+    while len(lines) - i > 4:
+        i = next_holding_index(i)
+        if i >= len(lines):
+            break
+
         market_value = float(lines[i])
-        i += 1
-        hold_gain = float(lines[i])
-        i += 1
-        nav = float(lines[i])
-        i += 1
-        while not re.match(r'[0-9A-Z]+', lines[i]):
-            i += 1
-        code = re.search(r'[0-9A-Z]+', lines[i]).group()
-        code = code[:5] if currency == 'hkd' else code[:4]
-        i += 1
-        if code == 'NMI':
-            code = 'IWN'
-        name, type, risk = SECURITIES[code]
-        while not re.match(r'^[\d.]+$', lines[i]):
-            i += 1
-        volume = int(lines[i])
-        i += 1
-        while not re.match(r'^[-\d.]+$', lines[i]):
-            i += 1
-        cost = float(lines[i])
-        i += 1
+        hold_gain = float(lines[i + 1])
+        nav = float(lines[i + 2])
+
+        code_index = i + 3
+        while code_index < len(lines) and not is_code(lines[code_index]):
+            code_index += 1
+        if code_index >= len(lines):
+            break
+
+        code = normalize_code(lines[code_index])
+        if code not in SECURITIES:
+            i = code_index + 1
+            continue
+
+        next_index = min(next_holding_index(code_index + 1), next_section_index(code_index + 1))
+        segment = lines[code_index + 1:next_index]
+        plain_numbers = [float(item) for item in segment if is_number(item)]
+        volume = None
+        for value in plain_numbers:
+            if value >= 0 and value.is_integer() and abs(round(value * nav, 2) - market_value) < 1:
+                volume = int(value)
+                break
+        if volume is None:
+            volume = int(round(market_value / nav)) if nav else 0
+
+        cost_values = [float(item) for item in segment if is_number(item) and not item.isdigit()]
+        cost = cost_values[-1] if cost_values else np.nan
+        if not cost_values and any(is_percent(item) for item in segment):
+            cost = np.nan
+
         if code not in codes:
             codes.append(code)
-            result.append(('华盛', currency, code, name, type, risk, market_value, hold_gain, volume, nav, cost))
+            name, typ, risk = SECURITIES[code]
+            currency = infer_currency(code)
+            result.append(('华盛', currency, code, name, typ, risk, market_value, hold_gain, volume, nav, cost))
+        i = next_index
+
     df = pd.DataFrame(result, columns=COLUMNS + ['volume', 'nav', 'cost'])
-    sum_mv = round(df['market_value'].sum(), 2)
-    assert sum_mv == asset, print("sum_mv({}) != asset({})".format(sum_mv, asset))
-    sum_hg = round(df['hold_gain'].sum(), 2)
-    assert sum_hg == total_hg, print("sum_hg({}) != total_hg({})".format(sum_hg, total_hg))
-    s = re.sub(r'.+_', '', datafile[: -4])
+    for currency, (section_mv, section_hg) in section_totals.items():
+        section_df = df[(df['currency'] == currency) & (df['code'] != 'cash')]
+        sum_section_mv = round(section_df['market_value'].sum(), 2)
+        assert abs(sum_section_mv - section_mv) < 0.02, \
+            print("sum_{}_mv({}) != section_mv({})".format(currency, sum_section_mv, section_mv))
+        sum_section_hg = round(section_df['hold_gain'].sum(), 2)
+        assert abs(sum_section_hg - section_hg) < 0.02, \
+            print("sum_{}_hg({}) != section_hg({})".format(currency, sum_section_hg, section_hg))
+
+    hkd_mv = df[df['currency'] == 'hkd']['market_value'].sum()
+    non_hkd_mv = df[df['currency'] != 'hkd']['market_value'].sum()
+    hkd_usd_rate = (asset - non_hkd_mv) / hkd_mv if hkd_mv and account_currency == 'usd' else 1
+    df_account_mv = df.apply(lambda row: convert_currency(row['market_value'], row['currency'], account_currency,
+                                                          hkd_usd_rate), axis=1)
+    df_account_hg = df.apply(lambda row: convert_currency(row['hold_gain'], row['currency'], account_currency,
+                                                          hkd_usd_rate), axis=1)
+    sum_mv = round(df_account_mv.sum(), 2)
+    assert abs(sum_mv - asset) < 0.02, print("sum_mv({}) != asset({})".format(sum_mv, asset))
+    sum_hg = round(df_account_hg.sum(), 2)
+    assert abs(sum_hg - total_hg) < 0.02, print("sum_hg({}) != total_hg({})".format(sum_hg, total_hg))
+    s = re.sub(r'\.txt.*$', '', datafile)
+    s = re.sub(r'.+_', '', s)
     cash2 = float(s) if s else 0
     df.at[0, 'market_value'] += cash2
     df.apply(verify, axis=1)
@@ -807,7 +907,7 @@ def main():
         sys.exit(1)
 
     path = sys.argv[1]
-    if path.endswith('.txt'):
+    if '.txt' in os.path.basename(path):
         if not os.path.isfile(path):
             with open(path, 'w') as fp:
                 fp.write(pyperclip.paste())

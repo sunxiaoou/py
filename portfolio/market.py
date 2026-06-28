@@ -66,7 +66,7 @@ class Market:
         for i in items:
             dic = {
                 'code': i['quote']['symbol'],
-                'ts': datetime.fromtimestamp(i['quote']['timestamp'] / 1000),
+                # 'ts': datetime.fromtimestamp(i['quote']['timestamp'] / 1000),
                 'name': i['quote']['name'],
                 'price': i['quote']['current'],
                 'premium': i['quote']['premium_rate'] if 'premium_rate' in i['quote'] else None,
