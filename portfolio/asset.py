@@ -306,7 +306,7 @@ def huabao(datafile: str) -> pd.DataFrame:
 
 def huasheng(datafile: str) -> pd.DataFrame:
     def normalize_number(s: str) -> str:
-        return re.sub(r'[,，＋]', '', re.sub('－', '-', s))
+        return re.sub(r'[,，＋+]', '', re.sub('－', '-', s))
 
     def is_number(s: str) -> bool:
         return bool(re.match(r'^[-\d]+(?:\.\d+)?$', s))
